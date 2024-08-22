@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::BTreeMap, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 pub trait BinarySerialize {
     fn serialize(&self) -> [u8];
@@ -25,20 +25,32 @@ pub trait BinarySerialize {
 pub struct Grammar<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
-    I: Sized + Clone + Debug,                   // Generic ident non-terminal type.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
     /// The root symbol of this grammar definition.
     root: I,
 
     /// The list of productions associated with this grammar.
-    productions: BTreeMap<I, Production<T, I>>,
+    productions: HashMap<I, Production<T, I>>,
 }
 
 impl<T, I> Grammar<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
-    I: Sized + Clone + Debug,                   // Generic ident non-terminal type.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
+    pub fn new(root: I, mut productions: Vec<Production<T, I>>) -> Self {
+        let mut map = HashMap::new();
+
+        while let Some(p) = productions.pop() {
+            map.insert(p.get_lhs(), p);
+        }
+
+        Self {
+            root,
+            productions: map,
+        }
+    }
 }
 
 pub type ProductionRule<T, I> = Vec<GrammarElement<T, I>>;
@@ -48,7 +60,7 @@ pub type ProductionRule<T, I> = Vec<GrammarElement<T, I>>;
 pub struct Production<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
-    I: Sized + Clone + Debug,                   // Generic ident non-terminal type.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
     /// Reference to the non-terminal that we are using here.
     non_terminal: I,
@@ -61,7 +73,7 @@ where
 impl<T, I> Production<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
-    I: Sized + Clone + Debug,                   // Generic ident non-terminal type.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
     pub fn new(non_terminal: I, items: Vec<ProductionRule<T, I>>) -> Self {
         Self {
@@ -69,12 +81,16 @@ where
             non_terminal,
         }
     }
+
+    pub fn get_lhs(&self) -> I {
+        self.non_terminal.clone()
+    }
 }
 
 pub enum GrammarElement<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
-    I: Sized + Clone + Debug,                   // Generic ident non-terminal type.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
     Terminal(T),
     NonTerminal(I),
