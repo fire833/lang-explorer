@@ -22,6 +22,22 @@ pub trait BinarySerialize {
     fn serialize(&self) -> [u8];
 }
 
+/// A grammar expander is an object that is able to take a
+/// current production rule, the whole of the grammar that is
+/// being utilized, and is able to spit out a production rule
+/// that should be utilized from the list of possible production
+/// rules that are implemented by this production.
+pub trait GrammarExpander<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize,
+    I: Sized + Clone + Debug + Hash + Eq,
+{
+    fn expand(
+        &self,
+        grammar: &Grammar<T, I>,
+        production: &Production<T, I>,
+    ) -> &ProductionRule<T, I>;
+}
 pub struct Grammar<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
