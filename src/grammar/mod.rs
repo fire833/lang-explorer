@@ -71,6 +71,22 @@ where
     }
 }
 
+impl<T, I> Debug for Grammar<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Entry Symbol: {:?}", self.root)?;
+
+        for (nt, rules) in self.productions.iter() {
+            writeln!(f, "{:?}: {:?}", nt, rules)?;
+        }
+
+        Ok(())
+    }
+}
+
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
 #[derive(Clone)]
@@ -110,12 +126,11 @@ where
     I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}: ", self.non_terminal)?;
         for (i, item) in self.items.iter().enumerate() {
             if i != self.items.len() - 1 {
                 write!(f, "{:?} |", item)?;
             } else {
-                write!(f, "{:?}", item)?;
+                write!(f, " {:?}", item)?;
             }
         }
 
@@ -137,7 +152,7 @@ where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
     I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
-    const fn new(elements: Vec<GrammarElement<T, I>>) -> Self {
+    pub const fn new(elements: Vec<GrammarElement<T, I>>) -> Self {
         Self { items: elements }
     }
 }
@@ -165,6 +180,13 @@ where
     Terminal(T),
     NonTerminal(I),
     Epsilon,
+}
+
+impl<T, I> GrammarElement<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
 }
 
 impl<T, I> Debug for GrammarElement<T, I>

@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use crate::grammar::{Grammar, Production};
+use crate::grammar::{Grammar, GrammarElement, Production, ProductionRule};
 
 use super::StringValue;
 
@@ -29,10 +29,20 @@ pub fn taco_schedule_grammar() -> Grammar<StringValue, StringValue> {
     Grammar::new(
         "Entrypoint".into(),
         vec![
-            Production::new("".into(), vec![]),
-            Production::new("".into(), vec![]),
-            Production::new("".into(), vec![]),
-            Production::new("".into(), vec![]),
+            Production::new(
+                "Entrypoint".into(),
+                vec![
+                    ProductionRule::new(vec![GrammarElement::Epsilon]),
+                    ProductionRule::new(vec![
+                        GrammarElement::Terminal(StringValue::from("pos")),
+                        GrammarElement::NonTerminal(StringValue::from("A")),
+                    ]),
+                ],
+            ),
+            Production::new(
+                "A".into(),
+                vec![ProductionRule::new(vec![GrammarElement::Epsilon])],
+            ),
         ],
     )
 }
