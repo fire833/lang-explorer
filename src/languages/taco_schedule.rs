@@ -16,8 +16,23 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-mod expanders;
-mod grammar;
-mod languages;
+use crate::grammar::{Grammar, Production};
 
-fn main() {}
+use super::StringValue;
+
+const POS_OP: &str = "pos";
+const FUSE_OP: &str = "fuse";
+const SPLIT_OP: &str = "split";
+const REORDER_OP: &str = "reorder";
+
+pub fn taco_schedule_grammar() -> Grammar<StringValue, StringValue> {
+    Grammar::new(
+        "Entrypoint".into(),
+        vec![
+            Production::new("".into(), vec![]),
+            Production::new("".into(), vec![]),
+            Production::new("".into(), vec![]),
+            Production::new("".into(), vec![]),
+        ],
+    )
+}

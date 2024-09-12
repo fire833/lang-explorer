@@ -19,7 +19,7 @@
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 pub trait BinarySerialize {
-    fn serialize(&self) -> [u8];
+    fn serialize(&self) -> Vec<u8>;
 }
 
 /// A grammar expander is an object that is able to take a
@@ -38,6 +38,8 @@ where
         production: &Production<T, I>,
     ) -> &ProductionRule<T, I>;
 }
+
+#[derive(Clone)]
 pub struct Grammar<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
@@ -69,10 +71,9 @@ where
     }
 }
 
-pub type ProductionRule<T, I> = Vec<GrammarElement<T, I>>;
-
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
+#[derive(Clone)]
 pub struct Production<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
@@ -91,7 +92,7 @@ where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
     I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
 {
-    pub fn new(non_terminal: I, items: Vec<ProductionRule<T, I>>) -> Self {
+    pub const fn new(non_terminal: I, items: Vec<ProductionRule<T, I>>) -> Self {
         Self {
             items,
             non_terminal,
@@ -103,6 +104,59 @@ where
     }
 }
 
+impl<T, I> Debug for Production<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}: ", self.non_terminal)?;
+        for (i, item) in self.items.iter().enumerate() {
+            if i != self.items.len() - 1 {
+                write!(f, "{:?} |", item)?;
+            } else {
+                write!(f, "{:?}", item)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct ProductionRule<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
+    items: Vec<GrammarElement<T, I>>,
+}
+
+impl<T, I> ProductionRule<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
+    const fn new(elements: Vec<GrammarElement<T, I>>) -> Self {
+        Self { items: elements }
+    }
+}
+
+impl<T, I> Debug for ProductionRule<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for item in self.items.iter() {
+            write!(f, "{:?}", item)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
 pub enum GrammarElement<T, I>
 where
     T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
@@ -111,4 +165,18 @@ where
     Terminal(T),
     NonTerminal(I),
     Epsilon,
+}
+
+impl<T, I> Debug for GrammarElement<T, I>
+where
+    T: Sized + Clone + Debug + BinarySerialize, // Generic terminal type, this will usually be some kind of string or bytes.
+    I: Sized + Clone + Debug + Hash + Eq,       // Generic ident non-terminal type.
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Epsilon => write!(f, "ε"),
+            Self::NonTerminal(nt) => write!(f, "{:?}", nt),
+            Self::Terminal(t) => write!(f, "{:?}", t),
+        }
+    }
 }
