@@ -24,6 +24,7 @@ use crate::{errors::LangExplorerError, expanders::GrammarExpander};
 /// to an output program.
 pub trait BinarySerialize {
     /// Serialize into a Vec.
+    #[allow(unused)]
     fn serialize(&self) -> Vec<u8>;
 
     /// Serialize by appending to the output vector.

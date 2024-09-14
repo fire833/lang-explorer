@@ -16,11 +16,9 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fmt::Debug, hash::Hash};
-
 use async_trait::async_trait;
 
-use crate::grammar::{BinarySerialize, Grammar, NonTerminal, Production, ProductionRule, Terminal};
+use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
 
 /// A grammar expander is an object that is able to take a
 /// current production rule, the whole of the grammar that is

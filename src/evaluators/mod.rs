@@ -25,6 +25,7 @@ use crate::errors::LangExplorerError;
 /// to be used as reward/error for the specific program that was
 /// generated.
 #[async_trait]
+#[allow(unused)]
 pub trait Evaluator<M>
 where
     M: Sized + Eq + PartialEq + PartialOrd,
