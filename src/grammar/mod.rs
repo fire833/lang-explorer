@@ -196,13 +196,13 @@ where
     I: NonTerminal,
 {
     /// optional prefix context for the rule.
-    prefix: Option<GrammarElement<T, I>>,
+    prefix: Option<Vec<GrammarElement<T, I>>>,
 
     /// non-terminal for the rule.
     non_terminal: I,
 
     /// optional siffx context for the rule.
-    suffix: Option<GrammarElement<T, I>>,
+    suffix: Option<Vec<GrammarElement<T, I>>>,
 }
 
 impl<T, I> ProductionLHS<T, I>
@@ -220,8 +220,12 @@ where
         }
     }
 
+    pub fn new_with_prefix_single(prefix: GrammarElement<T, I>, non_terminal: I) -> Self {
+        Self::new_with_prefix_list(vec![prefix], non_terminal)
+    }
+
     /// Create a new ProductionLHS with prefix context.
-    pub const fn new_with_prefix(prefix: GrammarElement<T, I>, non_terminal: I) -> Self {
+    pub const fn new_with_prefix_list(prefix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
         Self {
             prefix: Some(prefix),
             non_terminal,
@@ -229,8 +233,12 @@ where
         }
     }
 
+    pub fn new_with_suffix_single(suffix: GrammarElement<T, I>, non_terminal: I) -> Self {
+        Self::new_with_suffix_list(vec![suffix], non_terminal)
+    }
+
     /// Create a new ProductionLHS with suffix context.
-    pub const fn new_with_suffix(suffix: GrammarElement<T, I>, non_terminal: I) -> Self {
+    pub const fn new_with_suffix_list(suffix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
         Self {
             prefix: None,
             non_terminal,

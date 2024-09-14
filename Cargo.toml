@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.82"
 burn = { version = "0.13.2", features = ["cuda"] }
+clap = { version = "4.5.17", features = ["derive"] }
+mpi = "0.8.0"

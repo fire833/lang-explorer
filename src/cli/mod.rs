@@ -16,34 +16,34 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::{Debug, Display};
+use crate::errors::LangExplorerError;
 
-pub enum LangExplorerError {
-    General(String),
+#[derive(clap::Parser)]
+pub struct LangExplorerArgs {
+    #[command(subcommand)]
+    cmd: Option<Subcommand>,
 }
 
-impl Display for LangExplorerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::General(e) => write!(f, "{}", e),
+impl LangExplorerArgs {
+    pub fn entry(&self) -> Result<(), LangExplorerError> {
+        match &self.cmd {
+            Some(cmd) => match cmd {
+                Subcommand::MPI => todo!(),
+                Subcommand::Generate => todo!(),
+            },
+            None => return Err("no command provided".into()),
         }
     }
 }
 
-impl Debug for LangExplorerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
+#[derive(clap::Subcommand)]
+pub enum Subcommand {
+    /// Run lang-explorer in an MPI environment.
+    #[command()]
+    MPI,
 
-impl From<&str> for LangExplorerError {
-    fn from(value: &str) -> Self {
-        Self::General(value.to_string())
-    }
-}
-
-impl From<String> for LangExplorerError {
-    fn from(value: String) -> Self {
-        Self::General(value)
-    }
+    /// Generate a new program in a given language from
+    /// a given specification with a given expander.
+    #[command()]
+    Generate,
 }
