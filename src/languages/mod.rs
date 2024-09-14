@@ -18,7 +18,7 @@
 
 use std::fmt::Debug;
 
-use crate::grammar::BinarySerialize;
+use crate::grammar::{BinarySerialize, NonTerminal, Terminal};
 
 pub mod taco_schedule;
 
@@ -31,6 +31,12 @@ pub mod taco_schedule;
 pub struct StringValue {
     s: String,
 }
+
+/// StringValue is a valid terminal.
+impl Terminal for StringValue {}
+
+/// StringValue is a valid non-terminal.
+impl NonTerminal for StringValue {}
 
 impl BinarySerialize for StringValue {
     fn serialize(&self) -> Vec<u8> {

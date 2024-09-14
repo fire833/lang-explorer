@@ -20,7 +20,7 @@ use std::{fmt::Debug, hash::Hash};
 
 use async_trait::async_trait;
 
-use crate::grammar::{BinarySerialize, Grammar, Production, ProductionRule};
+use crate::grammar::{BinarySerialize, Grammar, NonTerminal, Production, ProductionRule, Terminal};
 
 /// A grammar expander is an object that is able to take a
 /// current production rule, the whole of the grammar that is
@@ -30,8 +30,8 @@ use crate::grammar::{BinarySerialize, Grammar, Production, ProductionRule};
 #[async_trait]
 pub trait GrammarExpander<T, I>
 where
-    T: Sized + Clone + Debug + BinarySerialize,
-    I: Sized + Clone + Debug + Hash + Eq,
+    T: Terminal,
+    I: NonTerminal,
 {
     fn expand_rule(
         &self,
