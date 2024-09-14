@@ -18,25 +18,16 @@
 
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
-pub trait BinarySerialize {
-    fn serialize(&self) -> Vec<u8>;
-}
+use crate::{errors::LangExplorerError, expanders::GrammarExpander};
 
-/// A grammar expander is an object that is able to take a
-/// current production rule, the whole of the grammar that is
-/// being utilized, and is able to spit out a production rule
-/// that should be utilized from the list of possible production
-/// rules that are implemented by this production.
-pub trait GrammarExpander<T, I>
-where
-    T: Sized + Clone + Debug + BinarySerialize,
-    I: Sized + Clone + Debug + Hash + Eq,
-{
-    fn expand(
-        &self,
-        grammar: &Grammar<T, I>,
-        production: &Production<T, I>,
-    ) -> &ProductionRule<T, I>;
+/// Trait for non-terminals to implement in order to be serialized
+/// to an output program.
+pub trait BinarySerialize {
+    /// Serialize into a Vec.
+    fn serialize(&self) -> Vec<u8>;
+
+    /// Serialize by appending to the output vector.
+    fn serialize_into(&self, output: &mut Vec<u8>);
 }
 
 #[derive(Clone)]
@@ -68,6 +59,50 @@ where
             root,
             productions: map,
         }
+    }
+
+    pub async fn generate_program(
+        &self,
+        expander: &dyn GrammarExpander<T, I>,
+    ) -> Result<Vec<u8>, LangExplorerError> {
+        let mut output: Vec<u8> = vec![];
+
+        let prod = match self.productions.get(&self.root) {
+            Some(prod) => prod,
+            None => return Err("no root non-terminal/production found".into()),
+        };
+
+        match self.generate_recursive(&mut output, prod, expander) {
+            Ok(_) => Ok(output),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn generate_recursive(
+        &self,
+        output: &mut Vec<u8>,
+        production: &Production<T, I>,
+        expander: &dyn GrammarExpander<T, I>,
+    ) -> Result<(), LangExplorerError> {
+        let rule = expander.expand_rule(&self, production);
+        for elem in rule.items.iter() {
+            match elem {
+                GrammarElement::Terminal(t) => t.serialize_into(output),
+                GrammarElement::NonTerminal(nt) => match self.productions.get(nt) {
+                    Some(prod) => {
+                        if let Err(e) = self.generate_recursive(output, prod, expander) {
+                            return Err(e);
+                        }
+                    }
+                    None => {
+                        return Err(format!("non-terminal {:?} not found in productions", nt).into())
+                    }
+                },
+                GrammarElement::Epsilon => continue,
+            }
+        }
+
+        Ok(())
     }
 }
 

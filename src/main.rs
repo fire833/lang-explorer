@@ -18,6 +18,8 @@
 
 use languages::taco_schedule::taco_schedule_grammar;
 
+mod errors;
+mod evaluators;
 mod expanders;
 mod grammar;
 mod languages;

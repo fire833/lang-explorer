@@ -36,6 +36,10 @@ impl BinarySerialize for StringValue {
     fn serialize(&self) -> Vec<u8> {
         self.s.clone().into_bytes()
     }
+
+    fn serialize_into(&self, output: &mut Vec<u8>) {
+        output.append(&mut self.s.clone().into_bytes());
+    }
 }
 
 impl Debug for StringValue {

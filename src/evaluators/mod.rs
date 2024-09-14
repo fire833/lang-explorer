@@ -16,26 +16,18 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fmt::Debug, hash::Hash};
-
 use async_trait::async_trait;
 
-use crate::grammar::{BinarySerialize, Grammar, Production, ProductionRule};
+use crate::errors::LangExplorerError;
 
-/// A grammar expander is an object that is able to take a
-/// current production rule, the whole of the grammar that is
-/// being utilized, and is able to spit out a production rule
-/// that should be utilized from the list of possible production
-/// rules that are implemented by this production.
+/// Evaluator is a trait that takes in some program, in the
+/// form of a vector of bytes, and returns some kind of metric
+/// to be used as reward/error for the specific program that was
+/// generated.
 #[async_trait]
-pub trait GrammarExpander<T, I>
+pub trait Evaluator<M>
 where
-    T: Sized + Clone + Debug + BinarySerialize,
-    I: Sized + Clone + Debug + Hash + Eq,
+    M: Sized + Eq + PartialEq + PartialOrd,
 {
-    fn expand_rule(
-        &self,
-        grammar: &Grammar<T, I>,
-        production: &Production<T, I>,
-    ) -> &ProductionRule<T, I>;
+    async fn evaluate(&self, program: Vec<u8>) -> Result<M, LangExplorerError>;
 }

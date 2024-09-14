@@ -16,26 +16,28 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fmt::Debug, hash::Hash};
+use std::fmt::Display;
 
-use async_trait::async_trait;
+pub enum LangExplorerError {
+    General(String),
+}
 
-use crate::grammar::{BinarySerialize, Grammar, Production, ProductionRule};
+impl Display for LangExplorerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::General(e) => write!(f, "{}", e),
+        }
+    }
+}
 
-/// A grammar expander is an object that is able to take a
-/// current production rule, the whole of the grammar that is
-/// being utilized, and is able to spit out a production rule
-/// that should be utilized from the list of possible production
-/// rules that are implemented by this production.
-#[async_trait]
-pub trait GrammarExpander<T, I>
-where
-    T: Sized + Clone + Debug + BinarySerialize,
-    I: Sized + Clone + Debug + Hash + Eq,
-{
-    fn expand_rule(
-        &self,
-        grammar: &Grammar<T, I>,
-        production: &Production<T, I>,
-    ) -> &ProductionRule<T, I>;
+impl From<&str> for LangExplorerError {
+    fn from(value: &str) -> Self {
+        Self::General(value.to_string())
+    }
+}
+
+impl From<String> for LangExplorerError {
+    fn from(value: String) -> Self {
+        Self::General(value)
+    }
 }
