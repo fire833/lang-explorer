@@ -18,7 +18,7 @@
 
 use std::fmt::Debug;
 
-use crate::grammar::{BinarySerialize, NonTerminal, Terminal};
+use crate::grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal};
 
 pub mod taco_schedule;
 
@@ -29,7 +29,7 @@ pub mod taco_schedule;
 /// fine for a majority of people.
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct StringValue {
-    s: String,
+    s: &'static str,
 }
 
 /// StringValue is a valid terminal.
@@ -40,11 +40,17 @@ impl NonTerminal for StringValue {}
 
 impl BinarySerialize for StringValue {
     fn serialize(&self) -> Vec<u8> {
-        self.s.clone().into_bytes()
+        self.s.as_bytes().to_vec()
     }
 
     fn serialize_into(&self, output: &mut Vec<u8>) {
-        output.append(&mut self.s.clone().into_bytes());
+        output.append(&mut self.s.as_bytes().to_vec());
+    }
+}
+
+impl StringValue {
+    const fn from_static_str(value: &'static str) -> Self {
+        Self { s: value }
     }
 }
 
@@ -54,23 +60,29 @@ impl Debug for StringValue {
     }
 }
 
-impl From<&str> for StringValue {
-    fn from(value: &str) -> Self {
-        Self {
-            s: String::from(value),
-        }
-    }
-}
-
-impl From<String> for StringValue {
-    fn from(value: String) -> Self {
-        Self { s: value }
+impl From<&'static str> for StringValue {
+    fn from(value: &'static str) -> Self {
+        Self::from_static_str(value)
     }
 }
 
 /// Macro to take a string literal and convert into a constant StringValue.
 /// This is useful for statically defining your terminals for easy reuse.
-macro_rules! const_string_value {
-    ($s:literal) => {};
+macro_rules! terminal_str {
+    ($i:ident, $s:literal) => {
+        const $i: GrammarElement<StringValue, StringValue> =
+            GrammarElement::Terminal(StringValue::from_static_str($s));
+    };
 }
-pub(crate) use const_string_value;
+pub(crate) use terminal_str;
+
+macro_rules! nterminal_str {
+    ($i:ident, $s:literal) => {
+        const $i: GrammarElement<StringValue, StringValue> =
+            GrammarElement::NonTerminal(StringValue::from_static_str($s));
+    };
+}
+
+pub(crate) use nterminal_str;
+
+// Some common terminals/tokens that you can import for other grammars.

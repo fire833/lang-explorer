@@ -18,12 +18,27 @@
 
 use crate::grammar::{Grammar, GrammarElement, Production, ProductionLHS, ProductionRule};
 
-use super::StringValue;
+use super::{nterminal_str, terminal_str, StringValue};
 
-const POS_OP: &str = "pos";
-const FUSE_OP: &str = "fuse";
-const SPLIT_OP: &str = "split";
-const REORDER_OP: &str = "reorder";
+const EPSILON: GrammarElement<StringValue, StringValue> = GrammarElement::Epsilon;
+
+// Non terminals for this grammar.
+nterminal_str!(NT_ENTRYPOINT, "entrypoint");
+nterminal_str!(NT_RULE, "rule");
+
+// Terminals for this grammar.
+terminal_str!(POS_OP, "pos");
+terminal_str!(FUSE_OP, "fuse");
+terminal_str!(SPLIT_OP, "split");
+terminal_str!(REORDER_OP, "reorder");
+terminal_str!(DIVIDE_OP, "divide");
+terminal_str!(PRECOMPUTE_OP, "precompute");
+terminal_str!(UNROLL_OP, "unroll");
+terminal_str!(BOUND_OP, "bound");
+terminal_str!(PARALLELIZE_OP, "parallelize");
+terminal_str!(ASSEMBLE_OP, "assemble");
+
+terminal_str!(COMMA, ",");
 
 pub fn taco_schedule_grammar() -> Grammar<StringValue, StringValue> {
     Grammar::new(
@@ -32,15 +47,16 @@ pub fn taco_schedule_grammar() -> Grammar<StringValue, StringValue> {
             Production::new(
                 ProductionLHS::new_context_free("entrypoint".into()),
                 vec![
-                    ProductionRule::new(vec![GrammarElement::Epsilon]),
-                    ProductionRule::new(vec![
-                        GrammarElement::Terminal(StringValue::from("pos")),
-                        GrammarElement::NonTerminal(StringValue::from("A")),
-                    ]),
+                    // Optionally create no rules
+                    ProductionRule::new(vec![EPSILON]),
+                    // Or one rule
+                    ProductionRule::new(vec![NT_RULE]),
+                    // Or many rules
+                    ProductionRule::new(vec![NT_ENTRYPOINT, COMMA, NT_RULE]),
                 ],
             ),
             Production::new(
-                ProductionLHS::new_context_free("A".into()),
+                ProductionLHS::new_context_free("rule".into()),
                 vec![ProductionRule::new(vec![GrammarElement::Epsilon])],
             ),
         ],
