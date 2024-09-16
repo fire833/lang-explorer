@@ -183,10 +183,12 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
-            if i != self.items.len() - 1 {
-                write!(f, " {:?} |", item)?;
-            } else {
+            if i == self.items.len() - 1 {
                 write!(f, " {:?}", item)?;
+            } else if i == 0 {
+                write!(f, "{:?} |", item)?;
+            } else {
+                write!(f, " {:?} |", item)?;
             }
         }
 
