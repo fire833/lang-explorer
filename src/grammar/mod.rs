@@ -151,6 +151,14 @@ where
     items: Vec<ProductionRule<T, I>>,
 }
 
+macro_rules! production_rule {
+    ($($x:expr),+) => {
+        ProductionRule::new(vec![$($x),+])
+    };
+}
+
+pub(crate) use production_rule;
+
 impl<T, I> Production<T, I>
 where
     T: Terminal,
@@ -176,7 +184,7 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i != self.items.len() - 1 {
-                write!(f, "{:?} |", item)?;
+                write!(f, " {:?} |", item)?;
             } else {
                 write!(f, " {:?}", item)?;
             }
@@ -210,6 +218,14 @@ where
     T: Terminal,
     I: NonTerminal,
 {
+    pub fn new_context_free_elem(non_terminal: GrammarElement<T, I>) -> Self {
+        if let GrammarElement::NonTerminal(nt) = non_terminal {
+            Self::new_context_free(nt)
+        } else {
+            panic!("grammar element must be a non-terminal");
+        }
+    }
+
     /// Create a new ProductionLHS with no context, only provide a non-terminal
     /// for expansion.
     pub const fn new_context_free(non_terminal: I) -> Self {
