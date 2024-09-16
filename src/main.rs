@@ -18,7 +18,7 @@
 
 use clap::Parser;
 use errors::LangExplorerError;
-use languages::taco_schedule::TacoGrammar;
+use languages::taco_schedule::TacoLanguage;
 
 mod cli;
 mod errors;
@@ -29,7 +29,7 @@ mod languages;
 
 fn main() -> Result<(), LangExplorerError> {
     let args = cli::LangExplorerArgs::parse();
-    let taco = TacoGrammar::new(vec![]);
+    let taco = TacoLanguage::new(vec![]);
     println!("{:?}", taco.taco_schedule_grammar());
 
     return args.entry();

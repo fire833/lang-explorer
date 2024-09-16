@@ -21,6 +21,8 @@ use std::{collections::HashMap, process::Command};
 use crate::errors::LangExplorerError;
 
 /// Enumeration of supported compiler modes for taco.
+/// When you select one of these modes, it will affect the
+/// arguments that are passed to the taco process.
 pub enum TacoCompileMode {
     /// Print the compute kernel (default).
     CompileComputeKernel,
@@ -46,10 +48,12 @@ impl TacoCompileMode {
     }
 }
 
+/// A wrapper for doing taco compilation stuff.
 pub struct TacoCompiler {}
 
 impl TacoCompiler {
-    /// Takes a TACO expression and a schedule, and compiles the output.
+    /// Takes a TACO expression and a schedule along with some other arguments,
+    /// and compiles the output.
     async fn compile(
         &self,
         executable: String,

@@ -18,18 +18,29 @@
 
 use crate::{
     errors::LangExplorerError,
+    evaluators::Evaluator,
     grammar::{Grammar, NonTerminal, Terminal},
 };
 
 pub mod strings;
 pub mod taco_schedule;
 
+/// A language is a wrapper trait for languages. These are objects
+/// that should contain both a grammar builder for constructing
+/// grammars which can be expanded into programs via a GrammarExpander,
+/// as well as an Evaluator for actually evaluating outputs and hopefully
+/// being used to assess the efficacy of a given expander for that program.
+///
+/// There may in the future be a need to bind specific expanders to
+/// a language, in which case this trait will probably grow, so look
+/// forward to that in the future. Yay.
+pub trait Language: GrammarBuilder + Evaluator {}
+
 /// GrammarBuilder is a wrapper around types that are able to
 /// construct grammars for downstream consumption.
-pub trait GrammarBuilder<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
-    fn generate_grammar(&self) -> Result<Grammar<T, I>, LangExplorerError>;
+pub trait GrammarBuilder {
+    type Term: Terminal;
+    type NTerm: NonTerminal;
+
+    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
 }

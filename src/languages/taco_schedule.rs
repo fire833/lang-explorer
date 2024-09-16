@@ -16,11 +16,20 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use crate::grammar::{
-    production_rule, Grammar, GrammarElement, Production, ProductionLHS, ProductionRule,
+use async_trait::async_trait;
+
+use crate::{
+    errors::LangExplorerError,
+    evaluators::{Evaluator, Metric},
+    grammar::{
+        production_rule, Grammar, GrammarElement, Production, ProductionLHS, ProductionRule,
+    },
 };
 
-use super::strings::{nterminal_str, terminal_str, StringValue, COMMA, EPSILON, LPAREN, RPAREN};
+use super::{
+    strings::{nterminal_str, terminal_str, StringValue, COMMA, EPSILON, LPAREN, RPAREN},
+    GrammarBuilder,
+};
 
 // Non terminals for this grammar.
 nterminal_str!(NT_ENTRYPOINT, "entrypoint");
@@ -59,11 +68,11 @@ terminal_str!(PARALLELIZE_RACE_ATOMICS, "Atomics");
 terminal_str!(PARALLELIZE_RACE_TEMP, "Temporary");
 terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
-pub struct TacoGrammar {
+pub struct TacoLanguage {
     index_variables: Vec<String>,
 }
 
-impl TacoGrammar {
+impl TacoLanguage {
     pub fn new(index_variables: Vec<String>) -> Self {
         Self { index_variables }
     }
@@ -174,12 +183,24 @@ impl TacoGrammar {
     }
 }
 
-// impl<T, I> GrammarBuilder<T, I> for TacoGrammar
-// where
-//     T: Terminal,
-//     I: NonTerminal,
-// {
-//     fn generate_grammar(&self) -> Result<Grammar<T, I>, LangExplorerError> {
-//         Ok(self.taco_schedule_grammar())
-//     }
-// }
+// impl Language for TacoLanguage {}
+
+impl GrammarBuilder for TacoLanguage {
+    type Term = StringValue;
+    type NTerm = StringValue;
+
+    fn generate_grammar(&self) -> Result<Grammar<StringValue, StringValue>, LangExplorerError> {
+        Ok(self.taco_schedule_grammar())
+    }
+}
+
+impl Metric for u64 {}
+
+#[async_trait]
+impl Evaluator for TacoLanguage {
+    type Metric = u64;
+
+    async fn evaluate(&self, program: Vec<u8>) -> Result<Self::Metric, LangExplorerError> {
+        Err(LangExplorerError::General("unimplemented".into()))
+    }
+}
