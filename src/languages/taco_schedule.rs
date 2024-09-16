@@ -68,11 +68,11 @@ terminal_str!(PARALLELIZE_RACE_ATOMICS, "Atomics");
 terminal_str!(PARALLELIZE_RACE_TEMP, "Temporary");
 terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
-pub struct TacoLanguage {
+pub struct TacoScheduleLanguage {
     index_variables: Vec<String>,
 }
 
-impl TacoLanguage {
+impl TacoScheduleLanguage {
     pub fn new(index_variables: Vec<String>) -> Self {
         Self { index_variables }
     }
@@ -185,7 +185,7 @@ impl TacoLanguage {
 
 // impl Language for TacoLanguage {}
 
-impl GrammarBuilder for TacoLanguage {
+impl GrammarBuilder for TacoScheduleLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
 
@@ -197,7 +197,7 @@ impl GrammarBuilder for TacoLanguage {
 impl Metric for u64 {}
 
 #[async_trait]
-impl Evaluator for TacoLanguage {
+impl Evaluator for TacoScheduleLanguage {
     type Metric = u64;
 
     async fn evaluate(&self, program: Vec<u8>) -> Result<Self::Metric, LangExplorerError> {
