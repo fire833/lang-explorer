@@ -16,16 +16,21 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    io,
+};
 
 pub enum LangExplorerError {
     General(String),
+    IOError(io::Error),
 }
 
 impl Display for LangExplorerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::General(e) => write!(f, "{}", e),
+            Self::IOError(e) => write!(f, "io: {}", e),
         }
     }
 }
@@ -45,5 +50,11 @@ impl From<&str> for LangExplorerError {
 impl From<String> for LangExplorerError {
     fn from(value: String) -> Self {
         Self::General(value)
+    }
+}
+
+impl From<io::Error> for LangExplorerError {
+    fn from(value: io::Error) -> Self {
+        Self::IOError(value)
     }
 }

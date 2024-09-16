@@ -16,21 +16,5 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use async_trait::async_trait;
-
-mod compilers;
-
-use crate::errors::LangExplorerError;
-
-/// Evaluator is a trait that takes in some program, in the
-/// form of a vector of bytes, and returns some kind of metric
-/// to be used as reward/error for the specific program that was
-/// generated.
-#[async_trait]
-#[allow(unused)]
-pub trait Evaluator<M>
-where
-    M: Sized + Eq + PartialEq + PartialOrd,
-{
-    async fn evaluate(&self, program: Vec<u8>) -> Result<M, LangExplorerError>;
-}
+mod clang;
+mod taco;
