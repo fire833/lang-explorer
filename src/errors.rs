@@ -24,6 +24,7 @@ use std::{
 pub enum LangExplorerError {
     General(String),
     IOError(io::Error),
+    CCError(cc::Error),
 }
 
 impl Display for LangExplorerError {
@@ -31,6 +32,7 @@ impl Display for LangExplorerError {
         match self {
             Self::General(e) => write!(f, "{}", e),
             Self::IOError(e) => write!(f, "io: {}", e),
+            Self::CCError(e) => write!(f, "cc: {}", e),
         }
     }
 }
@@ -56,5 +58,11 @@ impl From<String> for LangExplorerError {
 impl From<io::Error> for LangExplorerError {
     fn from(value: io::Error) -> Self {
         Self::IOError(value)
+    }
+}
+
+impl From<cc::Error> for LangExplorerError {
+    fn from(value: cc::Error) -> Self {
+        Self::CCError(value)
     }
 }

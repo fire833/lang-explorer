@@ -16,13 +16,31 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::path::Path;
+
 use crate::errors::LangExplorerError;
 
 pub struct CCompiler {}
 
 impl CCompiler {
-    async fn compile(infile: String, objectfile: String) -> Result<(), LangExplorerError> {
-        cc::Build::new().file(infile).compile(&objectfile);
-        Ok(())
+    async fn compile(infile: &Path, objectfile: &Path) -> Result<(), LangExplorerError> {
+        let dir = objectfile.parent();
+        let out = objectfile.file_name();
+
+        match (out, dir) {
+            (Some(f), Some(d)) => match cc::Build::new()
+                .file(infile)
+                .out_dir(d)
+                .try_compile(format!("{:?}", f).as_str())
+            {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            },
+            (None, None) | (Some(_), None) | (None, Some(_)) => {
+                return Err(LangExplorerError::General(
+                    "outfile must have an output file".to_string(),
+                ))
+            }
+        }
     }
 }
