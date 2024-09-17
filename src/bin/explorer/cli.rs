@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use crate::errors::LangExplorerError;
+use lang_explorer::errors::LangExplorerError;
 
 #[derive(clap::Parser)]
 pub struct LangExplorerArgs {
@@ -28,7 +28,8 @@ impl LangExplorerArgs {
     pub fn entry(&self) -> Result<(), LangExplorerError> {
         match &self.cmd {
             Some(cmd) => match cmd {
-                Subcommand::MPI => todo!(),
+                Subcommand::Explore => todo!(),
+                Subcommand::MPIExplore => todo!(),
                 Subcommand::Generate => todo!(),
             },
             None => return Err("no command provided".into()),
@@ -38,9 +39,13 @@ impl LangExplorerArgs {
 
 #[derive(clap::Subcommand)]
 pub enum Subcommand {
+    /// Run lang-explorer to explore a problem space.
+    #[command()]
+    Explore,
+
     /// Run lang-explorer in an MPI environment.
     #[command()]
-    MPI,
+    MPIExplore,
 
     /// Generate a new program in a given language from
     /// a given specification with a given expander.

@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::HashMap, process::Command};
+use std::{collections::HashMap, os::unix::process::CommandExt, path::Path, process::Command};
 
 use crate::errors::LangExplorerError;
 
@@ -38,12 +38,12 @@ pub enum TacoCompileMode {
 }
 
 impl TacoCompileMode {
-    fn to_argument_directive(&self) -> &'static str {
+    fn to_argument_directive(&self, file: String) -> String {
         match self {
-            TacoCompileMode::CompileComputeKernel => "-print-compute",
-            TacoCompileMode::CompileAssemblyKernel => "-print-assembly",
-            TacoCompileMode::CompileEvaluateKernel => "-print-evalute",
-            TacoCompileMode::CompileLibrary => "-print-kernels",
+            TacoCompileMode::CompileComputeKernel => format!("-write-compute={}", file),
+            TacoCompileMode::CompileAssemblyKernel => format!("-write-assembly={}", file),
+            TacoCompileMode::CompileEvaluateKernel => format!("-write-evalute={}", file),
+            TacoCompileMode::CompileLibrary => format!("-write-source={}", file),
         }
     }
 }
@@ -53,16 +53,17 @@ pub struct TacoCompiler {}
 
 impl TacoCompiler {
     /// Takes a TACO expression and a schedule along with some other arguments,
-    /// and compiles the output.
+    /// and compiles the output to a file.
     async fn compile(
         &self,
         executable: String,
+        outfile: String,
         input_expression: String,
         tensor_formats: HashMap<String, String>,
         mode: TacoCompileMode,
         threads: u32,
         schedule: String,
-    ) -> Result<Vec<u8>, LangExplorerError> {
+    ) -> Result<(), LangExplorerError> {
         let mut fargs = vec![];
         for (tensor, format) in tensor_formats {
             fargs.push(format!("-f={}:{}", tensor, format));
@@ -71,12 +72,12 @@ impl TacoCompiler {
         match Command::new(executable)
             .arg(input_expression)
             .arg(format!("-s=\"{}\"", schedule))
-            .arg(mode.to_argument_directive())
+            .arg(mode.to_argument_directive(outfile))
             .args(fargs)
             .arg(format!("-nthreads={}", threads))
             .output()
         {
-            Ok(o) => Ok(o.stdout),
+            Ok(_) => Ok(()),
             Err(e) => Err(e.into()),
         }
     }

@@ -16,21 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use clap::Parser;
-use errors::LangExplorerError;
-use languages::taco_schedule::TacoScheduleLanguage;
-
-mod cli;
-mod errors;
-mod evaluators;
-mod expanders;
-mod grammar;
-mod languages;
-
-fn main() -> Result<(), LangExplorerError> {
-    let args = cli::LangExplorerArgs::parse();
-    let taco = TacoScheduleLanguage::new(vec![]);
-    println!("{:?}", taco.taco_schedule_grammar());
-
-    return args.entry();
-}
+pub mod errors;
+pub mod evaluators;
+pub mod expanders;
+pub mod grammar;
+pub mod languages;
