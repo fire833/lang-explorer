@@ -1,2 +1,9 @@
 /target
 *.so
+.gdb_history
+runner
+*.tns
+Makefile
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
