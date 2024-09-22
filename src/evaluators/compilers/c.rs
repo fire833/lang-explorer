@@ -31,6 +31,7 @@ impl CCompiler {
             (Some(f), Some(d)) => match cc::Build::new()
                 .file(infile)
                 .out_dir(d)
+                .shared_flag(true)
                 .try_compile(format!("{:?}", f).as_str())
             {
                 Ok(_) => Ok(()),
