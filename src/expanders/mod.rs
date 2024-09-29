@@ -20,6 +20,8 @@ use async_trait::async_trait;
 
 use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
 
+pub mod mc;
+
 /// A grammar expander is an object that is able to take a
 /// current production rule, the whole of the grammar that is
 /// being utilized, and is able to spit out a production rule
@@ -31,9 +33,9 @@ where
     T: Terminal,
     I: NonTerminal,
 {
-    fn expand_rule(
-        &self,
-        grammar: &Grammar<T, I>,
-        production: &Production<T, I>,
-    ) -> &ProductionRule<T, I>;
+    fn expand_rule<'a>(
+        &mut self,
+        grammar: &'a Grammar<T, I>,
+        production: &'a Production<T, I>,
+    ) -> &'a ProductionRule<T, I>;
 }

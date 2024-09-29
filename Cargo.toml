@@ -12,3 +12,4 @@ cc = "1.1.20"
 clap = { version = "4.5.17", features = ["derive"] }
 libloading = "0.8.5"
 mpi = "0.8.0"
+rand = "0.8.5"

@@ -1754,6 +1754,7 @@ dependencies = [
  "clap",
  "libloading 0.8.5",
  "mpi",
+ "rand",
 ]
 
 [[package]]

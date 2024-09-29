@@ -59,7 +59,7 @@ where
         let mut map: HashMap<ProductionLHS<T, I>, Production<T, I>> = HashMap::new();
 
         while let Some(p) = productions.pop() {
-            map.insert(p.get_lhs(), p);
+            map.insert(p.lhs(), p);
         }
 
         Self {
@@ -70,7 +70,7 @@ where
 
     pub async fn generate_program(
         &self,
-        expander: &dyn GrammarExpander<T, I>,
+        expander: &mut dyn GrammarExpander<T, I>,
     ) -> Result<Vec<u8>, LangExplorerError> {
         let mut output: Vec<u8> = vec![];
 
@@ -92,7 +92,7 @@ where
         &self,
         output: &mut Vec<u8>,
         production: &Production<T, I>,
-        expander: &dyn GrammarExpander<T, I>,
+        expander: &mut dyn GrammarExpander<T, I>,
     ) -> Result<(), LangExplorerError> {
         let rule = expander.expand_rule(&self, production);
         for elem in rule.items.iter() {
@@ -171,8 +171,24 @@ where
         }
     }
 
-    pub fn get_lhs(&self) -> ProductionLHS<T, I> {
+    /// Get the left-hand size value for this production.
+    pub fn lhs(&self) -> ProductionLHS<T, I> {
         self.non_terminal.clone()
+    }
+
+    /// Wrapper to return an iterator for all production rules in this production.
+    pub fn iter(&self) -> impl Iterator<Item = &ProductionRule<T, I>> + '_ {
+        self.items.iter()
+    }
+
+    /// Wrapper to return number of production rules in this production.
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    /// Wrapper to return a specific rule.
+    pub fn get(&self, i: usize) -> Option<&ProductionRule<T, I>> {
+        self.items.get(i)
     }
 }
 
