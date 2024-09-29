@@ -33,6 +33,7 @@ use super::{
 
 // Non terminals for this grammar.
 nterminal_str!(NT_ENTRYPOINT, "entrypoint");
+nterminal_str!(NT_RULEGEN, "rulegen");
 nterminal_str!(NT_RULE, "rule");
 nterminal_str!(NT_ASSEMBLE_STRATEGY, "assemble_strategy");
 nterminal_str!(NT_PARALLELIZE_HW, "parallelize_hw");
@@ -69,22 +70,21 @@ terminal_str!(PARALLELIZE_RACE_TEMP, "Temporary");
 terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage {
-    index_variables: Vec<String>,
+    index_variables: Vec<StringValue>,
 }
 
 impl TacoScheduleLanguage {
-    pub fn new(index_variables: Vec<String>) -> Self {
+    pub fn new(index_variables: Vec<StringValue>) -> Self {
         Self { index_variables }
     }
 
-    pub fn taco_schedule_grammar(&self) -> Grammar<StringValue, StringValue> {
-        let index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        // for var in self.index_variables.iter() {
-        //     // Store this variable in the heap.
-        //     let b = Box::new(var.clone().as_str());
-        //     let term = GrammarElement::Terminal(StringValue::from(b));
-        //     index_productions.push(production_rule!(term));
-        // }
+    fn taco_schedule_grammar(&self) -> Grammar<StringValue, StringValue> {
+        let mut index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.index_variables.iter() {
+            // Store this variable in the heap.
+            let term = GrammarElement::Terminal(var.clone());
+            index_productions.push(production_rule!(term));
+        }
 
         Grammar::new(
             "entrypoint".into(),
@@ -95,10 +95,18 @@ impl TacoScheduleLanguage {
                     vec![
                         // Optionally create no rules
                         production_rule!(EPSILON),
+                        // Or generate rules
+                        production_rule!(NT_RULEGEN),
+                    ],
+                ),
+                // Epsilon edge case handler
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_RULEGEN),
+                    vec![
                         // Or one rule
                         production_rule!(NT_RULE),
                         // Or many rules
-                        production_rule!(NT_ENTRYPOINT, COMMA, NT_RULE),
+                        production_rule!(NT_RULE, COMMA, NT_RULEGEN),
                     ],
                 ),
                 // Rule definition rule

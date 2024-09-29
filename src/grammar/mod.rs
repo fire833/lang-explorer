@@ -68,7 +68,7 @@ where
         }
     }
 
-    pub async fn generate_program(
+    pub fn generate_program(
         &self,
         expander: &mut dyn GrammarExpander<T, I>,
     ) -> Result<Vec<u8>, LangExplorerError> {
