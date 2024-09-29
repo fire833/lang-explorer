@@ -1,7 +1,9 @@
 
-#include "random"
+// #include "random"
 #include "taco/format.h"
 #include "taco/index_notation/index_notation.h"
+#include "taco/parser/parser.h"
+// #include "taco/parser/schedule_parser.h"
 #include "taco/tensor.h"
 #include <cstdio>
 #include <cstdlib>
@@ -12,6 +14,8 @@
 
 using namespace taco;
 using namespace std;
+
+extern int compute();
 
 vector<int> parseDims(const string &s) {
   vector<int> values;
@@ -71,6 +75,7 @@ int main(int argc, char *argv[]) {
     // Populate the tensor with some data.
     for (int dim = dims.size() - 1; dim > 0; dim--) {
       if (formats[dim] == Dense) {
+
       } else if (formats[dim] == Sparse || formats[dim] == Compressed) {
       } else if (formats[dim] == Singleton) {
       }
@@ -87,5 +92,17 @@ int main(int argc, char *argv[]) {
     write(ss.str(), T);
     return 0;
   } else if (op == "evaluate") {
+    if (argc != 5) {
+      cout << "evaluate <expression> <schedule>";
+      return 1;
+    }
+
+    const string expression = argv[2];
+    const string schedule = argv[3];
+
+    // vector<vector<string>> parsed = parser::ScheduleParser(schedule);
+  } else {
+    cout << "unknown command provided, exiting";
+    return 1;
   }
 }
