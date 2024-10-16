@@ -21,6 +21,7 @@ use async_trait::async_trait;
 use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
 
 pub mod mc;
+pub mod wmc;
 
 /// A grammar expander is an object that is able to take a
 /// current production rule, the whole of the grammar that is

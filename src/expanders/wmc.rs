@@ -16,47 +16,31 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rand::{rngs::ThreadRng, Rng};
+use rand::distributions::{uniform::SampleUniform, WeightedIndex};
 
 use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
 
 use super::GrammarExpander;
 
-/// A Monte-Carlo expander is a naive expander that randomly
-/// selects paths to go down within the range of possible outcomes.
-/// This could lead to very dumb outputs, and take a very long time to
-/// create fully terminated words in a particular language.
-pub struct MonteCarloExpander {
-    rng: ThreadRng,
+/// A Weighted Monte Carlo explorer is a slightly less naive expander
+/// that selects paths to go down using a weighted sample from the possible
+/// expansion paths available at any given step.
+pub struct WeightedMonteCarloExpander<X>
+where
+    X: SampleUniform + PartialOrd,
+{
+    dist: WeightedIndex<X>,
 }
 
-impl MonteCarloExpander {
-    pub fn new() -> Self {
-        Self {
-            rng: rand::thread_rng(),
-        }
-    }
-}
-
-impl<T, I> GrammarExpander<T, I> for MonteCarloExpander
+impl<T, I> GrammarExpander<T, I> for WeightedMonteCarloExpander
 where
     T: Terminal,
     I: NonTerminal,
 {
     fn expand_rule<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
+        grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        let len = production.len();
-        let val = self.rng.gen::<u64>() % len as u64;
-        if let Some(rule) = production.get(val as usize) {
-            return rule;
-        } else {
-            panic!(
-                "got an index not valid within production rules: {} out of length: {}",
-                val, len
-            );
-        }
     }
 }
