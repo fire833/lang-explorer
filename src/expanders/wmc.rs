@@ -16,8 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rand::distributions::{uniform::SampleUniform, WeightedIndex};
-
 use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
 
 use super::GrammarExpander;
@@ -25,22 +23,20 @@ use super::GrammarExpander;
 /// A Weighted Monte Carlo explorer is a slightly less naive expander
 /// that selects paths to go down using a weighted sample from the possible
 /// expansion paths available at any given step.
-pub struct WeightedMonteCarloExpander<X>
-where
-    X: SampleUniform + PartialOrd,
-{
-    dist: WeightedIndex<X>,
+pub struct WeightedMonteCarloExpander {
+    // dist: WeightedIndex<X>,
 }
 
-impl<T, I> GrammarExpander<T, I> for WeightedMonteCarloExpander
-where
-    T: Terminal,
-    I: NonTerminal,
-{
-    fn expand_rule<'a>(
-        &mut self,
-        grammar: &'a Grammar<T, I>,
-        production: &'a Production<T, I>,
-    ) -> &'a ProductionRule<T, I> {
-    }
-}
+// impl<T, I> GrammarExpander<T, I> for WeightedMonteCarloExpander
+// where
+//     T: Terminal,
+//     I: NonTerminal,
+// {
+//     fn expand_rule<'a>(
+//         &mut self,
+//         grammar: &'a Grammar<T, I>,
+//         production: &'a Production<T, I>,
+//     ) -> &'a ProductionRule<T, I> {
+//         production.get(0)
+//     }
+// }
