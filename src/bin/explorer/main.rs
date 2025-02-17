@@ -24,23 +24,28 @@ use clap::Parser;
 use lang_explorer::{
     errors::LangExplorerError,
     expanders::mc::MonteCarloExpander,
-    languages::{strings::StringValue, taco_schedule::TacoScheduleLanguage, GrammarBuilder},
+    languages::{
+        strings::StringValue, taco_schedule::TacoScheduleLanguage, toy_language::ToyLanguage,
+        GrammarBuilder,
+    },
 };
 
 fn main() -> Result<(), LangExplorerError> {
     let args = cli::LangExplorerArgs::parse();
-    let taco = TacoScheduleLanguage::new(vec![
-        StringValue::from_static_str("i"),
-        StringValue::from_static_str("j"),
-        StringValue::from_static_str("k"),
-    ]);
+    let toy = ToyLanguage {}.generate_grammar().unwrap();
+    // let taco = TacoScheduleLanguage::new(vec![
+    //     StringValue::from_static_str("i"),
+    //     StringValue::from_static_str("j"),
+    //     StringValue::from_static_str("k"),
+    // ]);
 
     let mut mc = MonteCarloExpander::new();
-    let g = taco.generate_grammar().unwrap();
-    println!("Taco Schedule Grammar: {:?}", g);
+
+    // let g = taco.generate_grammar().unwrap();
+    // println!("Taco Schedule Grammar: {:?}", g);
 
     for _ in 1..5000 {
-        match g.generate_program(&mut mc) {
+        match toy.generate_program(&mut mc) {
             Ok(p) => {
                 let s = str::from_utf8(p.as_slice()).unwrap();
                 println!("{s}");

@@ -25,6 +25,7 @@ use crate::{
 pub mod nft_ruleset;
 pub mod strings;
 pub mod taco_schedule;
+pub mod toy_language;
 
 /// A language is a wrapper trait for languages. These are objects
 /// that should contain both a grammar builder for constructing
