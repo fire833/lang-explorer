@@ -16,9 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-pub mod errors;
-pub mod evaluators;
-pub mod expanders;
-pub mod grammar;
-pub mod languages;
-pub mod tooling;
+use burn::{nn::Embedding, tensor::backend::Backend};
+
+pub struct Graph2VecEmbedding<B: Backend> {
+    embed: Embedding<B>,
+}
