@@ -34,7 +34,7 @@ pub trait BinarySerialize {
 /// Wrapper trait for all terminal elements to implement.
 pub trait Terminal: Sized + Clone + Debug + Hash + Eq + PartialEq + BinarySerialize {}
 
-/// Wrapper trait for all non-terminal elemtns to implement.
+/// Wrapper trait for all non-terminal elements to implement.
 pub trait NonTerminal: Sized + Clone + Debug + Hash + Eq + PartialEq {}
 
 #[derive(Clone)]
@@ -66,6 +66,42 @@ where
             root,
             productions: map,
         }
+    }
+
+    pub fn generate_program_instance(
+        &self,
+        expander: &mut dyn GrammarExpander<T, I>,
+    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        let mut prog = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()));
+
+        let prod = match self
+            .productions
+            .get(&ProductionLHS::new_context_free(self.root.clone()))
+        {
+            Some(prod) => prod,
+            None => return Err("no root non-terminal/production found".into()),
+        };
+
+        match self.generate_program_instance_recursive(prod, expander) {
+            Ok(children) => prog.set_children(children),
+            Err(_) => todo!(),
+        }
+
+        Ok(prog)
+    }
+
+    fn generate_program_instance_recursive(
+        &self,
+        production: &Production<T, I>,
+        expander: &mut dyn GrammarExpander<T, I>,
+    ) -> Result<Vec<ProgramInstance<T, I>>, LangExplorerError> {
+        let rule = expander.expand_rule(&self, production);
+        let mut children: Vec<ProgramInstance<T, I>> = vec![];
+        for item in rule.items.iter() {
+            children.push(ProgramInstance::new(item.clone()));
+        }
+
+        Ok(children)
     }
 
     pub fn generate_program(
@@ -363,7 +399,7 @@ where
 
 /// The atomic elements that comprise the grammar. These can be terminals,
 /// which should serialize to a set of bytes (i.e. become valid program code)
-/// non-terminals, which are used for
+/// non-terminals, which are used within an AST representation.
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum GrammarElement<T, I>
 where
@@ -393,5 +429,54 @@ where
             Self::NonTerminal(nt) => write!(f, "{:?}", nt),
             Self::Terminal(t) => write!(f, "{:?}", t),
         }
+    }
+}
+
+/// A program instance is a program generated via a particular grammar represented
+/// in tree form. This is equivalent to being an AST-representation of a program.
+/// So it serves as a wrapper around a general purpose graph. This type is recursively
+/// defined.
+pub struct ProgramInstance<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    /// The current node in the tree.
+    node: GrammarElement<T, I>,
+    /// The list of children nodes.
+    children: Vec<ProgramInstance<T, I>>,
+}
+
+impl<T, I> ProgramInstance<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    /// Create a new program instance. This can be a root of a program tree,
+    /// or a subtree.
+    pub fn new(root: GrammarElement<T, I>) -> Self {
+        Self {
+            node: root,
+            children: vec![],
+        }
+    }
+
+    /// Add a child node to this current program tree.
+    pub fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
+        self.children = children;
+    }
+}
+
+impl<T, I> BinarySerialize for ProgramInstance<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn serialize(&self) -> Vec<u8> {
+        todo!()
+    }
+
+    fn serialize_into(&self, output: &mut Vec<u8>) {
+        todo!()
     }
 }
