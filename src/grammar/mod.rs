@@ -72,8 +72,6 @@ where
         &self,
         expander: &mut dyn GrammarExpander<T, I>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
-        let mut prog = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()));
-
         let prod = match self
             .productions
             .get(&ProductionLHS::new_context_free(self.root.clone()))
@@ -83,25 +81,45 @@ where
         };
 
         match self.generate_program_instance_recursive(prod, expander) {
-            Ok(children) => prog.set_children(children),
+            Ok(program) => return Ok(program),
             Err(_) => todo!(),
         }
-
-        Ok(prog)
     }
 
     fn generate_program_instance_recursive(
         &self,
         production: &Production<T, I>,
         expander: &mut dyn GrammarExpander<T, I>,
-    ) -> Result<Vec<ProgramInstance<T, I>>, LangExplorerError> {
+    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        let mut program = ProgramInstance::new(GrammarElement::NonTerminal(
+            production.non_terminal.non_terminal.clone(),
+        ));
         let rule = expander.expand_rule(&self, production);
         let mut children: Vec<ProgramInstance<T, I>> = vec![];
         for item in rule.items.iter() {
-            children.push(ProgramInstance::new(item.clone()));
+            match item {
+                GrammarElement::NonTerminal(nt) => {
+                    match self.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
+            {
+                Some(prod) => {
+                    match self.generate_program_instance_recursive(prod, expander)  {
+                        Ok(instance) => children.push(instance),
+                        Err(e) => return Err(e),
+                    }                        
+                }
+                None => {
+                    return Err(format!("non-terminal {:?} not found in productions", nt).into())
+                }
+            }
+                }
+                GrammarElement::Epsilon | GrammarElement::Terminal(_) => {
+                    children.push(ProgramInstance::new(item.clone()))
+                }
+            }
         }
 
-        Ok(children)
+        program.set_children(children);
+        Ok(program)
     }
 
     pub fn generate_program(
@@ -134,9 +152,8 @@ where
         for elem in rule.items.iter() {
             match elem {
                 GrammarElement::Terminal(t) => t.serialize_into(output),
-                GrammarElement::NonTerminal(nt) => match self
-                    .productions
-                    .get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
+                GrammarElement::NonTerminal(nt) => {
+                    match self.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
                 {
                     Some(prod) => {
                         if let Err(e) = self.generate_recursive(output, prod, expander) {
@@ -146,7 +163,8 @@ where
                     None => {
                         return Err(format!("non-terminal {:?} not found in productions", nt).into())
                     }
-                },
+                }
+                }
                 GrammarElement::Epsilon => continue,
             }
         }
@@ -473,10 +491,25 @@ where
     I: NonTerminal,
 {
     fn serialize(&self) -> Vec<u8> {
-        todo!()
+        let mut vec: Vec<u8> = vec![];
+
+        match &self.node {
+            GrammarElement::Terminal(t) => {
+                let mut c = t.serialize();
+                vec.append(&mut c);
+            },
+            GrammarElement::NonTerminal(_) => for child in self.children.iter() {
+                let mut c = child.serialize();
+                vec.append(&mut c);
+            },
+            GrammarElement::Epsilon => {},
+        }
+
+        vec
     }
 
     fn serialize_into(&self, output: &mut Vec<u8>) {
-        todo!()
+        let mut vec = self.serialize();
+        output.append(&mut vec);
     }
 }
