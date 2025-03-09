@@ -211,6 +211,7 @@ macro_rules! production_rule {
     };
 }
 
+use burn::serde::de;
 pub(crate) use production_rule;
 
 impl<T, I> Production<T, I>
@@ -482,6 +483,35 @@ where
     /// Add a child node to this current program tree.
     pub fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
         self.children = children;
+    }
+
+    /// Extract a rooted sub-program from this program instance of degree d.
+    /// Used for graph2vec implementation, where we need all rooted subgraphs 
+    /// of degree d of a particular graph.
+    pub fn get_wl_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
+        if degree == 0 {
+            return ProgramInstance::new(self.node.clone());
+        } else {
+            let mut newchildren = vec![];
+            for child in self.children.iter() {
+                let subgraph = child.get_wl_subgraph(degree - 1);
+                newchildren.push(subgraph);
+            }
+
+            let mut prog = ProgramInstance::new(self.node.clone());
+            prog.children = newchildren;
+            return prog;
+        }
+    }
+
+    /// Returns all rooted subgraphs for the provided graph of degree d.
+    pub fn get_all_wl_subgraphs(&self, degree: u32) -> Vec<ProgramInstance<T, I>> {
+        let mut subgraphs = vec![self.get_wl_subgraph(degree)];
+        for child in self.children.iter() {
+            subgraphs.append(&mut child.get_all_wl_subgraphs(degree));
+        }
+        
+        return subgraphs;
     }
 }
 

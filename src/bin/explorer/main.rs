@@ -38,6 +38,7 @@ fn main() -> Result<(), LangExplorerError> {
             StringValue::from_static_str("k"),
         ],
         vec![StringValue::from_static_str("d")],
+        vec![StringValue::from_static_str("f")],
         vec![
             StringValue::from_static_str("1"),
             StringValue::from_static_str("2"),
@@ -66,12 +67,19 @@ fn main() -> Result<(), LangExplorerError> {
     let g = taco.generate_grammar().unwrap();
     println!("Taco Schedule Grammar: {:?}", g);
 
-    for _ in 1..10 {
+    for i in 1..15 {
         match g.generate_program_instance(&mut mc) {
             Ok(p) => {
-                let data = p.serialize();
-                let s = str::from_utf8(data.as_slice()).unwrap();
-                println!("{s}");
+                println!(
+                    "instance {}: {}",
+                    i,
+                    str::from_utf8(p.serialize().as_slice()).unwrap()
+                );
+                let subgraphs = p.get_all_wl_subgraphs(2);
+
+                for sub in subgraphs.iter() {
+                    println!("{}", str::from_utf8(sub.serialize().as_slice()).unwrap());
+                }
             }
             Err(e) => println!("{}", e),
         }

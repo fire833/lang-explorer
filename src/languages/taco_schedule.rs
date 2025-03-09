@@ -40,6 +40,7 @@ nterminal_str!(NT_PARALLELIZE_HW, "parallelize_hw");
 nterminal_str!(NT_PARALLELIZE_RACES, "parallelize_races");
 nterminal_str!(NT_INDEX_VARIABLE, "index_variable");
 nterminal_str!(NT_WORKSPACE_INDEX_VARIABLE, "workspace_index_variable");
+nterminal_str!(NT_FUSED_INDEX_VARIABLE, "fused_index_variable");
 nterminal_str!(NT_UNROLL_FACTOR, "unroll_factor");
 nterminal_str!(NT_DIVIDE_FACTOR, "divide_factor");
 nterminal_str!(NT_SPLIT_FACTOR, "split_factor");
@@ -76,6 +77,7 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 pub struct TacoScheduleLanguage {
     index_variables: Vec<StringValue>,
     workspace_index_variables: Vec<StringValue>,
+    fused_index_variables: Vec<StringValue>,
     split_factor_variables: Vec<StringValue>,
     divide_factor_variables: Vec<StringValue>,
     unroll_factor_variables: Vec<StringValue>,
@@ -85,6 +87,7 @@ impl TacoScheduleLanguage {
     pub fn new(
         index_variables: Vec<StringValue>,
         workspace_index_variables: Vec<StringValue>,
+        fused_index_variables: Vec<StringValue>,
         split_factors: Vec<StringValue>,
         divide_factors: Vec<StringValue>,
         unroll_factors: Vec<StringValue>,
@@ -92,6 +95,7 @@ impl TacoScheduleLanguage {
         Self {
             index_variables,
             workspace_index_variables,
+            fused_index_variables,
             split_factor_variables: split_factors,
             divide_factor_variables: divide_factors,
             unroll_factor_variables: unroll_factors,
@@ -110,6 +114,12 @@ impl TacoScheduleLanguage {
         for var in self.workspace_index_variables.iter() {
             let term = GrammarElement::Terminal(var.clone());
             workspace_index_productions.push(production_rule!(term));
+        }
+
+        let mut fused_index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.fused_index_variables.iter() {
+            let term = GrammarElement::Terminal(var.clone());
+            fused_index_productions.push(production_rule!(term));
         }
 
         let mut split_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
@@ -167,6 +177,7 @@ impl TacoScheduleLanguage {
                             COMMA,
                             NT_INDEX_VARIABLE,
                             COMMA,
+                            NT_FUSED_INDEX_VARIABLE,
                             RPAREN
                         ),
                         // split(index_variable, outer_index_variable, inner_index_variable, split_factor)
@@ -266,6 +277,11 @@ impl TacoScheduleLanguage {
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_WORKSPACE_INDEX_VARIABLE),
                     workspace_index_productions,
+                ),
+                // Fused index variable
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_FUSED_INDEX_VARIABLE),
+                    fused_index_productions,
                 ),
                 // Unroll factor rule
                 Production::new(
