@@ -81,8 +81,8 @@ where
         };
 
         match self.generate_program_instance_recursive(prod, expander) {
-            Ok(program) => return Ok(program),
-            Err(_) => todo!(),
+            Ok(program) => Ok(program),
+            Err(e) => Err(e),
         }
     }
 

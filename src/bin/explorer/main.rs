@@ -25,20 +25,41 @@ use lang_explorer::{
     errors::LangExplorerError,
     expanders::mc::MonteCarloExpander,
     grammar::BinarySerialize,
-    languages::{
-        strings::StringValue, taco_schedule::TacoScheduleLanguage, toy_language::ToyLanguage,
-        GrammarBuilder,
-    },
+    languages::{strings::StringValue, taco_schedule::TacoScheduleLanguage, GrammarBuilder},
 };
 
 fn main() -> Result<(), LangExplorerError> {
-    let args = cli::LangExplorerArgs::parse();
+    let _args = cli::LangExplorerArgs::parse();
     // let toy = ToyLanguage {}.generate_grammar().unwrap();
-    let taco = TacoScheduleLanguage::new(vec![
-        StringValue::from_static_str("i"),
-        StringValue::from_static_str("j"),
-        StringValue::from_static_str("k"),
-    ]);
+    let taco = TacoScheduleLanguage::new(
+        vec![
+            StringValue::from_static_str("i"),
+            StringValue::from_static_str("j"),
+            StringValue::from_static_str("k"),
+        ],
+        vec![StringValue::from_static_str("d")],
+        vec![
+            StringValue::from_static_str("1"),
+            StringValue::from_static_str("2"),
+            StringValue::from_static_str("5"),
+            StringValue::from_static_str("10"),
+            StringValue::from_static_str("15"),
+        ],
+        vec![
+            StringValue::from_static_str("1"),
+            StringValue::from_static_str("2"),
+            StringValue::from_static_str("5"),
+            StringValue::from_static_str("10"),
+            StringValue::from_static_str("15"),
+        ],
+        vec![
+            StringValue::from_static_str("1"),
+            StringValue::from_static_str("2"),
+            StringValue::from_static_str("5"),
+            StringValue::from_static_str("10"),
+            StringValue::from_static_str("15"),
+        ],
+    );
 
     let mut mc = MonteCarloExpander::new();
 
@@ -52,7 +73,7 @@ fn main() -> Result<(), LangExplorerError> {
                 let s = str::from_utf8(data.as_slice()).unwrap();
                 println!("{s}");
             }
-            Err(_) => todo!(),
+            Err(e) => println!("{}", e),
         }
     }
 

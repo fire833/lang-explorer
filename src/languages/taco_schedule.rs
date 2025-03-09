@@ -39,6 +39,10 @@ nterminal_str!(NT_ASSEMBLE_STRATEGY, "assemble_strategy");
 nterminal_str!(NT_PARALLELIZE_HW, "parallelize_hw");
 nterminal_str!(NT_PARALLELIZE_RACES, "parallelize_races");
 nterminal_str!(NT_INDEX_VARIABLE, "index_variable");
+nterminal_str!(NT_WORKSPACE_INDEX_VARIABLE, "workspace_index_variable");
+nterminal_str!(NT_UNROLL_FACTOR, "unroll_factor");
+nterminal_str!(NT_DIVIDE_FACTOR, "divide_factor");
+nterminal_str!(NT_SPLIT_FACTOR, "split_factor");
 
 // Terminals for this grammar.
 terminal_str!(POS_OP, "pos");
@@ -71,11 +75,27 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage {
     index_variables: Vec<StringValue>,
+    workspace_index_variables: Vec<StringValue>,
+    split_factor_variables: Vec<StringValue>,
+    divide_factor_variables: Vec<StringValue>,
+    unroll_factor_variables: Vec<StringValue>,
 }
 
 impl TacoScheduleLanguage {
-    pub fn new(index_variables: Vec<StringValue>) -> Self {
-        Self { index_variables }
+    pub fn new(
+        index_variables: Vec<StringValue>,
+        workspace_index_variables: Vec<StringValue>,
+        split_factors: Vec<StringValue>,
+        divide_factors: Vec<StringValue>,
+        unroll_factors: Vec<StringValue>,
+    ) -> Self {
+        Self {
+            index_variables,
+            workspace_index_variables,
+            split_factor_variables: split_factors,
+            divide_factor_variables: divide_factors,
+            unroll_factor_variables: unroll_factors,
+        }
     }
 
     fn taco_schedule_grammar(&self) -> Grammar<StringValue, StringValue> {
@@ -84,6 +104,30 @@ impl TacoScheduleLanguage {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.clone());
             index_productions.push(production_rule!(term));
+        }
+
+        let mut workspace_index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.workspace_index_variables.iter() {
+            let term = GrammarElement::Terminal(var.clone());
+            workspace_index_productions.push(production_rule!(term));
+        }
+
+        let mut split_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.split_factor_variables.iter() {
+            let term = GrammarElement::Terminal(var.clone());
+            split_factor_productions.push(production_rule!(term));
+        }
+
+        let mut divide_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.divide_factor_variables.iter() {
+            let term = GrammarElement::Terminal(var.clone());
+            divide_factor_productions.push(production_rule!(term));
+        }
+
+        let mut unroll_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.unroll_factor_variables.iter() {
+            let term = GrammarElement::Terminal(var.clone());
+            unroll_factor_productions.push(production_rule!(term));
         }
 
         Grammar::new(
@@ -126,15 +170,47 @@ impl TacoScheduleLanguage {
                             RPAREN
                         ),
                         // split(index_variable, outer_index_variable, inner_index_variable, split_factor)
-                        production_rule!(SPLIT_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
+                        production_rule!(
+                            SPLIT_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_SPLIT_FACTOR,
+                            RPAREN
+                        ),
                         // reorder(index_variable)
                         production_rule!(REORDER_OP, LPAREN, NT_INDEX_VARIABLE, RPAREN),
                         // divide(index_variable, outer_index_variable, inner_index_variable, divide_factor)
-                        production_rule!(DIVIDE_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
+                        production_rule!(
+                            DIVIDE_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_DIVIDE_FACTOR,
+                            RPAREN
+                        ),
                         // precompute(expr, index_variable, workspace_index_variable)
-                        production_rule!(PRECOMPUTE_OP, LPAREN, RPAREN),
+                        production_rule!(
+                            PRECOMPUTE_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_WORKSPACE_INDEX_VARIABLE,
+                            RPAREN
+                        ),
                         // unroll(index_variable, unroll_factor)
-                        production_rule!(UNROLL_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
+                        production_rule!(
+                            UNROLL_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_UNROLL_FACTOR,
+                            RPAREN
+                        ),
                         // bound() // appears to be not yet supported in taco.
                         production_rule!(BOUND_OP, LPAREN, RPAREN),
                         // parallelize(index_variable, hardware, race_strategy)
@@ -181,10 +257,30 @@ impl TacoScheduleLanguage {
                         production_rule!(PARALLELIZE_RACE_ATOMICS),
                     ],
                 ),
-                // Index Variable Rule,
+                // Index variable rule
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_INDEX_VARIABLE),
                     index_productions,
+                ),
+                // Workspace index variable rule
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_WORKSPACE_INDEX_VARIABLE),
+                    workspace_index_productions,
+                ),
+                // Unroll factor rule
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_UNROLL_FACTOR),
+                    unroll_factor_productions,
+                ),
+                // Split factor rule
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_SPLIT_FACTOR),
+                    split_factor_productions,
+                ),
+                // Divide factor rule
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_DIVIDE_FACTOR),
+                    divide_factor_productions,
                 ),
             ],
         )
