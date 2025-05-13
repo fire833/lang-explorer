@@ -1,0 +1,42 @@
+# Copyright (C) 2025 Kendall Tauser
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+name: Build Containers
+on:
+  push:
+    tags:
+    - "*"
+  workflow_dispatch:
+    inputs:
+      SKIP:
+        description: Specify the list of images you want skip building, delimited '/'s.
+        required: false
+        default: ""
+        type: string
+      ONLY:
+        description: Specify only one image to build. If specified, SKIP input is ignored.
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  lang-explorer:
+    uses: fire833/cicd-templates/.github/workflows/containers_cd_v1.yaml@main
+    if: "inputs.ONLY == 'lang-explorer' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/lang-explorer/'))"
+    with:
+      APP_NAME: lang-explorer
+      VERSION: v0.1.0
+      DOCKERFILE_PATH: src/bin/explorer/Dockerfile

@@ -16,9 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+mod api;
 mod cli;
 
-use core::str;
+use std::str;
 
 use clap::Parser;
 use lang_explorer::{
@@ -29,7 +30,7 @@ use lang_explorer::{
 };
 
 fn main() -> Result<(), LangExplorerError> {
-    let _args = cli::LangExplorerArgs::parse();
+    let args = cli::LangExplorerArgs::parse();
     // let toy = ToyLanguage {}.generate_grammar().unwrap();
     let taco = TacoScheduleLanguage::new(
         vec![
@@ -85,6 +86,5 @@ fn main() -> Result<(), LangExplorerError> {
         }
     }
 
-    // return args.entry();
-    return Ok(());
+    return args.entry();
 }

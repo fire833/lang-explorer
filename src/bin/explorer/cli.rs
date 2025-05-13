@@ -31,6 +31,7 @@ impl LangExplorerArgs {
                 Subcommand::Explore => todo!(),
                 Subcommand::MPIExplore => todo!(),
                 Subcommand::Generate => todo!(),
+                Subcommand::Serve => todo!(),
             },
             None => return Err("no command provided".into()),
         }
@@ -51,4 +52,9 @@ pub enum Subcommand {
     /// a given specification with a given expander.
     #[command()]
     Generate,
+
+    /// Run an API server to handle requests for
+    /// generated programs.
+    #[command()]
+    Serve,
 }
