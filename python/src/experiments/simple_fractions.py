@@ -31,7 +31,7 @@ def main():
 	pi4 = ray.get(future)
 	end = time.time()
 	dur = end - start
-	print(f'Running {SAMPLE_COUNT} tests took {dur} seconds')
+	print(f"Running {SAMPLE_COUNT} tests took {dur} seconds")
 
 if __name__ == "__main__":
 	main()
