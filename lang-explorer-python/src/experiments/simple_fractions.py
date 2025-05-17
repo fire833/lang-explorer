@@ -5,6 +5,8 @@
 import ray
 import random
 import time
+from fractions import Fraction
+import math
 
 # From here: https://docs.ray.io/en/latest/ray-core/examples/highly_parallel.html
 
@@ -25,7 +27,7 @@ def pi4_sample(sample_count):
 def main():
 	ray.init(f"ray://10.0.2.221:10001")
 
-	SAMPLE_COUNT = 10000 * 10000
+	SAMPLE_COUNT = 100000 * 10000
 	start = time.time() 
 	future = pi4_sample.remote(sample_count = SAMPLE_COUNT)
 	pi4 = ray.get(future)
