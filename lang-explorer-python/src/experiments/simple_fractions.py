@@ -27,13 +27,21 @@ def pi4_sample(sample_count):
 def main():
 	ray.init(f"ray://10.0.2.221:10001")
 
-	SAMPLE_COUNT = 100000 * 10000
-	start = time.time() 
-	future = pi4_sample.remote(sample_count = SAMPLE_COUNT)
-	pi4 = ray.get(future)
-	end = time.time()
-	dur = end - start
-	print(f"Running {SAMPLE_COUNT} tests took {dur} seconds")
+	SAMPLE_COUNT = 1000 * 10000
+	# start = time.time() 
+	# future = pi4_sample.remote(sample_count = SAMPLE_COUNT)
+	# pi4 = ray.get(future)
+	# end = time.time()
+	# dur = end - start
+	# print(f"Running {SAMPLE_COUNT} tests took {dur} seconds")
+
+	FULL_SAMPLE_COUNT = 100 * 1000 * 1000 * 1000 # 100 billion samples! 
+	BATCHES = int(FULL_SAMPLE_COUNT / SAMPLE_COUNT)
+	print(f'Doing {BATCHES} batches')
+	results = []
+	for _ in range(BATCHES):
+	    results.append(pi4_sample.remote(sample_count = SAMPLE_COUNT))
+	output = ray.get(results)
 
 if __name__ == "__main__":
 	main()
