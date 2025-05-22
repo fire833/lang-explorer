@@ -6,47 +6,83 @@ from torch.nn import Linear
 from torch.nn import Module
 from torch.nn import LeakyReLU
 from torch.nn import MSELoss
-from torch.optim import AdamW
-from lightning.pytorch import LightningModule
+from torch.optim import Adam
+from torch.utils.data import Dataset, DataLoader
+from lightning.pytorch import LightningModule, Trainer
 import random
 import torch
+import torch.nn.functional as F
+
+class XORDataset(Dataset):
+	def __init__(self, size: int):
+		self.data = [truth(i/1000) for i in range(-size, size, 1)]
+
+	def __len__(self):
+		return self.data.__len__()
+	
+	def __getitem__(self, idx: int):
+		return self.data[idx]
 
 class XORModel(Module):
 	def __init__(self):
 		super(XORModel, self).__init__()
 
-		self.layer1 = Linear(2, 15, bias=True)
-		self.relu1 = LeakyReLU()
-		self.layer2 = Linear(15, 1, bias=True)
-		self.relu2 = LeakyReLU()
+		self.layer1 = Linear(1, 20, bias=True)
+		self.layer2 = Linear(20, 1, bias=True)
 
 	def forward(self, x):
 		x = self.layer1(x)
-		x = self.relu1(x)
+		x = F.leaky_relu(x)
 		x = self.layer2(x)
-		x = self.relu2(x)
+		x = F.leaky_relu(x)
 		return x
 
-def ground_truth():
-	x1 = random.randint(0, 255)
-	x2 = random.randint(0, 255)
+class XORLearner(LightningModule):
+	def __init__(self):
+		super(XORLearner, self).__init__()
 
-	return (torch.tensor([float(x1), float(x2)]), torch.tensor(float(x1 ^ x2)))
+		self.model = XORModel()
+
+	def forward(self, x):
+		return self.model.forward(x)
+	
+	def configure_optimizers(self):
+		return Adam(self.parameters(), lr=0.01)
+
+	def training_step(self, batch, batch_idx):
+		(x, y) = batch
+		yhat = self.model.forward(x)
+		loss = F.mse_loss(yhat, y)
+		self.log("train_loss", loss, on_epoch=True, prog_bar=True)
+		return loss
+
+	def validation_step(self, batch, batch_idx):
+		(x, y) = batch
+		yhat = self.model.forward(x)
+		loss = F.mse_loss(yhat, y)
+		self.log("validation_loss", loss, on_epoch=True, prog_bar=True)
+		return loss
+
+def truth(x):
+	return (torch.tensor(x), torch.tensor(float(x**2)))
 
 def train_func():
 	model = XORModel()
 	model = prepare_model(model)
 
-	adam = AdamW(model.parameters(), lr=0.0001)
+	adam = Adam(model.parameters(), lr=0.01)
 	loss = MSELoss()
 
 def main():
-	model = XORModel()
+	print("building datasets")
+	train = DataLoader(XORDataset(5000), batch_size=500, shuffle=True, num_workers=6)
+	validate = DataLoader(XORDataset(500), batch_size=500, shuffle=False, num_workers=6)
 
-	model.train(mode=False)
-	x, y = ground_truth()
-
-	print(model.forward(x))
+	print("instantiating trainer")
+	trainer = Trainer(log_every_n_steps=5)
+	print("training...")
+	model = XORLearner()
+	trainer.fit(model, train, validate)
 
 	# ray.init(f"ray://10.0.2.221:10001")
 
