@@ -7,6 +7,7 @@ from torch.nn import Module
 from torch.nn import LeakyReLU
 from torch.nn import MSELoss
 from torch.optim import AdamW
+from lightning.pytorch import LightningModule
 import random
 import torch
 
