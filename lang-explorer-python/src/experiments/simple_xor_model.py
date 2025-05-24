@@ -28,12 +28,15 @@ class XORModel(Module):
 		super(XORModel, self).__init__()
 
 		self.layer1 = Linear(1, 20, bias=True)
-		self.layer2 = Linear(20, 1, bias=True)
+		self.layer2 = Linear(20, 20, bias=True)
+		self.layer3 = Linear(20, 1, bias=True)
 
 	def forward(self, x):
 		x = self.layer1(x)
 		x = F.leaky_relu(x)
 		x = self.layer2(x)
+		x = F.leaky_relu(x)
+		x = self.layer3(x)
 		x = F.leaky_relu(x)
 		return x
 
