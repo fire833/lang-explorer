@@ -9,9 +9,10 @@ from torch.nn import MSELoss
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
 from lightning.pytorch import LightningModule, Trainer
+import torch.nn.functional as F
 import random
 import torch
-import torch.nn.functional as F
+import math
 
 class XORDataset(Dataset):
 	def __init__(self, size: int):
@@ -28,22 +29,18 @@ class XORModel(Module):
 		super(XORModel, self).__init__()
 
 		self.layer1 = Linear(1, 20, bias=True)
-		self.layer2 = Linear(20, 20, bias=True)
 		self.layer3 = Linear(20, 1, bias=True)
 
 	def forward(self, x):
 		x = self.layer1(x)
-		x = F.leaky_relu(x)
-		x = self.layer2(x)
-		x = F.leaky_relu(x)
+		x = F.relu(x)
 		x = self.layer3(x)
-		x = F.leaky_relu(x)
+		x = F.relu(x)
 		return x
 
 class XORLearner(LightningModule):
 	def __init__(self):
 		super(XORLearner, self).__init__()
-
 		self.model = XORModel()
 
 	def forward(self, x):
@@ -67,7 +64,7 @@ class XORLearner(LightningModule):
 		return loss
 
 def truth(x):
-	return (torch.tensor(x), torch.tensor(float(x**2)))
+	return (torch.tensor(x), torch.tensor(x**3))
 
 def train_func():
 	model = XORModel()
@@ -78,8 +75,8 @@ def train_func():
 
 def main():
 	print("building datasets")
-	train = DataLoader(XORDataset(5000), batch_size=500, shuffle=True, num_workers=6)
-	validate = DataLoader(XORDataset(500), batch_size=500, shuffle=False, num_workers=6)
+	train = DataLoader(XORDataset(1000), batch_size=1, shuffle=True, num_workers=2)
+	validate = DataLoader(XORDataset(500), batch_size=1, shuffle=False, num_workers=2)
 
 	print("instantiating trainer")
 	trainer = Trainer(log_every_n_steps=5)
