@@ -4,19 +4,19 @@ import numpy as np
 
 def find_kron_val(k, i, j, matrix):
 	if k == 0:
-		return matrix[i, j]
+		return matrix[i][j]
 
 	rc = 2**(k+1)
 	rc2 = rc / 2
 
 	if i >= rc2 and j >= rc2:
 		return matrix[1, 1] * find_kron_val(k - 1, i - rc2, j - rc2, matrix)
-	elif i <= rc2 and j <= rc2:
-		return matrix[0, 0] * find_kron_val(k - 1, i, j, matrix)
-	elif i <= rc2 and j >= rc2:
-		return matrix[0, 1] * find_kron_val(k - 1, i, j - rc2, matrix)
-	elif i >= rc2 and j <= rc2:
-		return matrix[1, 0] * find_kron_val(k - 1, i - rc2, j, matrix)
+	elif i < rc2 and j < rc2:
+		return matrix[0, 0] * find_kron_val(k - 1, i - 1, j - 1, matrix)
+	elif i < rc2 and j >= rc2:
+		return matrix[0, 1] * find_kron_val(k - 1, i - 1, j - rc2, matrix)
+	elif i >= rc2 and j < rc2:
+		return matrix[1, 0] * find_kron_val(k - 1, i - rc2, j - 1, matrix)
 
 def main():
 	kron = np.array([[0.1, 0.2], [0.3, 0.4]])
