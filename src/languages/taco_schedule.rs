@@ -149,18 +149,10 @@ impl TacoScheduleLanguage {
                     vec![
                         // Optionally create no rules
                         production_rule!(EPSILON),
-                        // Or generate rules
-                        production_rule!(NT_RULEGEN),
-                    ],
-                ),
-                // Epsilon edge case handler
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_RULEGEN),
-                    vec![
-                        // Or one rule
-                        production_rule!(NT_RULE),
-                        // Or many rules
-                        production_rule!(NT_RULE, COMMA, NT_RULEGEN),
+                        // Or generate rule
+                        production_rule!(NT_ENTRYPOINT),
+                        // Or generate many rules
+                        production_rule!(NT_RULE, COMMA, NT_ENTRYPOINT),
                     ],
                 ),
                 // Rule definition rule
@@ -309,7 +301,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
 
-    fn generate_grammar(&self) -> Result<Grammar<StringValue, StringValue>, LangExplorerError> {
+    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         Ok(self.taco_schedule_grammar())
     }
 }
@@ -320,7 +312,7 @@ impl Metric for u64 {}
 impl Evaluator for TacoScheduleLanguage {
     type Metric = u64;
 
-    async fn evaluate(&self, program: Vec<u8>) -> Result<Self::Metric, LangExplorerError> {
+    async fn evaluate(&self, _program: Vec<u8>) -> Result<Self::Metric, LangExplorerError> {
         Err(LangExplorerError::General("unimplemented".into()))
     }
 }
