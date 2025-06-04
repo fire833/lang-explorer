@@ -16,10 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
-
-use super::GrammarExpander;
-
 /// A Weighted Monte Carlo explorer is a slightly less naive expander
 /// that selects paths to go down using a weighted sample from the possible
 /// expansion paths available at any given step.

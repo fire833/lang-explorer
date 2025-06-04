@@ -110,3 +110,5 @@ terminal_str!(pub, LBRACE, "[");
 terminal_str!(pub, RBRACE, "]");
 terminal_str!(pub, LBRACKET, "{");
 terminal_str!(pub, RBRACKET, "}");
+terminal_str!(pub, SEMICOLON, ";");
+terminal_str!(pub, COLON, ":");

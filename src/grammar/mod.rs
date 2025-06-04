@@ -211,7 +211,6 @@ macro_rules! production_rule {
     };
 }
 
-use burn::serde::de;
 pub(crate) use production_rule;
 
 impl<T, I> Production<T, I>
