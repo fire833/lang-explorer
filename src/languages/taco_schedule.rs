@@ -33,7 +33,6 @@ use super::{
 
 // Non terminals for this grammar.
 nterminal_str!(NT_ENTRYPOINT, "entrypoint");
-nterminal_str!(NT_RULEGEN, "rulegen");
 nterminal_str!(NT_RULE, "rule");
 nterminal_str!(NT_ASSEMBLE_STRATEGY, "assemble_strategy");
 nterminal_str!(NT_PARALLELIZE_HW, "parallelize_hw");
