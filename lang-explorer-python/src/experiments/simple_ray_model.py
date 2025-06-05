@@ -2,6 +2,7 @@
 
 from ray.train.torch import TorchTrainer, prepare_model
 from ray.train import ScalingConfig
+from ray.train.lightning import prepare_trainer
 from torch.nn import Linear
 from torch.nn import Module
 from torch.nn import LeakyReLU
@@ -9,10 +10,12 @@ from torch.nn import MSELoss
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
 from lightning.pytorch import LightningModule, Trainer
+import lightning as pl
 import torch.nn.functional as F
 import random
 import torch
 import math
+import ray
 
 class CubeDataset(Dataset):
 	def __init__(self, size: int):
@@ -66,21 +69,46 @@ class XORLearner(LightningModule):
 def truth(x):
 	return (torch.tensor(x), torch.tensor(x**3))
 
-def main():
-	print("building datasets")
+def train_func():
+	print("loading datasets...")
 	train = DataLoader(CubeDataset(1000), batch_size=1, shuffle=True, num_workers=2)
 	validate = DataLoader(CubeDataset(500), batch_size=1, shuffle=False, num_workers=2)
 
-	print("instantiating trainer")
-	trainer = Trainer(log_every_n_steps=5)
-	print("training...")
 	model = XORLearner()
-	trainer.fit(model, train, validate)
+	print("configuring trainer...")
+    # [1] Configure PyTorch Lightning Trainer.
+	trainer = pl.Trainer(
+		max_epochs=30,
+		devices="auto",
+		accelerator="auto",
+		strategy=ray.train.lightning.RayDDPStrategy(),
+		plugins=[ray.train.lightning.RayLightningEnvironment()],
+		callbacks=[ray.train.lightning.RayTrainReportCallback()],
+		# [1a] Optionally, disable the default checkpointing behavior
+		# in favor of the `RayTrainReportCallback` above.
+		enable_checkpointing=False,
+    )
 
-	# ray.init(f"ray://10.0.2.221:10001")
+	trainer = ray.train.lightning.prepare_trainer(trainer)
+	trainer.fit(model, train_dataloaders=train, val_dataloaders=validate)
 
-	# conf = ScalingConfig(num_workers=12, use_gpu=False)
-	# trainer = TorchTrainer(scaling_config=conf)
+def main():
+	ray.init(f"ray://10.0.2.221:10001", runtime_env={
+		"pip": ["torch", "lightning"],
+	})
+	scaling_config = ScalingConfig(num_workers=10, use_gpu=True)
+
+	# [3] Launch distributed training job.
+	trainer = TorchTrainer(
+    	train_func,
+    	scaling_config=scaling_config,
+    	# [3a] If running in a multi-node cluster, this is where you
+    	# should configure the run's persistent storage that is accessible
+    	# across all worker nodes.
+    	# run_config=ray.train.RunConfig(storage_path="s3://..."),
+	)
+	result: ray.train.Result = trainer.fit()
+
 
 if __name__ == "__main__":
 	main()
