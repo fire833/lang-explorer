@@ -41,6 +41,8 @@ nterminal_str!(NT_MULTI_CSHE, "comma_separated_html_elements");
 nterminal_str!(NT_MULTI_SSHE, "space_separated_html_elements");
 nterminal_str!(NT_PSEUDO_ELEMENTS, "pseudo_element");
 nterminal_str!(NT_PSEUDO_CLASSES, "pseudo_class");
+nterminal_str!(NT_CLASS, "class");
+nterminal_str!(NT_ID, "id");
 
 // Enumeration of properties
 terminal_str!(ALIGN_CONTENT, "align-content");
@@ -347,16 +349,37 @@ terminal_str!(BEFORE, "before");
 terminal_str!(AFTER, "after");
 terminal_str!(SELECTION, "selection");
 
-pub struct CSSLanguage {}
+pub struct CSSLanguage {
+    classes: Vec<StringValue>,
+    ids: Vec<StringValue>,
+}
 
-impl CSSLanguage {}
+impl CSSLanguage {
+    pub fn new(classes: Vec<StringValue>, ids: Vec<StringValue>) -> Self {
+        Self { classes, ids }
+    }
+}
 
 impl GrammarBuilder for CSSLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
 
     fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        Ok(Grammar::new(
+        let mut classes: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.classes.iter() {
+            // Store this variable in the heap.
+            let term = GrammarElement::Terminal(var.clone());
+            classes.push(production_rule!(term));
+        }
+
+        let mut ids: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in self.ids.iter() {
+            // Store this variable in the heap.
+            let term = GrammarElement::Terminal(var.clone());
+            ids.push(production_rule!(term));
+        }
+
+        let grammar = Grammar::new(
             "entrypoint".into(),
             vec![
                 Production::new(
@@ -625,10 +648,22 @@ impl GrammarBuilder for CSSLanguage {
                     ProductionLHS::new_context_free_elem(NT_HTML_ELEMENT),
                     vec![
                         production_rule!(NT_BASE_HTML_ELEMENT, COLON, COLON, NT_PSEUDO_ELEMENTS),
+                        production_rule!(
+                            NT_BASE_HTML_ELEMENT,
+                            COLON,
+                            COLON,
+                            NT_PSEUDO_ELEMENTS,
+                            COLON,
+                            NT_PSEUDO_CLASSES
+                        ),
                         production_rule!(NT_BASE_HTML_ELEMENT, COLON, NT_PSEUDO_CLASSES),
                         production_rule!(NT_BASE_HTML_ELEMENT),
                     ],
                 ),
+                // Classes variable rule
+                Production::new(ProductionLHS::new_context_free_elem(NT_CLASS), classes),
+                // Ids variable rule
+                Production::new(ProductionLHS::new_context_free_elem(NT_ID), ids),
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_BASE_HTML_ELEMENT),
                     vec![
@@ -745,6 +780,8 @@ impl GrammarBuilder for CSSLanguage {
                     ],
                 ),
             ],
-        ))
+        );
+
+        Ok(grammar)
     }
 }
