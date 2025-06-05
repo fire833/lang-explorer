@@ -101,8 +101,15 @@ impl TacoScheduleLanguage {
             unroll_factor_variables: unroll_factors,
         }
     }
+}
 
-    fn taco_schedule_grammar(&self) -> Grammar<StringValue, StringValue> {
+// impl Language for TacoLanguage {}
+
+impl GrammarBuilder for TacoScheduleLanguage {
+    type Term = StringValue;
+    type NTerm = StringValue;
+
+    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         let mut index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
         for var in self.index_variables.iter() {
             // Store this variable in the heap.
@@ -140,7 +147,7 @@ impl TacoScheduleLanguage {
             unroll_factor_productions.push(production_rule!(term));
         }
 
-        Grammar::new(
+        let grammar = Grammar::new(
             "entrypoint".into(),
             vec![
                 // Entrypoint rule
@@ -291,18 +298,9 @@ impl TacoScheduleLanguage {
                     divide_factor_productions,
                 ),
             ],
-        )
-    }
-}
+        );
 
-// impl Language for TacoLanguage {}
-
-impl GrammarBuilder for TacoScheduleLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
-
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        Ok(self.taco_schedule_grammar())
+        Ok(grammar)
     }
 }
 
