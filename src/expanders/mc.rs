@@ -18,7 +18,10 @@
 
 use rand::{rngs::ThreadRng, Rng};
 
-use crate::grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal};
+use crate::{
+    errors::LangExplorerError,
+    grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal},
+};
 
 use super::GrammarExpander;
 
@@ -43,6 +46,13 @@ where
     T: Terminal,
     I: NonTerminal,
 {
+    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    where
+        Self: Sized,
+    {
+        Ok(Self::new())
+    }
+
     fn expand_rule<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,

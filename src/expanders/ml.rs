@@ -16,41 +16,54 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use async_trait::async_trait;
+use std::collections::HashMap;
+
+use burn::{
+    module::Module,
+    nn::{Embedding, Linear},
+    prelude::Backend,
+};
 
 use crate::{
     errors::LangExplorerError,
+    expanders::GrammarExpander,
     grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal},
 };
 
-pub mod mc;
-pub mod ml;
-pub mod wmc;
-
-/// A grammar expander is an object that is able to take a
-/// current production rule, the whole of the grammar that is
-/// being utilized, and is able to spit out a production rule
-/// that should be utilized from the list of possible production
-/// rules that are implemented by this production.
-#[async_trait]
-pub trait GrammarExpander<T, I>
+pub struct LearnedExpander<T, I, B>
 where
     T: Terminal,
     I: NonTerminal,
+    B: Backend,
 {
-    /// We may need to initialize the expander depending on the type of grammar
-    /// we are using. For example, with my ML based example, the internal models of
-    /// the expander may change completely depending on the rules of the grammar
-    /// I want to expand.
-    fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
-    where
-        Self: Sized;
+    production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
+}
 
-    /// We want the expander to take a grammar and the current rule and
-    /// make a decision on what the next expansion should be.
+enum ModuleWrapper<B>
+where
+    B: Backend,
+{
+    Linear(Linear<B>),
+    Embedding(Embedding<B>),
+}
+
+impl<T, I, B> GrammarExpander<T, I> for LearnedExpander<T, I, B>
+where
+    T: Terminal,
+    I: NonTerminal,
+    B: Backend,
+{
+    fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError> {
+        Ok(Self {
+            production_to_model: HashMap::new(),
+        })
+    }
+
     fn expand_rule<'a>(
         &mut self,
         grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
-    ) -> &'a ProductionRule<T, I>;
+    ) -> &'a ProductionRule<T, I> {
+        todo!()
+    }
 }

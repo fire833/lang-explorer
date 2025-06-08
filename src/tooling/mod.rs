@@ -16,5 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+pub mod burnmods;
 pub mod doc2vec;
 pub mod graph2vec;

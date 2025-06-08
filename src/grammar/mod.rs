@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::HashMap, fmt::Debug, hash::Hash};
+use std::{collections::{hash_map::Values, HashMap}, fmt::Debug, hash::Hash, slice::Iter};
 
 use crate::{errors::LangExplorerError, expanders::GrammarExpander};
 
@@ -211,6 +211,7 @@ macro_rules! production_rule {
     };
 }
 
+use burn::{backend, module::Module, nn, prelude::Backend};
 pub(crate) use production_rule;
 
 impl<T, I> Production<T, I>
@@ -243,6 +244,10 @@ where
     /// Wrapper to return a specific rule.
     pub fn get(&self, i: usize) -> Option<&ProductionRule<T, I>> {
         self.items.get(i)
+    }
+
+    pub fn create_linear_classifier<B: Backend>(&self, embedding_dim: u32, device: &B::Device) -> impl Module<B> {
+        nn::LinearConfig::new(embedding_dim as usize, self.items.len()).with_bias(true).init(device)
     }
 }
 
