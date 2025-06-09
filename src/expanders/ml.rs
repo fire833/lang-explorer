@@ -16,6 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use core::f64;
 use std::collections::HashMap;
 
 use burn::{
@@ -41,13 +42,30 @@ where
     // embedding: Embedding<B>,
 
     /// Recorder to store/load models from disk.
-    recorder: BinGzFileRecorder<FullPrecisionSettings>,
+    _recorder: BinGzFileRecorder<FullPrecisionSettings>,
 
     /// The device on which things should live.
     dev: Device<B>,
 
     /// Mapping of each production rule to its corresponding decision function.
     production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
+
+    strategy: SamplingStrategy,
+}
+
+/// The different strategies for choosing the next expansion rule
+/// given the probability distribution from the model.
+pub enum SamplingStrategy {
+    /// Randomly sample from the distribution.
+    Random,
+
+    /// Choose the highest probability expansion.
+    HighestProb,
+
+    /// Choose the lowest probability distribution,
+    /// you probably don't want to do this if you
+    /// care about your output.
+    LowestProb,
 }
 
 /// A bit of a hack to allow us to keep a mapping of models
@@ -84,7 +102,8 @@ where
 
         Ok(Self {
             production_to_model: map,
-            recorder,
+            _recorder: recorder,
+            strategy: SamplingStrategy::Random,
             // Default this for now.
             dev: device,
         })
@@ -100,14 +119,57 @@ where
                 ModuleWrapper::Linear(linear) => {
                     softmax(linear.forward(Tensor::ones([128], &self.dev)), 0)
                 }
-            };
+            }
+            .to_data()
+            .convert::<f64>();
 
             // Sample in [0, 1].
             let sample = rand::random::<f64>() / f64::MAX;
 
-            for item in distribution.iter_dim(0 as usize) {}
+            // Depending on our strategy, choose the next expansion.
+            let index: usize = match self.strategy {
+                SamplingStrategy::Random => {
+                    let mut idx = production.len() - 1;
+                    let mut cumsum = 0.0;
+                    for (i, prob) in distribution.value.iter().enumerate() {
+                        cumsum += prob;
+                        if sample <= cumsum {
+                            idx = i;
+                            break;
+                        }
+                    }
 
-            return production.get(0).unwrap();
+                    idx
+                }
+                SamplingStrategy::HighestProb => {
+                    let mut highest = 0.0;
+                    let mut highest_idx = 0;
+
+                    for (i, prob) in distribution.value.iter().enumerate() {
+                        if *prob > highest {
+                            highest = *prob;
+                            highest_idx = i;
+                        }
+                    }
+
+                    highest_idx
+                }
+                SamplingStrategy::LowestProb => {
+                    let mut lowest = f64::MAX;
+                    let mut lowest_idx = 0;
+
+                    for (i, prob) in distribution.value.iter().enumerate() {
+                        if *prob < lowest {
+                            lowest = *prob;
+                            lowest_idx = i;
+                        }
+                    }
+
+                    lowest_idx
+                }
+            };
+
+            return production.get(index).unwrap();
         } else {
             panic!(
                 "expander does not have model for production rule {:?}",
