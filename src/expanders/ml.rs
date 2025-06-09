@@ -124,7 +124,7 @@ where
             .convert::<f64>();
 
             // Sample in [0, 1].
-            let sample = rand::random::<f64>() / f64::MAX;
+            let sample = rand::random::<f64>();
 
             // Depending on our strategy, choose the next expansion.
             let index: usize = match self.strategy {
