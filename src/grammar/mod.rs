@@ -16,7 +16,9 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{hash_map::Values, HashMap}, fmt::Debug, hash::Hash, slice::Iter};
+use std::{collections::{ HashMap}, fmt::Debug, hash::Hash};
+
+use burn::{module::Module, nn, prelude::Backend};
 
 use crate::{errors::LangExplorerError, expanders::GrammarExpander};
 
@@ -66,6 +68,10 @@ where
             root,
             productions: map,
         }
+    }
+
+    pub fn get_productions(&self) -> Vec<&Production<T, I>> {
+        return Vec::from_iter(self.productions.values());
     }
 
     pub fn generate_program_instance(
@@ -191,7 +197,7 @@ where
 
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
-#[derive(Clone)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Production<T, I>
 where
     T: Terminal,
@@ -211,7 +217,6 @@ macro_rules! production_rule {
     };
 }
 
-use burn::{backend, module::Module, nn, prelude::Backend};
 pub(crate) use production_rule;
 
 impl<T, I> Production<T, I>
@@ -387,7 +392,7 @@ where
 /// A production rule to use for grammar expansion. Contains a list of
 /// GrammarElements that are expanded usually using DFS until only a list of
 /// non-terminals remains.
-#[derive(Clone)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct ProductionRule<T, I>
 where
     T: Terminal,

@@ -19,9 +19,10 @@
 use std::collections::HashMap;
 
 use burn::{
-    module::Module,
-    nn::{Embedding, Linear},
+    nn::{Linear, LinearConfig},
     prelude::Backend,
+    record::{BinGzFileRecorder, FullPrecisionSettings},
+    tensor::{activation::softmax, Device, Tensor},
 };
 
 use crate::{
@@ -36,15 +37,28 @@ where
     I: NonTerminal,
     B: Backend,
 {
+    /// Embedding model that creates embeddings of grammars.
+    // embedding: Embedding<B>,
+
+    /// Recorder to store/load models from disk.
+    recorder: BinGzFileRecorder<FullPrecisionSettings>,
+
+    /// The device on which things should live.
+    dev: Device<B>,
+
+    /// Mapping of each production rule to its corresponding decision function.
     production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
 }
 
+/// A bit of a hack to allow us to keep a mapping of models
+/// for each of the production rules in our grammar.
 enum ModuleWrapper<B>
 where
     B: Backend,
 {
     Linear(Linear<B>),
-    Embedding(Embedding<B>),
+    // Conv1d(Conv1d<B>),
+    // Conv2d(Conv2d<B>),
 }
 
 impl<T, I, B> GrammarExpander<T, I> for LearnedExpander<T, I, B>
@@ -54,16 +68,51 @@ where
     B: Backend,
 {
     fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError> {
+        let device = Default::default();
+        let recorder = BinGzFileRecorder::<FullPrecisionSettings>::new();
+        let mut map = HashMap::new();
+
+        for production in grammar.get_productions() {
+            let module = ModuleWrapper::Linear(
+                LinearConfig::new(128, production.len())
+                    .with_bias(true)
+                    .init(&device),
+            );
+
+            map.insert(production.clone(), module);
+        }
+
         Ok(Self {
-            production_to_model: HashMap::new(),
+            production_to_model: map,
+            recorder,
+            // Default this for now.
+            dev: device,
         })
     }
 
     fn expand_rule<'a>(
         &mut self,
-        grammar: &'a Grammar<T, I>,
+        _grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        todo!()
+        if let Some(model) = self.production_to_model.get(&production) {
+            let distribution = match model {
+                ModuleWrapper::Linear(linear) => {
+                    softmax(linear.forward(Tensor::ones([128], &self.dev)), 0)
+                }
+            };
+
+            // Sample in [0, 1].
+            let sample = rand::random::<f64>() / f64::MAX;
+
+            for item in distribution.iter_dim(0 as usize) {}
+
+            return production.get(0).unwrap();
+        } else {
+            panic!(
+                "expander does not have model for production rule {:?}",
+                production
+            );
+        }
     }
 }
