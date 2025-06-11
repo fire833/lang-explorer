@@ -117,11 +117,13 @@ where
         if let Some(model) = self.production_to_model.get(&production) {
             let distribution = match model {
                 ModuleWrapper::Linear(linear) => {
-                    softmax(linear.forward(Tensor::ones([128], &self.dev)), 0)
+                    softmax(linear.forward(Tensor::<B, 1>::ones([128], &self.dev)), 0)
                 }
             }
             .to_data()
-            .convert::<f64>();
+            .convert::<f64>()
+            .to_vec()
+            .unwrap();
 
             // Sample in [0, 1].
             let sample = rand::random::<f64>();
@@ -131,7 +133,7 @@ where
                 SamplingStrategy::Random => {
                     let mut idx = production.len() - 1;
                     let mut cumsum = 0.0;
-                    for (i, prob) in distribution.value.iter().enumerate() {
+                    for (i, prob) in distribution.iter().enumerate() {
                         cumsum += prob;
                         if sample <= cumsum {
                             idx = i;
@@ -145,7 +147,7 @@ where
                     let mut highest = 0.0;
                     let mut highest_idx = 0;
 
-                    for (i, prob) in distribution.value.iter().enumerate() {
+                    for (i, prob) in distribution.iter().enumerate() {
                         if *prob > highest {
                             highest = *prob;
                             highest_idx = i;
@@ -158,7 +160,7 @@ where
                     let mut lowest = f64::MAX;
                     let mut lowest_idx = 0;
 
-                    for (i, prob) in distribution.value.iter().enumerate() {
+                    for (i, prob) in distribution.iter().enumerate() {
                         if *prob < lowest {
                             lowest = *prob;
                             lowest_idx = i;
