@@ -251,6 +251,16 @@ macro_rules! production_rule {
 
 pub(crate) use production_rule;
 
+macro_rules! context_free_production {
+    ($nt:expr, $($x:expr),+) => {
+        Production::new(
+            ProductionLHS::new_context_free_elem($nt), vec![$($x),+],
+        )   
+    };
+}
+
+pub(crate) use context_free_production;
+
 impl<T, I> Production<T, I>
 where
     T: Terminal,
