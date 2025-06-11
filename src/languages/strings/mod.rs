@@ -18,6 +18,8 @@
 
 use std::fmt::Debug;
 
+pub mod alphanumeric;
+
 use crate::grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal};
 
 /// A generic terminal or non-terminal type which wraps a standard String.
@@ -114,6 +116,7 @@ terminal_str!(pub, SEMICOLON, ";");
 terminal_str!(pub, COLON, ":");
 terminal_str!(pub, PLUS, "+");
 terminal_str!(pub, MINUS, "-");
+terminal_str!(pub, EQUALS, "=");
 terminal_str!(pub, GREATER, ">");
 terminal_str!(pub, LESS, "<");
 terminal_str!(pub, STAR, "*");
