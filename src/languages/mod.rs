@@ -24,6 +24,7 @@ use crate::{
 
 pub mod css;
 pub mod nft_ruleset;
+pub mod parsers;
 pub mod spiral;
 pub mod strings;
 pub mod taco_schedule;
