@@ -76,11 +76,6 @@ fn main() -> Result<(), LangExplorerError> {
                     i,
                     str::from_utf8(p.serialize().as_slice()).unwrap()
                 );
-                let subgraphs = p.get_all_wl_subgraphs(2);
-
-                for sub in subgraphs.iter() {
-                    println!("{}", str::from_utf8(sub.serialize().as_slice()).unwrap());
-                }
             }
             Err(e) => println!("{}", e),
         }

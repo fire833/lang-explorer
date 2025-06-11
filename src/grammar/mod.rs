@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{ HashMap}, fmt::Debug, hash::Hash};
+use std::{collections::{HashMap, HashSet}, fmt::Debug, hash::Hash};
 
 use burn::{module::Module, nn, prelude::Backend};
 
@@ -176,6 +176,34 @@ where
         }
 
         Ok(())
+    }
+
+    /// Retrieve all grammar elements found within this grammar as a set.
+    /// Can be useful for creating a static labeling for each element.
+    pub fn get_all_elements(&self) -> HashSet<&GrammarElement<T, I>> {
+        let mut set = HashSet::new();
+
+        for prod in self.productions.values() {
+            for rule in prod.items.iter() {
+                for item in rule.items.iter() {
+                    set.insert(item);
+                }
+            }
+
+            if let Some(prefix) = &prod.non_terminal.prefix {
+                for item in prefix.iter() {
+                    set.insert(item);
+                }
+            }
+
+            if let Some(suffix) = &prod.non_terminal.suffix {
+                for item in suffix.iter() {
+                    set.insert(item);
+                }
+            }
+        }
+
+        return set;
     }
 }
 
@@ -494,16 +522,24 @@ where
         self.children = children;
     }
 
+    /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman 
+    /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
+    pub fn extract_words_wl_kernel(&self, nodes: Vec<&GrammarElement<T, I>>) -> Vec<String> {
+        let node_strings = nodes.iter().map(|item| format!("{:?}", item)).collect();
+
+        return node_strings;
+    }
+
     /// Extract a rooted sub-program from this program instance of degree d.
     /// Used for graph2vec implementation, where we need all rooted subgraphs 
     /// of degree d of a particular graph.
-    pub fn get_wl_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
+    pub fn get_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
         if degree == 0 {
             return ProgramInstance::new(self.node.clone());
         } else {
             let mut newchildren = vec![];
             for child in self.children.iter() {
-                let subgraph = child.get_wl_subgraph(degree - 1);
+                let subgraph = child.get_subgraph(degree - 1);
                 newchildren.push(subgraph);
             }
 
@@ -514,10 +550,10 @@ where
     }
 
     /// Returns all rooted subgraphs for the provided graph of degree d.
-    pub fn get_all_wl_subgraphs(&self, degree: u32) -> Vec<ProgramInstance<T, I>> {
-        let mut subgraphs = vec![self.get_wl_subgraph(degree)];
+    pub fn get_all_subgraphs(&self, degree: u32) -> Vec<ProgramInstance<T, I>> {
+        let mut subgraphs = vec![self.get_subgraph(degree)];
         for child in self.children.iter() {
-            subgraphs.append(&mut child.get_all_wl_subgraphs(degree));
+            subgraphs.append(&mut child.get_all_subgraphs(degree));
         }
         
         return subgraphs;
