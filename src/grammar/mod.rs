@@ -16,9 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{HashMap, HashSet}, fmt::Debug, hash::Hash};
+use std::{collections::{HashMap, HashSet, VecDeque}, fmt::Debug, hash::{self, Hash, Hasher}};
 
 use burn::{module::Module, nn, prelude::Backend};
+use fasthash::{city, FastHasher};
 
 use crate::{errors::LangExplorerError, expanders::GrammarExpander};
 
@@ -180,7 +181,7 @@ where
 
     /// Retrieve all grammar elements found within this grammar as a set.
     /// Can be useful for creating a static labeling for each element.
-    pub fn get_all_elements(&self) -> HashSet<&GrammarElement<T, I>> {
+    pub fn get_all_nodes(&self) -> HashSet<&GrammarElement<T, I>> {
         let mut set = HashSet::new();
 
         for prod in self.productions.values() {
@@ -524,10 +525,49 @@ where
 
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman 
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
-    pub fn extract_words_wl_kernel(&self, nodes: Vec<&GrammarElement<T, I>>) -> Vec<String> {
-        let node_strings = nodes.iter().map(|item| format!("{:?}", item)).collect();
+    pub fn extract_words_wl_kernel(&self, iterations: u32) -> Vec<u128> {
+        let nodes = self.get_all_nodes();
+        let mut node_labels: Vec<u128> = nodes.iter().map(|node| {
+            city::hash128(node.serialize_bytes().as_slice())
+        }).collect();
+        let mut found_labels = node_labels.clone();
 
-        return node_strings;
+        for _ in 0..iterations {
+            for node in nodes.iter() {
+
+            }
+        }
+
+        found_labels
+    }
+
+    pub fn serialize_bytes(&self) -> Vec<u8> {
+        match &self.node {
+            GrammarElement::Terminal(t) => t.serialize(),
+            // Hacky as all molasses, but works for now.
+            GrammarElement::NonTerminal(nt) => Vec::from(format!("{:?}", nt).as_bytes()),
+            GrammarElement::Epsilon => Vec::from(b"epsilon"),
+        }
+    }
+
+    /// Essentially run BFS on the graph to get all nodes.
+    fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
+        let mut nodes = vec![];
+
+        // Since these will all be acyclic trees, we don't need to worry about keeping a visited set. Haha I say that now.
+        // let mut visited: HashSet<&ProgramInstance<T, I>> = HashSet::new();
+        let mut queue: VecDeque<&ProgramInstance<T, I>> = VecDeque::new();
+        queue.push_back(self);
+
+        while let Some(node) = queue.pop_front() {
+            nodes.push(node);
+
+            for child in node.children.iter() {
+                queue.push_back(child);
+            }
+        }
+
+        nodes
     }
 
     /// Extract a rooted sub-program from this program instance of degree d.
