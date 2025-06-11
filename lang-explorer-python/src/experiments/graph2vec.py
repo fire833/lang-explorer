@@ -174,7 +174,9 @@ def main(args):
     """
     graphs = glob.glob(os.path.join(args.input_path, "*.json"))
     print("\nFeature extraction started.\n")
-    document_collections = Parallel(n_jobs=args.workers)(delayed(feature_extractor)(g, args.wl_iterations) for g in tqdm(graphs))
+    document_collections = []
+    for g in tqdm(graphs):
+        document_collections.append(feature_extractor(g, args.wl_iterations))
     print("\nOptimization started.\n")
 
     model = Doc2Vec(document_collections,
