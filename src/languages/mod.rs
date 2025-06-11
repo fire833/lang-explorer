@@ -27,6 +27,7 @@ pub mod nft_ruleset;
 pub mod parsers;
 pub mod spiral;
 pub mod strings;
+pub mod taco_expression;
 pub mod taco_schedule;
 pub mod toy_language;
 
