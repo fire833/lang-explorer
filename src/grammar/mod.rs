@@ -16,10 +16,13 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{HashMap, HashSet, VecDeque}, fmt::Debug, hash::{self, Hash, Hasher}};
+use std::{collections::{HashMap, HashSet, VecDeque}, fmt::Debug, hash::{ Hash, Hasher}};
 
 use burn::{module::Module, nn, prelude::Backend};
 use fasthash::{city, FastHasher};
+
+#[allow(unused)]
+use crate::languages::strings::{nterminal_str, StringValue};
 
 use crate::{errors::LangExplorerError, expanders::GrammarExpander};
 
@@ -525,20 +528,47 @@ where
 
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman 
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
-    pub fn extract_words_wl_kernel(&self, iterations: u32) -> Vec<u128> {
+    pub fn extract_words_wl_kernel(&self, iterations: u16) -> Vec<u64> {
         let nodes = self.get_all_nodes();
-        let mut node_labels: Vec<u128> = nodes.iter().map(|node| {
-            city::hash128(node.serialize_bytes().as_slice())
-        }).collect();
-        let mut found_labels = node_labels.clone();
+        let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
+        let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
+
+        nodes.iter().for_each(|node| {
+            let hash = city::hash64(node.serialize_bytes().as_slice());
+
+            node_features_old.insert(node, hash);
+        });
+
+        let mut found_features: Vec<u64>
+        = node_features_old.values().map(|u| *u).collect();
 
         for _ in 0..iterations {
             for node in nodes.iter() {
+                let mut hasher = city::Hasher64::new();
 
+                // Write the current node into the hasher.
+                hasher.write(node.serialize_bytes().as_slice());
+
+                let mut child_values: Vec<u64> = node.children.iter().map(|child| node_features_old.get(child).unwrap()).map(|v| *v).collect();
+
+                child_values.sort();
+
+                // Write each child's feature value into the hash as well.
+                child_values.iter().for_each(|child| hasher.write(&child.to_ne_bytes()));
+
+                node_features_new.insert(node, hasher.finish());
             }
+
+            node_features_new.values().for_each(|v| found_features.push(*v));
+
+            // Swap out old and new vectors now for the next iteration.
+            let cp = node_features_new;
+            let cp2 = node_features_old;
+            node_features_old = cp;
+            node_features_new = cp2;
         }
 
-        found_labels
+        found_features
     }
 
     pub fn serialize_bytes(&self) -> Vec<u8> {
@@ -626,5 +656,40 @@ where
     fn serialize_into(&self, output: &mut Vec<u8>) {
         let mut vec = self.serialize();
         output.append(&mut vec);
+    }
+}
+
+/// Implement partial equality for program instance.
+/// Since we just care about node equality, just compare 
+/// the grammar elements within, don't worry about 
+/// children for now. This will probably bite me later
+/// but lets just deal with it.
+impl<T, I> PartialEq for ProgramInstance<T, I>
+where
+    T: Terminal,
+    I: NonTerminal, 
+    {
+    fn eq(&self, other: &Self) -> bool {
+        self.node == other.node
+    }
+}
+
+impl<T, I> Eq for ProgramInstance<T, I> 
+where 
+    T: Terminal,
+    I: NonTerminal,
+{}
+
+impl <T, I> Hash for ProgramInstance<T, I> 
+where
+T: Terminal,
+I: NonTerminal,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.node.hash(state);
+        // This will probably also come back to bite me, will most 
+        // likely need to be changed because I can't keep hashing the 
+        // entirety of these massive trees.
+        self.children.hash(state);
     }
 }
