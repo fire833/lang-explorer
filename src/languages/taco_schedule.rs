@@ -22,7 +22,8 @@ use crate::{
     errors::LangExplorerError,
     evaluators::{Evaluator, Metric},
     grammar::{
-        production_rule, Grammar, GrammarElement, Production, ProductionLHS, ProductionRule,
+        context_free_production, production_rule, Grammar, GrammarElement, Production,
+        ProductionLHS, ProductionRule,
     },
 };
 
@@ -150,16 +151,13 @@ impl GrammarBuilder for TacoScheduleLanguage {
             "entrypoint".into(),
             vec![
                 // Entrypoint rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_ENTRYPOINT),
-                    vec![
-                        // Optionally create no rules
-                        production_rule!(EPSILON),
-                        // Or generate rule
-                        production_rule!(NT_ENTRYPOINT),
-                        // Or generate many rules
-                        production_rule!(NT_RULE, COMMA, NT_ENTRYPOINT),
-                    ],
+                context_free_production!(
+                    NT_ENTRYPOINT, // Optionally create no rules
+                    production_rule!(EPSILON),
+                    // Or generate rule
+                    production_rule!(NT_ENTRYPOINT),
+                    // Or generate many rules
+                    production_rule!(NT_RULE, COMMA, NT_ENTRYPOINT)
                 ),
                 // Rule definition rule
                 Production::new(

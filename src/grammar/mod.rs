@@ -257,6 +257,12 @@ macro_rules! context_free_production {
             ProductionLHS::new_context_free_elem($nt), vec![$($x),+],
         )   
     };
+    // ($nt:expr, $rules:expr) => {
+    //     Production::new(
+    //         ProductionLHS::new_context_free_elem($nt),
+    //         $rules,
+    //     )
+    // }
 }
 
 pub(crate) use context_free_production;

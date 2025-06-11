@@ -19,7 +19,8 @@
 use crate::{
     errors::LangExplorerError,
     grammar::{
-        production_rule, Grammar, GrammarElement, Production, ProductionLHS, ProductionRule,
+        context_free_production, production_rule, Grammar, GrammarElement, Production,
+        ProductionLHS, ProductionRule,
     },
     languages::{
         strings::{
@@ -382,33 +383,24 @@ impl GrammarBuilder for CSSLanguage {
         let grammar = Grammar::new(
             "entrypoint".into(),
             vec![
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_ENTRYPOINT),
-                    vec![
-                        // Optionally create no blocks
-                        production_rule!(EPSILON),
-                        // Or generate block
-                        production_rule!(NT_BLOCK),
-                        // Or generate multiple blocks
-                        production_rule!(NT_BLOCK, NT_ENTRYPOINT),
-                    ],
+                context_free_production!(
+                    NT_ENTRYPOINT,
+                    // Optionally create no blocks
+                    production_rule!(EPSILON),
+                    // Or generate block
+                    production_rule!(NT_BLOCK),
+                    // Or generate multiple blocks
+                    production_rule!(NT_BLOCK, NT_ENTRYPOINT)
                 ),
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_BLOCK),
-                    vec![production_rule!(
-                        NT_SELECTOR,
-                        LBRACKET,
-                        NT_PROPERTIES,
-                        RBRACKET
-                    )],
+                context_free_production!(
+                    NT_BLOCK,
+                    production_rule!(NT_SELECTOR, LBRACKET, NT_PROPERTIES, RBRACKET)
                 ),
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_MULTI_CSHE),
-                    vec![
-                        production_rule!(NT_BASE_HTML_ELEMENT),
-                        // Imperfect, but whatever for right now
-                        production_rule!(NT_BASE_HTML_ELEMENT, COMMA, NT_MULTI_CSHE),
-                    ],
+                context_free_production!(
+                    NT_MULTI_CSHE,
+                    production_rule!(NT_BASE_HTML_ELEMENT),
+                    // Imperfect, but whatever for right now
+                    production_rule!(NT_BASE_HTML_ELEMENT, COMMA, NT_MULTI_CSHE)
                 ),
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_MULTI_SSHE),
