@@ -21,68 +21,68 @@ use crate::{
     languages::strings::{terminal_str, GrammarElement, StringValue},
 };
 
-terminal_str!(NT_LO_A, "a");
-terminal_str!(NT_LO_B, "b");
-terminal_str!(NT_LO_C, "c");
-terminal_str!(NT_LO_D, "d");
-terminal_str!(NT_LO_E, "e");
-terminal_str!(NT_LO_F, "f");
-terminal_str!(NT_LO_G, "g");
-terminal_str!(NT_LO_H, "h");
-terminal_str!(NT_LO_I, "i");
-terminal_str!(NT_LO_J, "j");
-terminal_str!(NT_LO_K, "k");
-terminal_str!(NT_LO_L, "l");
-terminal_str!(NT_LO_M, "m");
-terminal_str!(NT_LO_N, "n");
-terminal_str!(NT_LO_O, "o");
-terminal_str!(NT_LO_P, "p");
-terminal_str!(NT_LO_Q, "q");
-terminal_str!(NT_LO_R, "r");
-terminal_str!(NT_LO_S, "s");
-terminal_str!(NT_LO_T, "t");
-terminal_str!(NT_LO_U, "u");
-terminal_str!(NT_LO_V, "v");
-terminal_str!(NT_LO_W, "w");
-terminal_str!(NT_LO_X, "x");
-terminal_str!(NT_LO_Y, "y");
-terminal_str!(NT_LO_Z, "z");
-terminal_str!(NT_UP_A, "A");
-terminal_str!(NT_UP_B, "B");
-terminal_str!(NT_UP_C, "C");
-terminal_str!(NT_UP_D, "D");
-terminal_str!(NT_UP_E, "E");
-terminal_str!(NT_UP_F, "F");
-terminal_str!(NT_UP_G, "G");
-terminal_str!(NT_UP_H, "H");
-terminal_str!(NT_UP_I, "I");
-terminal_str!(NT_UP_J, "J");
-terminal_str!(NT_UP_K, "K");
-terminal_str!(NT_UP_L, "L");
-terminal_str!(NT_UP_M, "M");
-terminal_str!(NT_UP_N, "N");
-terminal_str!(NT_UP_O, "O");
-terminal_str!(NT_UP_P, "P");
-terminal_str!(NT_UP_Q, "Q");
-terminal_str!(NT_UP_R, "R");
-terminal_str!(NT_UP_S, "S");
-terminal_str!(NT_UP_T, "T");
-terminal_str!(NT_UP_U, "U");
-terminal_str!(NT_UP_V, "V");
-terminal_str!(NT_UP_W, "W");
-terminal_str!(NT_UP_X, "X");
-terminal_str!(NT_UP_Y, "Y");
-terminal_str!(NT_UP_Z, "Z");
-terminal_str!(NT_0, "0");
-terminal_str!(NT_1, "1");
-terminal_str!(NT_2, "2");
-terminal_str!(NT_3, "3");
-terminal_str!(NT_4, "4");
-terminal_str!(NT_5, "5");
-terminal_str!(NT_6, "6");
-terminal_str!(NT_7, "7");
-terminal_str!(NT_8, "8");
-terminal_str!(NT_9, "9");
+terminal_str!(pub, NT_LO_A, "a");
+terminal_str!(pub, NT_LO_B, "b");
+terminal_str!(pub, NT_LO_C, "c");
+terminal_str!(pub, NT_LO_D, "d");
+terminal_str!(pub, NT_LO_E, "e");
+terminal_str!(pub, NT_LO_F, "f");
+terminal_str!(pub, NT_LO_G, "g");
+terminal_str!(pub, NT_LO_H, "h");
+terminal_str!(pub, NT_LO_I, "i");
+terminal_str!(pub, NT_LO_J, "j");
+terminal_str!(pub, NT_LO_K, "k");
+terminal_str!(pub, NT_LO_L, "l");
+terminal_str!(pub, NT_LO_M, "m");
+terminal_str!(pub, NT_LO_N, "n");
+terminal_str!(pub, NT_LO_O, "o");
+terminal_str!(pub, NT_LO_P, "p");
+terminal_str!(pub, NT_LO_Q, "q");
+terminal_str!(pub, NT_LO_R, "r");
+terminal_str!(pub, NT_LO_S, "s");
+terminal_str!(pub, NT_LO_T, "t");
+terminal_str!(pub, NT_LO_U, "u");
+terminal_str!(pub, NT_LO_V, "v");
+terminal_str!(pub, NT_LO_W, "w");
+terminal_str!(pub, NT_LO_X, "x");
+terminal_str!(pub, NT_LO_Y, "y");
+terminal_str!(pub, NT_LO_Z, "z");
+terminal_str!(pub, NT_UP_A, "A");
+terminal_str!(pub, NT_UP_B, "B");
+terminal_str!(pub, NT_UP_C, "C");
+terminal_str!(pub, NT_UP_D, "D");
+terminal_str!(pub, NT_UP_E, "E");
+terminal_str!(pub, NT_UP_F, "F");
+terminal_str!(pub, NT_UP_G, "G");
+terminal_str!(pub, NT_UP_H, "H");
+terminal_str!(pub, NT_UP_I, "I");
+terminal_str!(pub, NT_UP_J, "J");
+terminal_str!(pub, NT_UP_K, "K");
+terminal_str!(pub, NT_UP_L, "L");
+terminal_str!(pub, NT_UP_M, "M");
+terminal_str!(pub, NT_UP_N, "N");
+terminal_str!(pub, NT_UP_O, "O");
+terminal_str!(pub, NT_UP_P, "P");
+terminal_str!(pub, NT_UP_Q, "Q");
+terminal_str!(pub, NT_UP_R, "R");
+terminal_str!(pub, NT_UP_S, "S");
+terminal_str!(pub, NT_UP_T, "T");
+terminal_str!(pub, NT_UP_U, "U");
+terminal_str!(pub, NT_UP_V, "V");
+terminal_str!(pub, NT_UP_W, "W");
+terminal_str!(pub, NT_UP_X, "X");
+terminal_str!(pub, NT_UP_Y, "Y");
+terminal_str!(pub, NT_UP_Z, "Z");
+terminal_str!(pub, NT_0, "0");
+terminal_str!(pub, NT_1, "1");
+terminal_str!(pub, NT_2, "2");
+terminal_str!(pub, NT_3, "3");
+terminal_str!(pub, NT_4, "4");
+terminal_str!(pub, NT_5, "5");
+terminal_str!(pub, NT_6, "6");
+terminal_str!(pub, NT_7, "7");
+terminal_str!(pub, NT_8, "8");
+terminal_str!(pub, NT_9, "9");
 
 fn productions_alpha_lower() -> Vec<ProductionRule<StringValue, StringValue>> {
     return vec![
@@ -169,6 +169,17 @@ pub fn alphanumeric_character_production_context_free(
     productions.append(&mut productions_alpha_lower());
     productions.append(&mut productions_alpha_upper());
     productions.append(&mut productions_digits());
+
+    return Production::new(ProductionLHS::new_context_free(root), productions);
+}
+
+pub fn alpha_character_production_context_free(
+    root: StringValue,
+) -> Production<StringValue, StringValue> {
+    let mut productions = vec![];
+
+    productions.append(&mut productions_alpha_lower());
+    productions.append(&mut productions_alpha_upper());
 
     return Production::new(ProductionLHS::new_context_free(root), productions);
 }
