@@ -630,6 +630,19 @@ where
     }
 }
 
+#[test]
+fn test_extract_words_wl_kernel() {
+    nterminal_str!(FOO, "foo");
+    nterminal_str!(BAR, "bar");
+    nterminal_str!(BAZ, "baz");
+
+    let mut program = ProgramInstance::new(FOO);
+    program.set_children(vec![ProgramInstance::new(BAR), ProgramInstance::new(BAZ), ProgramInstance::new(FOO)]);
+
+    let words = program.extract_words_wl_kernel(3);
+    println!("{:?}", words);
+}
+
 impl<T, I> BinarySerialize for ProgramInstance<T, I>
 where
     T: Terminal,
