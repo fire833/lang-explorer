@@ -16,32 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
-    str::FromStr,
-};
+use serde::{Deserialize, Serialize};
 
-use warp::{reply::reply, Filter};
-
-use crate::generate::GenerateParams;
-
-pub async fn start_server(port: u16) {
-    let get_local_vpn = warp::post()
-        .and(warp::path!("v1" / "generate"))
-        .and(warp::path::end())
-        .and(warp::body::json::<GenerateParams>())
-        .and_then(generate);
-
-    let routes = get_local_vpn;
-
-    warp::serve(routes)
-        .run(SocketAddr::V4(SocketAddrV4::new(
-            Ipv4Addr::from_str("0.0.0.0").expect("invalid bind ip address"),
-            port,
-        )))
-        .await;
-}
-
-async fn generate(params: GenerateParams) -> Result<impl warp::Reply, warp::Rejection> {
-    Ok(reply())
-}
+#[derive(Serialize, Deserialize)]
+pub struct GenerateParams {}

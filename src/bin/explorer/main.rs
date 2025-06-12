@@ -18,6 +18,7 @@
 
 mod api;
 mod cli;
+mod generate;
 
 use std::str;
 
@@ -29,57 +30,60 @@ use lang_explorer::{
     languages::{strings::StringValue, taco_schedule::TacoScheduleLanguage, GrammarBuilder},
 };
 
-fn main() -> Result<(), LangExplorerError> {
+#[tokio::main]
+async fn main() -> Result<(), LangExplorerError> {
     let args = cli::LangExplorerArgs::parse();
-    // let toy = ToyLanguage {}.generate_grammar().unwrap();
-    let taco = TacoScheduleLanguage::new(
-        vec![
-            StringValue::from_static_str("i"),
-            StringValue::from_static_str("j"),
-            StringValue::from_static_str("k"),
-        ],
-        vec![StringValue::from_static_str("d")],
-        vec![StringValue::from_static_str("f")],
-        vec![
-            StringValue::from_static_str("1"),
-            StringValue::from_static_str("2"),
-            StringValue::from_static_str("5"),
-            StringValue::from_static_str("10"),
-            StringValue::from_static_str("15"),
-        ],
-        vec![
-            StringValue::from_static_str("1"),
-            StringValue::from_static_str("2"),
-            StringValue::from_static_str("5"),
-            StringValue::from_static_str("10"),
-            StringValue::from_static_str("15"),
-        ],
-        vec![
-            StringValue::from_static_str("1"),
-            StringValue::from_static_str("2"),
-            StringValue::from_static_str("5"),
-            StringValue::from_static_str("10"),
-            StringValue::from_static_str("15"),
-        ],
-    );
+    return args.entry().await;
 
-    let mut mc = MonteCarloExpander::new();
+    // // let toy = ToyLanguage {}.generate_grammar().unwrap();
+    // let taco = TacoScheduleLanguage::new(
+    //     vec![
+    //         StringValue::from_static_str("i"),
+    //         StringValue::from_static_str("j"),
+    //         StringValue::from_static_str("k"),
+    //     ],
+    //     vec![StringValue::from_static_str("d")],
+    //     vec![StringValue::from_static_str("f")],
+    //     vec![
+    //         StringValue::from_static_str("1"),
+    //         StringValue::from_static_str("2"),
+    //         StringValue::from_static_str("5"),
+    //         StringValue::from_static_str("10"),
+    //         StringValue::from_static_str("15"),
+    //     ],
+    //     vec![
+    //         StringValue::from_static_str("1"),
+    //         StringValue::from_static_str("2"),
+    //         StringValue::from_static_str("5"),
+    //         StringValue::from_static_str("10"),
+    //         StringValue::from_static_str("15"),
+    //     ],
+    //     vec![
+    //         StringValue::from_static_str("1"),
+    //         StringValue::from_static_str("2"),
+    //         StringValue::from_static_str("5"),
+    //         StringValue::from_static_str("10"),
+    //         StringValue::from_static_str("15"),
+    //     ],
+    // );
 
-    let g = taco.generate_grammar().unwrap();
-    println!("Taco Schedule Grammar: {:?}", g);
+    // let mut mc = MonteCarloExpander::new();
 
-    for i in 1..15 {
-        match g.generate_program_instance(&mut mc) {
-            Ok(p) => {
-                println!(
-                    "instance {}: {}",
-                    i,
-                    str::from_utf8(p.serialize().as_slice()).unwrap()
-                );
-            }
-            Err(e) => println!("{}", e),
-        }
-    }
+    // let g = taco.generate_grammar().unwrap();
+    // println!("Taco Schedule Grammar: {:?}", g);
 
-    return args.entry();
+    // for i in 1..15 {
+    //     match g.generate_program_instance(&mut mc) {
+    //         Ok(p) => {
+    //             println!(
+    //                 "instance {}: {}",
+    //                 i,
+    //                 str::from_utf8(p.serialize().as_slice()).unwrap()
+    //             );
+    //         }
+    //         Err(e) => println!("{}", e),
+    //     }
+    // }
+
+    // return args.entry();
 }

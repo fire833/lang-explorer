@@ -18,20 +18,26 @@
 
 use lang_explorer::errors::LangExplorerError;
 
+use crate::api;
+
 #[derive(clap::Parser)]
 pub struct LangExplorerArgs {
+    /// Specify the port to listen on for the server.
+    #[arg(short, long)]
+    port: u16,
+
     #[command(subcommand)]
     cmd: Option<Subcommand>,
 }
 
 impl LangExplorerArgs {
-    pub fn entry(&self) -> Result<(), LangExplorerError> {
+    pub async fn entry(&self) -> Result<(), LangExplorerError> {
         match &self.cmd {
             Some(cmd) => match cmd {
                 Subcommand::Explore => todo!(),
                 Subcommand::MPIExplore => todo!(),
                 Subcommand::Generate => todo!(),
-                Subcommand::Serve => todo!(),
+                Subcommand::Serve => Ok(api::start_server(self.port).await),
             },
             None => return Err("no command provided".into()),
         }
