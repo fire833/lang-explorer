@@ -42,6 +42,6 @@ pub async fn start_server(port: u16) {
         .await;
 }
 
-async fn generate(params: GenerateParams) -> Result<impl warp::Reply, warp::Rejection> {
+async fn generate(_params: GenerateParams) -> Result<impl warp::Reply, warp::Rejection> {
     Ok(reply())
 }

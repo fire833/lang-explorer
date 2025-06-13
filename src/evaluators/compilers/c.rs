@@ -20,9 +20,11 @@ use std::path::Path;
 
 use crate::errors::LangExplorerError;
 
+#[allow(unused)]
 pub struct CCompiler {}
 
 impl CCompiler {
+    #[allow(unused)]
     async fn compile(infile: &Path, objectfile: &Path) -> Result<(), LangExplorerError> {
         let dir = objectfile.parent();
         let out = objectfile.file_name();

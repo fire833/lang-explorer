@@ -16,13 +16,14 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::HashMap, os::unix::process::CommandExt, path::Path, process::Command};
+use std::{collections::HashMap, process::Command};
 
 use crate::errors::LangExplorerError;
 
 /// Enumeration of supported compiler modes for taco.
 /// When you select one of these modes, it will affect the
 /// arguments that are passed to the taco process.
+#[allow(unused)]
 pub enum TacoCompileMode {
     /// Print the compute kernel (default).
     CompileComputeKernel,
@@ -38,6 +39,7 @@ pub enum TacoCompileMode {
 }
 
 impl TacoCompileMode {
+    #[allow(unused)]
     fn to_argument_directive(&self, file: String) -> String {
         match self {
             TacoCompileMode::CompileComputeKernel => format!("-write-compute={}", file),
@@ -49,11 +51,14 @@ impl TacoCompileMode {
 }
 
 /// A wrapper for doing taco compilation stuff.
+#[allow(unused)]
+
 pub struct TacoCompiler {}
 
 impl TacoCompiler {
     /// Takes a TACO expression and a schedule along with some other arguments,
     /// and compiles the output to a file.
+    #[allow(unused)]
     async fn compile(
         &self,
         executable: String,

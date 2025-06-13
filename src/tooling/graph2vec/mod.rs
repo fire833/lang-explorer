@@ -23,7 +23,7 @@ use burn::{
 };
 
 pub struct Graph2Vec<B: Backend> {
-    embed: Embedding<B>,
+    _embed: Embedding<B>,
 }
 
 #[derive(Debug, Config)]
@@ -35,7 +35,7 @@ pub struct Graph2VecConfig {
 impl Graph2VecConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Graph2Vec<B> {
         Graph2Vec {
-            embed: EmbeddingConfig::new(self.num_graphs as usize, self.embedding_dim as usize)
+            _embed: EmbeddingConfig::new(self.num_graphs as usize, self.embedding_dim as usize)
                 .init(device),
         }
     }
@@ -43,7 +43,7 @@ impl Graph2VecConfig {
 
 impl<B: Backend> Graph2Vec<B> {
     pub fn forward(&self, graphs: Tensor<B, 2>) -> Tensor<B, 3> {
-        let [dim, num_samples] = graphs.dims();
+        let [_dim, _num_samples] = graphs.dims();
         todo!()
         // let x = graphs.reshape([]);
         // self.embed.forward(graphs)
