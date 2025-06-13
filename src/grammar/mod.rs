@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{HashMap, HashSet, VecDeque}, fmt::Debug, hash::{ Hash, Hasher}};
+use std::{collections::{HashMap, HashSet, VecDeque}, fmt::{Debug, Display}, hash::{ Hash, Hasher}};
 
 use burn::{module::Module, nn, prelude::Backend};
 use fasthash::{city, FastHasher};
@@ -227,6 +227,34 @@ where
     }
 }
 
+/// Displays the grammar in BNF form for easier insertion into the appendices.
+impl<T, I> Display for Grammar<T, I> 
+where
+    T: Terminal,
+    I: NonTerminal,
+    {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            // Do this twice for ease, make sure we show the root symbol first
+            for (nt, rules) in self.productions.iter() {
+                if nt.non_terminal != self.root {
+                    continue;
+                }
+
+                writeln!(f, "<{:?}> ::= {}\n", nt, rules)?;
+            }
+
+            for (nt, rules) in self.productions.iter() {
+                if nt.non_terminal == self.root {
+                    continue;
+                }
+
+                writeln!(f, "<{:?}> ::= {}\n", nt, rules)?;
+            }
+
+        Ok(())
+    }
+    }
+
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -301,6 +329,26 @@ where
 
     pub fn create_linear_classifier<B: Backend>(&self, embedding_dim: u32, device: &B::Device) -> impl Module<B> {
         nn::LinearConfig::new(embedding_dim as usize, self.items.len()).with_bias(true).init(device)
+    }
+}
+
+impl<T, I> Display for Production<T, I> 
+where
+    T: Terminal,
+    I: NonTerminal, 
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, item) in self.items.iter().enumerate() {
+            if i == self.items.len() - 1 {
+                write!(f, " {}", item)?;
+            } else if i == 0 {
+                write!(f, "{} |", item)?;
+            } else {
+                write!(f, " {} |", item)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -459,6 +507,20 @@ where
     }
 }
 
+impl<T, I> Display for ProductionRule<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+         for item in self.items.iter() {
+            write!(f, "{}", item)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl<T, I> Debug for ProductionRule<T, I>
 where
     T: Terminal,
@@ -487,11 +549,18 @@ where
     Epsilon,
 }
 
-impl<T, I> GrammarElement<T, I>
+impl<T, I> Display for GrammarElement<T, I>
 where
     T: Terminal,
     I: NonTerminal,
 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Terminal(t) => write!(f, "'{:?}'", t),
+            Self::NonTerminal(nt) => write!(f, "<{:?}>", nt),
+            Self::Epsilon => write!(f, "'ε'"),
+        }
+    }
 }
 
 impl<T, I> Debug for GrammarElement<T, I>
@@ -544,7 +613,7 @@ where
 
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman 
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
-    pub fn extract_words_wl_kernel(&self, iterations: u16) -> Vec<u64> {
+    pub fn extract_words_wl_kernel(&self, degree: u16) -> Vec<u64> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
         let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
@@ -558,7 +627,7 @@ where
         let mut found_features: Vec<u64>
         = node_features_old.values().map(|u| *u).collect();
 
-        for _ in 0..iterations {
+        for _ in 0..degree {
             for node in nodes.iter() {
                 let mut hasher = city::Hasher64::new();
 
