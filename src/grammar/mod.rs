@@ -132,6 +132,9 @@ where
         Ok(program)
     }
 
+    /// Deprecated: use to generate raw program outputs directly rather
+    /// than constructing ASTs.
+    #[deprecated(note = "Please use generate_program_instance to generate ASTs which can then be serialized to output programs. ")]
     pub fn generate_program(
         &self,
         expander: &mut dyn GrammarExpander<T, I>,
@@ -146,12 +149,16 @@ where
             None => return Err("no root non-terminal/production found".into()),
         };
 
+        #[allow(deprecated)]
         match self.generate_recursive(&mut output, prod, expander) {
             Ok(_) => Ok(output),
             Err(e) => Err(e),
         }
     }
 
+    /// Deprecated: use to generate raw program outputs directly rather
+    /// than constructing ASTs.
+    #[deprecated()]
     fn generate_recursive(
         &self,
         output: &mut Vec<u8>,
