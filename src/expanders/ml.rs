@@ -23,7 +23,7 @@ use burn::{
     nn::{Linear, LinearConfig},
     prelude::Backend,
     record::{BinGzFileRecorder, FullPrecisionSettings},
-    tensor::{activation::softmax, Device, Tensor},
+    tensor::{activation::log_softmax, Device, Tensor},
 };
 
 use crate::{
@@ -117,7 +117,7 @@ where
         if let Some(model) = self.production_to_model.get(&production) {
             let distribution = match model {
                 ModuleWrapper::Linear(linear) => {
-                    softmax(linear.forward(Tensor::<B, 1>::ones([128], &self.dev)), 0)
+                    log_softmax(linear.forward(Tensor::<B, 1>::ones([128], &self.dev)), 0)
                 }
             }
             .to_data()
