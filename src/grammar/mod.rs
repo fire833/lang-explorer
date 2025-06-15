@@ -599,6 +599,10 @@ where
     children: Vec<ProgramInstance<T, I>>,
 }
 
+pub enum WLKernelHashingOrder {
+    SelfChildrenOrdered,    
+}
+
 impl<T, I> ProgramInstance<T, I>
 where
     T: Terminal,
@@ -620,7 +624,7 @@ where
 
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman 
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
-    pub fn extract_words_wl_kernel(&self, degree: u16) -> Vec<u64> {
+    pub fn extract_words_wl_kernel(&self, degree: u16, ordering: WLKernelHashingOrder) -> Vec<u64> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
         let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
@@ -638,17 +642,23 @@ where
             for node in nodes.iter() {
                 let mut hasher = city::Hasher64::new();
 
-                // Write the current node into the hasher.
-                hasher.write(node.serialize_bytes().as_slice());
+                let new_label = match ordering {
+                    WLKernelHashingOrder::SelfChildrenOrdered => {
+                        // Write the current node into the hasher.
+                        hasher.write(node.serialize_bytes().as_slice());
 
-                let mut child_values: Vec<u64> = node.children.iter().map(|child| node_features_old.get(child).unwrap()).map(|v| *v).collect();
+                        let mut child_values: Vec<u64> = node.children.iter().map(|child| node_features_old.get(child).unwrap()).map(|v| *v).collect();
 
-                child_values.sort();
+                        child_values.sort();
 
-                // Write each child's feature value into the hash as well.
-                child_values.iter().for_each(|child| hasher.write(&child.to_ne_bytes()));
+                        // Write each child's feature value into the hash as well.
+                        child_values.iter().for_each(|child| hasher.write(&child.to_ne_bytes()));
 
-                node_features_new.insert(node, hasher.finish());
+                        hasher.finish()
+                    },
+                };
+                
+                node_features_new.insert(node, new_label);
             }
 
             node_features_new.values().for_each(|v| found_features.push(*v));
@@ -731,7 +741,7 @@ fn test_extract_words_wl_kernel() {
     let mut program = ProgramInstance::new(FOO);
     program.set_children(vec![ProgramInstance::new(BAR), ProgramInstance::new(BAZ), ProgramInstance::new(FOO)]);
 
-    let words = program.extract_words_wl_kernel(3);
+    let words = program.extract_words_wl_kernel(3, WLKernelHashingOrder::SelfChildrenOrdered);
     println!("{:?}", words);
 }
 
