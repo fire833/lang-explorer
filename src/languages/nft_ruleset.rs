@@ -39,9 +39,9 @@ terminal_str!(ADDRESS_FAMILY_ARP, "arp");
 terminal_str!(ADDRESS_FAMILY_BRIDGE, "bridge");
 terminal_str!(ADDRESS_FAMILY_NETDEV, "netdev");
 
-pub struct NFTRulesetLanguage {}
+pub struct NFTRulesetLanguage;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct NFTRulesetParams {}
 
 impl GrammarBuilder for NFTRulesetLanguage {

@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
 use clap::ValueEnum;
@@ -64,6 +64,18 @@ where
 pub enum ExpanderWrapper {
     MonteCarlo,
     ML,
+}
+
+impl FromStr for ExpanderWrapper {
+    type Err = LangExplorerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "mc" | "montecarlo" => Ok(Self::MonteCarlo),
+            "ml" => Ok(Self::ML),
+            _ => Err(LangExplorerError::General("invalid expander string".into())),
+        }
+    }
 }
 
 impl Display for ExpanderWrapper {

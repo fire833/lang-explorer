@@ -32,8 +32,9 @@ nterminal_str!(S, "S");
 terminal_str!(A, "a");
 terminal_str!(B, "b");
 
-pub struct ToyLanguage {}
+pub struct ToyLanguage;
 
+#[derive(Debug, Clone, Default)]
 pub struct ToyLanguageParams {}
 
 impl GrammarBuilder for ToyLanguage {

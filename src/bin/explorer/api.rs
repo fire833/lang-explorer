@@ -21,13 +21,17 @@ use std::{
     str::FromStr,
 };
 
+use lang_explorer::{
+    expanders::ExpanderWrapper,
+    languages::{GenerateParams, LanguageWrapper},
+};
 use warp::{reply::reply, Filter};
-
-use crate::glue::GenerateParams;
 
 pub async fn start_server(addr: &str, port: u16) {
     let get_local_vpn = warp::post()
-        .and(warp::path!("v1" / "generate"))
+        .and(warp::path!(
+            "v1" / "generate" / LanguageWrapper / ExpanderWrapper
+        ))
         .and(warp::path::end())
         .and(warp::body::json::<GenerateParams>())
         .and_then(generate);
@@ -42,6 +46,10 @@ pub async fn start_server(addr: &str, port: u16) {
         .await;
 }
 
-async fn generate(_params: GenerateParams) -> Result<impl warp::Reply, warp::Rejection> {
+async fn generate(
+    _language: LanguageWrapper,
+    _expander: ExpanderWrapper,
+    _params: GenerateParams,
+) -> Result<impl warp::Reply, warp::Rejection> {
     Ok(reply())
 }

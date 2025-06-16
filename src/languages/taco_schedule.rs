@@ -74,9 +74,9 @@ terminal_str!(PARALLELIZE_RACE_ATOMICS, "Atomics");
 terminal_str!(PARALLELIZE_RACE_TEMP, "Temporary");
 terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
-pub struct TacoScheduleLanguage {}
+pub struct TacoScheduleLanguage;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct TacoScheduleLanguageParams {
     index_variables: Vec<StringValue>,
     workspace_index_variables: Vec<StringValue>,

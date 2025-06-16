@@ -22,8 +22,9 @@ use crate::{
     languages::{strings::StringValue, GrammarBuilder},
 };
 
-pub struct SpiralLanguage {}
+pub struct SpiralLanguage;
 
+#[derive(Debug, Clone, Default)]
 pub struct SpiralLanguageParams {}
 
 impl GrammarBuilder for SpiralLanguage {

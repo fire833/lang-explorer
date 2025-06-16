@@ -16,8 +16,12 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::fmt::Display;
+
 use lang_explorer::{
-    errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
+    errors::LangExplorerError,
+    expanders::ExpanderWrapper,
+    languages::{GenerateSubcommand, LanguageWrapper},
 };
 
 use crate::api;
@@ -91,22 +95,6 @@ pub enum Subcommand {
         #[arg(short, long, default_value_t = default_port())]
         port: u16,
     },
-}
-
-#[derive(clap::Subcommand)]
-pub enum GenerateSubcommand {
-    /// Generate one or more program instances using the given expander.
-    #[command()]
-    Program,
-
-    /// Generate a BNF grammar of the given language with the given input parameters.
-    #[command()]
-    Grammar,
-
-    /// Generate a new program, but also return extracted subgraphs/features
-    /// for use in downstream embeddings work.
-    #[command()]
-    ProgramWithFeatures,
 }
 
 fn default_bind_addr() -> String {

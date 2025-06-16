@@ -350,15 +350,9 @@ terminal_str!(BEFORE, "before");
 terminal_str!(AFTER, "after");
 terminal_str!(SELECTION, "selection");
 
-pub struct CSSLanguage {}
+pub struct CSSLanguage;
 
-impl CSSLanguage {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct CSSLanguageParameters {
     classes: Vec<StringValue>,
     ids: Vec<StringValue>,

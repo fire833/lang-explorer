@@ -41,8 +41,9 @@ nterminal_str!(SYMBOL, "symbol");
 nterminal_str!(NT_INDEX, "index");
 nterminal_str!(INDEX, "index");
 
-pub struct TacoExpressionLanguage {}
+pub struct TacoExpressionLanguage;
 
+#[derive(Debug, Clone, Default)]
 pub struct TacoExpressionLanguageParams {}
 
 impl GrammarBuilder for TacoExpressionLanguage {

@@ -16,9 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use clap::ValueEnum;
+use serde::{de::Visitor, Deserialize, Serialize};
 
 use crate::{
     errors::LangExplorerError,
@@ -51,7 +52,7 @@ pub trait Language: GrammarBuilder + Evaluator {}
 pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
-    type Params;
+    type Params: Default;
 
     fn generate_grammar(
         &self,
@@ -61,13 +62,30 @@ pub trait GrammarBuilder {
 
 /// Enumeration of all supported languages currently within lang-explorer.
 /// This will almost certainly grow and change with time.
-#[derive(Clone, Copy, ValueEnum)]
+#[derive(Clone, ValueEnum)]
 pub enum LanguageWrapper {
     CSS,
     NFT,
     Spiral,
     TacoExpression,
     TacoSchedule,
+}
+
+impl FromStr for LanguageWrapper {
+    type Err = LangExplorerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "css" => Ok(Self::CSS),
+            "nft" => Ok(Self::NFT),
+            "spiral" => Ok(Self::Spiral),
+            "tacoexpr" => Ok(Self::TacoExpression),
+            "tacosched" => Ok(Self::TacoSchedule),
+            _ => Err(LangExplorerError::General(
+                "invalid language value provided".into(),
+            )),
+        }
+    }
 }
 
 impl Display for LanguageWrapper {
@@ -82,4 +100,95 @@ impl Display for LanguageWrapper {
     }
 }
 
-impl LanguageWrapper {}
+#[derive(Debug, clap::Subcommand)]
+pub enum GenerateSubcommand {
+    /// Generate one or more program instances using the given expander.
+    #[command()]
+    Program,
+
+    /// Generate a BNF grammar of the given language with the given input parameters.
+    #[command()]
+    Grammar,
+
+    /// Generate a new program, but also return extracted subgraphs/features
+    /// for use in downstream embeddings work.
+    #[command()]
+    ProgramWithFeatures,
+}
+
+impl Serialize for GenerateSubcommand {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(format!("{}", self).as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for GenerateSubcommand {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(SubcommandVisitor)
+    }
+}
+
+struct SubcommandVisitor;
+
+impl<'de> Visitor<'de> for SubcommandVisitor {
+    type Value = GenerateSubcommand;
+
+    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "either of the strings 'program', 'grammar', or 'progwfeat'"
+        )
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        match GenerateSubcommand::from_str(v.as_str()) {
+            Ok(s) => Ok(s),
+            Err(_) => Err(E::custom(
+                "value must be one of 'program', 'grammar', or 'progwfeat'",
+            )),
+        }
+    }
+}
+
+impl FromStr for GenerateSubcommand {
+    type Err = LangExplorerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "program" => Ok(Self::Program),
+            "grammar" => Ok(Self::Grammar),
+            "progwfeat" | "programwithfeat" => Ok(Self::ProgramWithFeatures),
+            _ => Err(LangExplorerError::General(
+                "invalid generate operation string".into(),
+            )),
+        }
+    }
+}
+
+impl Display for GenerateSubcommand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Program => write!(f, "program"),
+            Self::Grammar => write!(f, "grammar"),
+            Self::ProgramWithFeatures => write!(f, "programfeatures"),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GenerateParams {
+    #[serde(alias = "operation")]
+    op: GenerateSubcommand,
+
+    #[serde(alias = "count")]
+    count: u64,
+}
