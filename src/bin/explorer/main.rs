@@ -18,7 +18,7 @@
 
 mod api;
 mod cli;
-mod generate;
+mod glue;
 
 use clap::Parser;
 use lang_explorer::errors::LangExplorerError;

@@ -23,9 +23,9 @@ use std::{
 
 use warp::{reply::reply, Filter};
 
-use crate::generate::GenerateParams;
+use crate::glue::GenerateParams;
 
-pub async fn start_server(port: u16) {
+pub async fn start_server(addr: &str, port: u16) {
     let get_local_vpn = warp::post()
         .and(warp::path!("v1" / "generate"))
         .and(warp::path::end())
@@ -36,7 +36,7 @@ pub async fn start_server(port: u16) {
 
     warp::serve(routes)
         .run(SocketAddr::V4(SocketAddrV4::new(
-            Ipv4Addr::from_str("0.0.0.0").expect("invalid bind ip address"),
+            Ipv4Addr::from_str(addr).expect("invalid bind ip address"),
             port,
         )))
         .await;

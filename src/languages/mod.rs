@@ -16,6 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::fmt::Display;
+
+use clap::ValueEnum;
+
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -57,12 +61,25 @@ pub trait GrammarBuilder {
 
 /// Enumeration of all supported languages currently within lang-explorer.
 /// This will almost certainly grow and change with time.
+#[derive(Clone, Copy, ValueEnum)]
 pub enum LanguageWrapper {
     CSS,
     NFT,
     Spiral,
     TacoExpression,
     TacoSchedule,
+}
+
+impl Display for LanguageWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::CSS => write!(f, "css"),
+            Self::NFT => write!(f, "nft"),
+            Self::Spiral => write!(f, "spiral"),
+            Self::TacoExpression => write!(f, "tacoexpr"),
+            Self::TacoSchedule => write!(f, "tacosched"),
+        }
+    }
 }
 
 impl LanguageWrapper {}

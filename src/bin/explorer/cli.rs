@@ -16,7 +16,9 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use lang_explorer::errors::LangExplorerError;
+use lang_explorer::{
+    errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
+};
 
 use crate::api;
 
@@ -32,8 +34,19 @@ impl LangExplorerArgs {
             Some(cmd) => match cmd {
                 Subcommand::Explore => todo!(),
                 Subcommand::MPIExplore => todo!(),
-                Subcommand::Generate {} => todo!(),
-                Subcommand::Serve { port } => Ok(api::start_server(*port).await),
+                Subcommand::Generate {
+                    cmd,
+                    language,
+                    expander,
+                    count,
+                } => match cmd {
+                    GenerateSubcommand::Program => todo!(),
+                    GenerateSubcommand::Grammar => todo!(),
+                    GenerateSubcommand::ProgramWithFeatures => todo!(),
+                },
+                Subcommand::Serve { address, port } => {
+                    Ok(api::start_server(address.as_str(), *port).await)
+                }
             },
             None => return Err("no command provided".into()),
         }
@@ -53,14 +66,53 @@ pub enum Subcommand {
     /// Generate a new program in a given language from
     /// a given specification with a given expander.
     #[command()]
-    Generate {},
+    Generate {
+        #[command(subcommand)]
+        cmd: GenerateSubcommand,
+
+        #[arg(short, long, value_enum)]
+        language: LanguageWrapper,
+
+        #[arg(short, long, value_enum)]
+        expander: ExpanderWrapper,
+
+        #[arg(short, long, default_value_t = 1)]
+        count: u64,
+    },
 
     /// Run an API server to handle requests for
     /// generated programs.
     #[command()]
     Serve {
+        /// Specify the address to bind to.
+        #[arg(short, long, default_value_t = default_bind_addr())]
+        address: String,
         /// Specify the port to listen on for the server.
-        #[arg(short, long)]
+        #[arg(short, long, default_value_t = default_port())]
         port: u16,
     },
+}
+
+#[derive(clap::Subcommand)]
+pub enum GenerateSubcommand {
+    /// Generate one or more program instances using the given expander.
+    #[command()]
+    Program,
+
+    /// Generate a BNF grammar of the given language with the given input parameters.
+    #[command()]
+    Grammar,
+
+    /// Generate a new program, but also return extracted subgraphs/features
+    /// for use in downstream embeddings work.
+    #[command()]
+    ProgramWithFeatures,
+}
+
+fn default_bind_addr() -> String {
+    "0.0.0.0".into()
+}
+
+fn default_port() -> u16 {
+    8080
 }

@@ -16,7 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::fmt::Display;
+
 use async_trait::async_trait;
+use clap::ValueEnum;
 
 use crate::{
     errors::LangExplorerError,
@@ -53,4 +56,21 @@ where
         grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I>;
+}
+
+/// Enumeration of all supported expanders currently within lang-explorer.
+/// This will almost certainly grow and change with time.
+#[derive(Clone, Copy, ValueEnum)]
+pub enum ExpanderWrapper {
+    MonteCarlo,
+    ML,
+}
+
+impl Display for ExpanderWrapper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MonteCarlo => write!(f, "montecarlo"),
+            Self::ML => write!(f, "ml"),
+        }
+    }
 }
