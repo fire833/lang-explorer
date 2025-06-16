@@ -30,6 +30,7 @@ use crate::{
 pub mod css;
 pub mod nft_ruleset;
 pub mod parsers;
+pub mod spice;
 pub mod spiral;
 pub mod strings;
 pub mod taco_expression;
@@ -69,6 +70,7 @@ pub enum LanguageWrapper {
     Spiral,
     TacoExpression,
     TacoSchedule,
+    Spice,
 }
 
 impl FromStr for LanguageWrapper {
@@ -81,6 +83,7 @@ impl FromStr for LanguageWrapper {
             "spiral" => Ok(Self::Spiral),
             "tacoexpr" => Ok(Self::TacoExpression),
             "tacosched" => Ok(Self::TacoSchedule),
+            "spice" => Ok(Self::Spice),
             _ => Err(LangExplorerError::General(
                 "invalid language value provided".into(),
             )),
@@ -96,6 +99,7 @@ impl Display for LanguageWrapper {
             Self::Spiral => write!(f, "spiral"),
             Self::TacoExpression => write!(f, "tacoexpr"),
             Self::TacoSchedule => write!(f, "tacosched"),
+            Self::Spice => write!(f, "spice"),
         }
     }
 }
