@@ -41,12 +41,18 @@ terminal_str!(ADDRESS_FAMILY_NETDEV, "netdev");
 
 pub struct NFTRulesetLanguage {}
 
+#[derive(Debug)]
+pub struct NFTRulesetParams {}
+
 impl GrammarBuilder for NFTRulesetLanguage {
     type Term = StringValue;
-
     type NTerm = StringValue;
+    type Params = NFTRulesetParams;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar(
+        &self,
+        _params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         todo!()
     }
 }

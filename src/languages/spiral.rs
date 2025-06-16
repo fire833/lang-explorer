@@ -24,11 +24,17 @@ use crate::{
 
 pub struct SpiralLanguage {}
 
+pub struct SpiralLanguageParams {}
+
 impl GrammarBuilder for SpiralLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
+    type Params = SpiralLanguageParams;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar(
+        &self,
+        _params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         todo!()
     }
 }

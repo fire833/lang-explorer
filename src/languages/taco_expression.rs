@@ -43,11 +43,17 @@ nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage {}
 
+pub struct TacoExpressionLanguageParams {}
+
 impl GrammarBuilder for TacoExpressionLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
+    type Params = TacoExpressionLanguageParams;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar(
+        &self,
+        _params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         let grammar = Grammar::new(
             "entrypoint".into(),
             vec![

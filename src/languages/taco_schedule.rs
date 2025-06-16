@@ -74,7 +74,10 @@ terminal_str!(PARALLELIZE_RACE_ATOMICS, "Atomics");
 terminal_str!(PARALLELIZE_RACE_TEMP, "Temporary");
 terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
-pub struct TacoScheduleLanguage {
+pub struct TacoScheduleLanguage {}
+
+#[derive(Debug)]
+pub struct TacoScheduleLanguageParams {
     index_variables: Vec<StringValue>,
     workspace_index_variables: Vec<StringValue>,
     fused_index_variables: Vec<StringValue>,
@@ -83,7 +86,7 @@ pub struct TacoScheduleLanguage {
     unroll_factor_variables: Vec<StringValue>,
 }
 
-impl TacoScheduleLanguage {
+impl TacoScheduleLanguageParams {
     pub fn new(
         index_variables: Vec<StringValue>,
         workspace_index_variables: Vec<StringValue>,
@@ -103,46 +106,48 @@ impl TacoScheduleLanguage {
     }
 }
 
-// impl Language for TacoLanguage {}
-
 impl GrammarBuilder for TacoScheduleLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
+    type Params = TacoScheduleLanguageParams;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar(
+        &self,
+        params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         let mut index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.index_variables.iter() {
+        for var in params.index_variables.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.clone());
             index_productions.push(production_rule!(term));
         }
 
         let mut workspace_index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.workspace_index_variables.iter() {
+        for var in params.workspace_index_variables.iter() {
             let term = GrammarElement::Terminal(var.clone());
             workspace_index_productions.push(production_rule!(term));
         }
 
         let mut fused_index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.fused_index_variables.iter() {
+        for var in params.fused_index_variables.iter() {
             let term = GrammarElement::Terminal(var.clone());
             fused_index_productions.push(production_rule!(term));
         }
 
         let mut split_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.split_factor_variables.iter() {
+        for var in params.split_factor_variables.iter() {
             let term = GrammarElement::Terminal(var.clone());
             split_factor_productions.push(production_rule!(term));
         }
 
         let mut divide_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.divide_factor_variables.iter() {
+        for var in params.divide_factor_variables.iter() {
             let term = GrammarElement::Terminal(var.clone());
             divide_factor_productions.push(production_rule!(term));
         }
 
         let mut unroll_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.unroll_factor_variables.iter() {
+        for var in params.unroll_factor_variables.iter() {
             let term = GrammarElement::Terminal(var.clone());
             unroll_factor_productions.push(production_rule!(term));
         }

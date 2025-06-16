@@ -84,6 +84,7 @@ macro_rules! terminal_str {
              GrammarElement::Terminal(StringValue::from_static_str($s));
      };
  }
+use serde::Deserialize;
 pub(crate) use terminal_str;
 
 macro_rules! nterminal_str {

@@ -47,6 +47,22 @@ pub trait Language: GrammarBuilder + Evaluator {}
 pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
+    type Params;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
+    fn generate_grammar(
+        &self,
+        params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
 }
+
+/// Enumeration of all supported languages currently within lang-explorer.
+/// This will almost certainly grow and change with time.
+pub enum LanguageWrapper {
+    CSS,
+    NFT,
+    Spiral,
+    TacoExpression,
+    TacoSchedule,
+}
+
+impl LanguageWrapper {}

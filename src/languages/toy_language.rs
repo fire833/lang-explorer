@@ -34,11 +34,17 @@ terminal_str!(B, "b");
 
 pub struct ToyLanguage {}
 
+pub struct ToyLanguageParams {}
+
 impl GrammarBuilder for ToyLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
+    type Params = ToyLanguageParams;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar(
+        &self,
+        _params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         Ok(Grammar::new(
             "S".into(),
             vec![Production::new(

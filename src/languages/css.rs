@@ -350,31 +350,38 @@ terminal_str!(BEFORE, "before");
 terminal_str!(AFTER, "after");
 terminal_str!(SELECTION, "selection");
 
-pub struct CSSLanguage {
-    classes: Vec<StringValue>,
-    ids: Vec<StringValue>,
-}
+pub struct CSSLanguage {}
 
 impl CSSLanguage {
-    pub fn new(classes: Vec<StringValue>, ids: Vec<StringValue>) -> Self {
-        Self { classes, ids }
+    pub fn new() -> Self {
+        Self {}
     }
+}
+
+#[derive(Debug)]
+pub struct CSSLanguageParameters {
+    classes: Vec<StringValue>,
+    ids: Vec<StringValue>,
 }
 
 impl GrammarBuilder for CSSLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
+    type Params = CSSLanguageParameters;
 
-    fn generate_grammar(&self) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar(
+        &self,
+        params: Self::Params,
+    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         let mut classes: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.classes.iter() {
+        for var in params.classes.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.clone());
             classes.push(production_rule!(term));
         }
 
         let mut ids: Vec<ProductionRule<StringValue, StringValue>> = vec![];
-        for var in self.ids.iter() {
+        for var in params.ids.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.clone());
             ids.push(production_rule!(term));

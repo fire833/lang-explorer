@@ -22,10 +22,6 @@ use crate::api;
 
 #[derive(clap::Parser)]
 pub struct LangExplorerArgs {
-    /// Specify the port to listen on for the server.
-    #[arg(short, long)]
-    port: u16,
-
     #[command(subcommand)]
     cmd: Option<Subcommand>,
 }
@@ -36,8 +32,8 @@ impl LangExplorerArgs {
             Some(cmd) => match cmd {
                 Subcommand::Explore => todo!(),
                 Subcommand::MPIExplore => todo!(),
-                Subcommand::Generate => todo!(),
-                Subcommand::Serve => Ok(api::start_server(self.port).await),
+                Subcommand::Generate {} => todo!(),
+                Subcommand::Serve { port } => Ok(api::start_server(*port).await),
             },
             None => return Err("no command provided".into()),
         }
@@ -57,10 +53,14 @@ pub enum Subcommand {
     /// Generate a new program in a given language from
     /// a given specification with a given expander.
     #[command()]
-    Generate,
+    Generate {},
 
     /// Run an API server to handle requests for
     /// generated programs.
     #[command()]
-    Serve,
+    Serve {
+        /// Specify the port to listen on for the server.
+        #[arg(short, long)]
+        port: u16,
+    },
 }
