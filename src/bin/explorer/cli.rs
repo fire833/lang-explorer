@@ -16,8 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::Display;
-
 use lang_explorer::{
     errors::LangExplorerError,
     expanders::ExpanderWrapper,

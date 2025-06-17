@@ -25,7 +25,12 @@ use lang_explorer::{
     expanders::ExpanderWrapper,
     languages::{GenerateParams, LanguageWrapper},
 };
-use warp::{reply::reply, Filter};
+use serde::{Deserialize, Serialize};
+use warp::{
+    http::StatusCode,
+    reply::{Json, WithStatus},
+    Filter,
+};
 
 pub async fn start_server(addr: &str, port: u16) {
     let get_local_vpn = warp::post()
@@ -36,7 +41,19 @@ pub async fn start_server(addr: &str, port: u16) {
         .and(warp::body::json::<GenerateParams>())
         .and_then(generate);
 
-    let routes = get_local_vpn;
+    let health = warp::get()
+        .and(warp::path!("readyz"))
+        .or(warp::path!("livez"))
+        .and(warp::path::end())
+        .map(|_item| ready_ok());
+
+    let any_handler = warp::any().map(|| not_found());
+
+    let routes = get_local_vpn.or(health).or(any_handler).with(
+        warp::cors()
+            .allow_any_origin()
+            .allow_methods(vec!["POST", "GET"]),
+    );
 
     warp::serve(routes)
         .run(SocketAddr::V4(SocketAddrV4::new(
@@ -47,9 +64,86 @@ pub async fn start_server(addr: &str, port: u16) {
 }
 
 async fn generate(
-    _language: LanguageWrapper,
-    _expander: ExpanderWrapper,
-    _params: GenerateParams,
+    language: LanguageWrapper,
+    expander: ExpanderWrapper,
+    params: GenerateParams,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    Ok(reply())
+    match params.execute(language, expander) {
+        Ok(resp) => Ok(warp::reply::with_status(
+            warp::reply::json(&resp),
+            StatusCode::OK,
+        )),
+        Err(e) => Ok(invalid_request(e.to_string())),
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ErrorMessage {
+    code: u16,
+    message: String,
+}
+
+impl ErrorMessage {
+    #[allow(unused)]
+    fn new(code: u16, message: &str) -> Self {
+        Self {
+            code,
+            message: message.to_string(),
+        }
+    }
+
+    fn new_from_string(code: u16, message: String) -> Self {
+        Self { code, message }
+    }
+}
+
+fn not_found() -> WithStatus<Json> {
+    let code = StatusCode::NOT_FOUND;
+    warp::reply::with_status(
+        warp::reply::json(&ErrorMessage::new(code.into(), "resource not found")),
+        code,
+    )
+}
+
+fn ready_ok() -> WithStatus<Json> {
+    let code = StatusCode::OK;
+    warp::reply::with_status(
+        warp::reply::json(&ErrorMessage::new(code.into(), "application is ready")),
+        code,
+    )
+}
+
+#[allow(unused)]
+fn invalid_authorization() -> WithStatus<Json> {
+    let code = StatusCode::UNAUTHORIZED;
+    warp::reply::with_status(
+        warp::reply::json(&ErrorMessage::new(
+            code.into(),
+            "invalid authorization credentials provided",
+        )),
+        code,
+    )
+}
+
+fn invalid_request(err: String) -> WithStatus<Json> {
+    let code = StatusCode::BAD_REQUEST;
+    warp::reply::with_status(
+        warp::reply::json(&ErrorMessage::new_from_string(
+            code.into(),
+            format!("invalid request: {}", err),
+        )),
+        code,
+    )
+}
+
+#[allow(unused)]
+fn internal_error(err: String) -> WithStatus<Json> {
+    let code = StatusCode::INTERNAL_SERVER_ERROR;
+    warp::reply::with_status(
+        warp::reply::json(&ErrorMessage::new_from_string(
+            code.into(),
+            format!("unable to execute request: {}", err),
+        )),
+        code,
+    )
 }

@@ -25,7 +25,7 @@ use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
     expanders::ExpanderWrapper,
-    grammar::{Grammar, NonTerminal, ProgramInstance, Terminal},
+    grammar::{Grammar, NonTerminal, Terminal},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
@@ -198,7 +198,7 @@ impl Display for GenerateSubcommand {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateParams {
-    #[serde(alias = "operation")]
+    #[serde(alias = "operation", default = "default_op")]
     op: GenerateSubcommand,
 
     #[serde(alias = "css")]
@@ -219,17 +219,25 @@ pub struct GenerateParams {
     #[serde(alias = "taco_schedule")]
     taco_sched: TacoScheduleLanguageParams,
 
-    #[serde(alias = "count")]
+    #[serde(alias = "count", default = "default_count")]
     count: u64,
 }
 
+fn default_count() -> u64 {
+    1
+}
+
+fn default_op() -> GenerateSubcommand {
+    GenerateSubcommand::Program
+}
+
 impl GenerateParams {
-    fn execute(
+    pub fn execute(
         self,
         language: LanguageWrapper,
-        expander: ExpanderWrapper,
+        _expander: ExpanderWrapper,
     ) -> Result<GenerateResults, LangExplorerError> {
-        let grammar = match language {
+        let _grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
             LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
             LanguageWrapper::Spiral => SpiralLanguage::generate_grammar(self.spiral),
@@ -242,12 +250,18 @@ impl GenerateParams {
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
         }?;
 
+        // let expander = match expander {
+        //     ExpanderWrapper::MonteCarlo => MonteCarloExpander::new(),
+        //     ExpanderWrapper::ML => LearnedExpander::new(),
+        // };
+
         match self.op {
-            GenerateSubcommand::Program => todo!(),
-            GenerateSubcommand::Grammar => todo!(),
-            GenerateSubcommand::ProgramWithFeatures => todo!(),
+            GenerateSubcommand::Program => Ok(GenerateResults {}),
+            GenerateSubcommand::Grammar => Ok(GenerateResults {}),
+            GenerateSubcommand::ProgramWithFeatures => Ok(GenerateResults {}),
         }
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateResults {}
