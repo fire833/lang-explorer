@@ -25,7 +25,7 @@ use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
     expanders::{mc::MonteCarloExpander, ExpanderWrapper, GrammarExpander},
-    grammar::{Grammar, NonTerminal, Terminal, WLKernelHashingOrder},
+    grammar::{BinarySerialize, Grammar, NonTerminal, Terminal, WLKernelHashingOrder},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
@@ -268,7 +268,9 @@ impl GenerateParams {
         let mut programs = vec![];
         let mut features = vec![];
 
-        if self.op == GenerateSubcommand::Program {
+        if self.op == GenerateSubcommand::Program
+            || self.op == GenerateSubcommand::ProgramWithFeatures
+        {
             for _ in 0..self.count {
                 match grammar.generate_program_instance(&mut expander) {
                     Ok(prog) => {
@@ -279,7 +281,7 @@ impl GenerateParams {
                             ));
                         }
 
-                        match String::from_utf8(prog.serialize_bytes()) {
+                        match String::from_utf8(prog.serialize()) {
                             Ok(data) => programs.push(data),
                             Err(e) => return Err(e.into()),
                         }
@@ -288,6 +290,12 @@ impl GenerateParams {
                 }
             }
         }
+
+        println!(
+            "generated {} programs and {} features",
+            programs.len(),
+            features.len()
+        );
 
         match self.op {
             GenerateSubcommand::Program => Ok(GenerateResults {
