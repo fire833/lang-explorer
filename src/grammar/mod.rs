@@ -741,11 +741,12 @@ fn test_extract_words_wl_kernel() {
     nterminal_str!(FOO, "foo");
     nterminal_str!(BAR, "bar");
     nterminal_str!(BAZ, "baz");
+    nterminal_str!(BUZZ, "buzz");
 
     let mut program = ProgramInstance::new(FOO);
-    program.set_children(vec![ProgramInstance::new(BAR), ProgramInstance::new(BAZ), ProgramInstance::new(FOO)]);
+    program.set_children(vec![ProgramInstance::new(BAR), ProgramInstance::new(BAZ), ProgramInstance::new(FOO), ProgramInstance::new(BUZZ)]);
 
-    let words = program.extract_words_wl_kernel(3, WLKernelHashingOrder::SelfChildrenOrdered);
+    let words = program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenOrdered);
     println!("{:?}", words);
 }
 
@@ -799,7 +800,7 @@ where
     I: NonTerminal,
 {}
 
-impl <T, I> Hash for ProgramInstance<T, I> 
+impl<T, I> Hash for ProgramInstance<T, I> 
 where
 T: Terminal,
 I: NonTerminal,
@@ -809,6 +810,19 @@ I: NonTerminal,
         // This will probably also come back to bite me, will most 
         // likely need to be changed because I can't keep hashing the 
         // entirety of these massive trees.
-        self.children.hash(state);
+        //
+        // Follow up: Don't really know what to do about this right now.
+        // 
+        // self.children.hash(state);
+    }
+}
+
+impl<T, I> Debug for ProgramInstance<T, I> 
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.node)
     }
 }
