@@ -53,6 +53,22 @@ where
     strategy: SamplingStrategy,
 }
 
+impl<T, I, B> LearnedExpander<T, I, B>
+where
+    T: Terminal,
+    I: NonTerminal,
+    B: Backend,
+{
+    pub fn new() -> Self {
+        Self {
+            _recorder: BinGzFileRecorder::new(),
+            dev: Default::default(),
+            production_to_model: HashMap::new(),
+            strategy: SamplingStrategy::Random,
+        }
+    }
+}
+
 /// The different strategies for choosing the next expansion rule
 /// given the probability distribution from the model.
 pub enum SamplingStrategy {

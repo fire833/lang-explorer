@@ -24,13 +24,14 @@ use serde::{de::Visitor, Deserialize, Serialize};
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
-    expanders::ExpanderWrapper,
-    grammar::{Grammar, NonTerminal, Terminal},
+    expanders::{mc::MonteCarloExpander, ExpanderWrapper, GrammarExpander},
+    grammar::{Grammar, NonTerminal, Terminal, WLKernelHashingOrder},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
         spice::{SpiceLanguage, SpiceLanguageParams},
         spiral::{SpiralLanguage, SpiralLanguageParams},
+        strings::StringValue,
         taco_expression::{TacoExpressionLanguage, TacoExpressionLanguageParams},
         taco_schedule::{TacoScheduleLanguage, TacoScheduleLanguageParams},
     },
@@ -112,7 +113,7 @@ impl Display for LanguageWrapper {
     }
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(Debug, clap::Subcommand, PartialEq)]
 pub enum GenerateSubcommand {
     /// Generate one or more program instances using the given expander.
     #[command()]
@@ -221,10 +222,17 @@ pub struct GenerateParams {
 
     #[serde(alias = "count", default = "default_count")]
     count: u64,
+
+    #[serde(alias = "wl_degree", default = "default_wl_degree")]
+    wl_degree: u32,
 }
 
 fn default_count() -> u64 {
     1
+}
+
+fn default_wl_degree() -> u32 {
+    3
 }
 
 fn default_op() -> GenerateSubcommand {
@@ -235,9 +243,9 @@ impl GenerateParams {
     pub fn execute(
         self,
         language: LanguageWrapper,
-        _expander: ExpanderWrapper,
+        expander: ExpanderWrapper,
     ) -> Result<GenerateResults, LangExplorerError> {
-        let _grammar = match language {
+        let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
             LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
             LanguageWrapper::Spiral => SpiralLanguage::generate_grammar(self.spiral),
@@ -250,18 +258,67 @@ impl GenerateParams {
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
         }?;
 
-        // let expander = match expander {
-        //     ExpanderWrapper::MonteCarlo => MonteCarloExpander::new(),
-        //     ExpanderWrapper::ML => LearnedExpander::new(),
-        // };
+        let mut expander: Box<dyn GrammarExpander<StringValue, StringValue>> = match expander {
+            ExpanderWrapper::MonteCarlo => Box::new(MonteCarloExpander::new()),
+            ExpanderWrapper::ML => {
+                return Err(LangExplorerError::General(
+                    "ml method not implemented".into(),
+                ))
+            }
+        };
+
+        let mut programs = vec![];
+        let mut features = vec![];
+
+        if self.op == GenerateSubcommand::Program {
+            for _ in 0..self.count {
+                match grammar.generate_program_instance(&mut expander) {
+                    Ok(prog) => {
+                        if self.op == GenerateSubcommand::ProgramWithFeatures {
+                            features.push(prog.extract_words_wl_kernel(
+                                self.wl_degree,
+                                WLKernelHashingOrder::SelfChildrenOrdered,
+                            ));
+                        }
+
+                        match String::from_utf8(prog.serialize_bytes()) {
+                            Ok(data) => programs.push(data),
+                            Err(e) => return Err(e.into()),
+                        }
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+        }
 
         match self.op {
-            GenerateSubcommand::Program => Ok(GenerateResults {}),
-            GenerateSubcommand::Grammar => Ok(GenerateResults {}),
-            GenerateSubcommand::ProgramWithFeatures => Ok(GenerateResults {}),
+            GenerateSubcommand::Program => Ok(GenerateResults {
+                grammar: None,
+                programs: Some(programs),
+                features: None,
+            }),
+            GenerateSubcommand::Grammar => Ok(GenerateResults {
+                grammar: Some(format!("{}", grammar)),
+                programs: None,
+                features: None,
+            }),
+            GenerateSubcommand::ProgramWithFeatures => Ok(GenerateResults {
+                grammar: None,
+                programs: Some(programs),
+                features: Some(features),
+            }),
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GenerateResults {}
+pub struct GenerateResults {
+    #[serde(alias = "programs")]
+    programs: Option<Vec<String>>,
+
+    #[serde(alias = "features")]
+    features: Option<Vec<Vec<u64>>>,
+
+    #[serde(alias = "grammar")]
+    grammar: Option<String>,
+}

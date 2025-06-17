@@ -80,7 +80,7 @@ where
 
     pub fn generate_program_instance(
         &self,
-        expander: &mut dyn GrammarExpander<T, I>,
+        expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let prod = match self
             .productions
@@ -99,7 +99,7 @@ where
     fn generate_program_instance_recursive(
         &self,
         production: &Production<T, I>,
-        expander: &mut dyn GrammarExpander<T, I>,
+        expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let mut program = ProgramInstance::new(GrammarElement::NonTerminal(
             production.non_terminal.non_terminal.clone(),
@@ -600,7 +600,7 @@ where
 }
 
 pub enum WLKernelHashingOrder {
-    SelfChildrenOrdered,    
+    SelfChildrenOrdered,
 }
 
 impl<T, I> ProgramInstance<T, I>
@@ -624,7 +624,7 @@ where
 
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman 
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
-    pub fn extract_words_wl_kernel(&self, degree: u16, ordering: WLKernelHashingOrder) -> Vec<u64> {
+    pub fn extract_words_wl_kernel(&self, degree: u32, ordering: WLKernelHashingOrder) -> Vec<u64> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
         let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();

@@ -19,12 +19,14 @@
 use std::{
     fmt::{Debug, Display},
     io,
+    string::FromUtf8Error,
 };
 
 pub enum LangExplorerError {
     General(String),
     IOError(io::Error),
     CCError(cc::Error),
+    FromUtf8Error(FromUtf8Error),
 }
 
 impl Display for LangExplorerError {
@@ -33,6 +35,7 @@ impl Display for LangExplorerError {
             Self::General(e) => write!(f, "{}", e),
             Self::IOError(e) => write!(f, "io: {}", e),
             Self::CCError(e) => write!(f, "cc: {}", e),
+            Self::FromUtf8Error(e) => write!(f, "utf8: {}", e),
         }
     }
 }
@@ -64,5 +67,11 @@ impl From<io::Error> for LangExplorerError {
 impl From<cc::Error> for LangExplorerError {
     fn from(value: cc::Error) -> Self {
         Self::CCError(value)
+    }
+}
+
+impl From<FromUtf8Error> for LangExplorerError {
+    fn from(value: FromUtf8Error) -> Self {
+        Self::FromUtf8Error(value)
     }
 }
