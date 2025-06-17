@@ -28,6 +28,7 @@ use lang_explorer::{
 use serde::{Deserialize, Serialize};
 use warp::{
     http::StatusCode,
+    reject::Rejection,
     reply::{Json, WithStatus},
     Filter,
 };
@@ -39,7 +40,8 @@ pub async fn start_server(addr: &str, port: u16) {
         ))
         .and(warp::path::end())
         .and(warp::body::json::<GenerateParams>())
-        .and_then(generate);
+        .and_then(generate)
+        .recover(invalid_request_rejection);
 
     let health = warp::get()
         .and(warp::path!("readyz"))
@@ -52,6 +54,7 @@ pub async fn start_server(addr: &str, port: u16) {
     let routes = get_local_vpn.or(health).or(any_handler).with(
         warp::cors()
             .allow_any_origin()
+            .allow_header("Content-Type")
             .allow_methods(vec!["POST", "GET"]),
     );
 
@@ -97,6 +100,7 @@ impl ErrorMessage {
     }
 }
 
+#[allow(unused)]
 fn not_found() -> WithStatus<Json> {
     let code = StatusCode::NOT_FOUND;
     warp::reply::with_status(
@@ -123,6 +127,17 @@ fn invalid_authorization() -> WithStatus<Json> {
         )),
         code,
     )
+}
+
+async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, Rejection> {
+    let code = StatusCode::BAD_REQUEST;
+    Ok(warp::reply::with_status(
+        warp::reply::json(&ErrorMessage::new_from_string(
+            code.into(),
+            format!("invalid request: {:?}", rej),
+        )),
+        code,
+    ))
 }
 
 fn invalid_request(err: String) -> WithStatus<Json> {

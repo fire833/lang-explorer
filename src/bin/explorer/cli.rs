@@ -38,9 +38,9 @@ impl LangExplorerArgs {
                 Subcommand::MPIExplore => todo!(),
                 Subcommand::Generate {
                     cmd,
-                    language,
-                    expander,
-                    count,
+                    language: _,
+                    expander: _,
+                    count: _,
                 } => match cmd {
                     GenerateSubcommand::Program => todo!(),
                     GenerateSubcommand::Grammar => todo!(),

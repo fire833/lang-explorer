@@ -159,15 +159,13 @@ impl<'de> Visitor<'de> for SubcommandVisitor {
         )
     }
 
-    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        match GenerateSubcommand::from_str(v.as_str()) {
+        match GenerateSubcommand::from_str(v) {
             Ok(s) => Ok(s),
-            Err(_) => Err(E::custom(
-                "value must be one of 'program', 'grammar', or 'progwfeat'",
-            )),
+            Err(e) => Err(E::custom(e.to_string())),
         }
     }
 }
@@ -179,7 +177,7 @@ impl FromStr for GenerateSubcommand {
         match s {
             "program" => Ok(Self::Program),
             "grammar" => Ok(Self::Grammar),
-            "progwfeat" | "programwithfeat" => Ok(Self::ProgramWithFeatures),
+            "progwfeat" | "programwithfeat" | "pgfeat" => Ok(Self::ProgramWithFeatures),
             _ => Err(LangExplorerError::General(
                 "invalid generate operation string".into(),
             )),
@@ -202,22 +200,22 @@ pub struct GenerateParams {
     #[serde(alias = "operation", default = "default_op")]
     op: GenerateSubcommand,
 
-    #[serde(alias = "css")]
+    #[serde(alias = "css", default)]
     css: CSSLanguageParameters,
 
-    #[serde(alias = "nft")]
+    #[serde(alias = "nft", default)]
     nft: NFTRulesetParams,
 
-    #[serde(alias = "spice")]
+    #[serde(alias = "spice", default)]
     spice: SpiceLanguageParams,
 
-    #[serde(alias = "spiral")]
+    #[serde(alias = "spiral", default)]
     spiral: SpiralLanguageParams,
 
-    #[serde(alias = "taco_expression")]
+    #[serde(alias = "taco_expression", default)]
     taco_expr: TacoExpressionLanguageParams,
 
-    #[serde(alias = "taco_schedule")]
+    #[serde(alias = "taco_schedule", default)]
     taco_sched: TacoScheduleLanguageParams,
 
     #[serde(alias = "count", default = "default_count")]
