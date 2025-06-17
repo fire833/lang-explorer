@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fmt::Display, str::FromStr};
+use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use clap::ValueEnum;
 use serde::{de::Visitor, Deserialize, Serialize};
@@ -256,7 +256,7 @@ impl GenerateParams {
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
         }?;
 
-        let mut expander: Box<dyn GrammarExpander<StringValue, StringValue>> = match expander {
+        let mut exp: Box<dyn GrammarExpander<StringValue, StringValue>> = match expander {
             ExpanderWrapper::MonteCarlo => Box::new(MonteCarloExpander::new()),
             ExpanderWrapper::ML => {
                 return Err(LangExplorerError::General(
@@ -271,8 +271,10 @@ impl GenerateParams {
         if self.op == GenerateSubcommand::Program
             || self.op == GenerateSubcommand::ProgramWithFeatures
         {
+            let start = SystemTime::now();
+
             for _ in 0..self.count {
-                match grammar.generate_program_instance(&mut expander) {
+                match grammar.generate_program_instance(&mut exp) {
                     Ok(prog) => {
                         if self.op == GenerateSubcommand::ProgramWithFeatures {
                             features.push(prog.extract_words_wl_kernel(
@@ -289,13 +291,18 @@ impl GenerateParams {
                     Err(e) => return Err(e),
                 }
             }
-        }
 
-        println!(
-            "generated {} programs and {} features",
-            programs.len(),
-            features.len()
-        );
+            let elapsed = start.elapsed().unwrap();
+
+            println!(
+                "generated {} programs and {} features for language {} with expander {} in {} seconds",
+                programs.len(),
+                features.len(),
+                language,
+                expander,
+                elapsed.as_secs()
+            );
+        }
 
         match self.op {
             GenerateSubcommand::Program => Ok(GenerateResults {
