@@ -24,7 +24,16 @@ use serde::{de::Visitor, Deserialize, Serialize};
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
-    grammar::{Grammar, NonTerminal, Terminal},
+    expanders::ExpanderWrapper,
+    grammar::{Grammar, NonTerminal, ProgramInstance, Terminal},
+    languages::{
+        css::{CSSLanguage, CSSLanguageParameters},
+        nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
+        spice::{SpiceLanguage, SpiceLanguageParams},
+        spiral::{SpiralLanguage, SpiralLanguageParams},
+        taco_expression::{TacoExpressionLanguage, TacoExpressionLanguageParams},
+        taco_schedule::{TacoScheduleLanguage, TacoScheduleLanguageParams},
+    },
 };
 
 pub mod css;
@@ -53,11 +62,10 @@ pub trait Language: GrammarBuilder + Evaluator {}
 pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
-    type Params: Default;
+    type Params<'de>: Default + Serialize + Deserialize<'de>;
 
-    fn generate_grammar(
-        &self,
-        params: Self::Params,
+    fn generate_grammar<'de>(
+        params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
 }
 
@@ -193,6 +201,53 @@ pub struct GenerateParams {
     #[serde(alias = "operation")]
     op: GenerateSubcommand,
 
+    #[serde(alias = "css")]
+    css: CSSLanguageParameters,
+
+    #[serde(alias = "nft")]
+    nft: NFTRulesetParams,
+
+    #[serde(alias = "spice")]
+    spice: SpiceLanguageParams,
+
+    #[serde(alias = "spiral")]
+    spiral: SpiralLanguageParams,
+
+    #[serde(alias = "taco_expression")]
+    taco_expr: TacoExpressionLanguageParams,
+
+    #[serde(alias = "taco_schedule")]
+    taco_sched: TacoScheduleLanguageParams,
+
     #[serde(alias = "count")]
     count: u64,
 }
+
+impl GenerateParams {
+    fn execute(
+        self,
+        language: LanguageWrapper,
+        expander: ExpanderWrapper,
+    ) -> Result<GenerateResults, LangExplorerError> {
+        let grammar = match language {
+            LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
+            LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
+            LanguageWrapper::Spiral => SpiralLanguage::generate_grammar(self.spiral),
+            LanguageWrapper::TacoExpression => {
+                TacoExpressionLanguage::generate_grammar(self.taco_expr)
+            }
+            LanguageWrapper::TacoSchedule => {
+                TacoScheduleLanguage::generate_grammar(self.taco_sched)
+            }
+            LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
+        }?;
+
+        match self.op {
+            GenerateSubcommand::Program => todo!(),
+            GenerateSubcommand::Grammar => todo!(),
+            GenerateSubcommand::ProgramWithFeatures => todo!(),
+        }
+    }
+}
+
+pub struct GenerateResults {}

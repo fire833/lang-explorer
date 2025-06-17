@@ -61,13 +61,6 @@ impl StringValue {
             other: None,
         }
     }
-
-    pub fn new(s: String) -> Self {
-        Self {
-            s: "",
-            other: Some(s),
-        }
-    }
 }
 
 impl Debug for StringValue {
@@ -83,6 +76,24 @@ impl Debug for StringValue {
 impl From<&'static str> for StringValue {
     fn from(value: &'static str) -> Self {
         Self::from_static_str(value)
+    }
+}
+
+impl From<&String> for StringValue {
+    fn from(value: &String) -> Self {
+        Self {
+            s: "",
+            other: Some(value.clone()),
+        }
+    }
+}
+
+impl From<String> for StringValue {
+    fn from(value: String) -> Self {
+        Self {
+            s: "",
+            other: Some(value),
+        }
     }
 }
 

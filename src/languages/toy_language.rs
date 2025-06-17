@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     errors::LangExplorerError,
     grammar::{
@@ -34,17 +36,16 @@ terminal_str!(B, "b");
 
 pub struct ToyLanguage;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ToyLanguageParams {}
 
 impl GrammarBuilder for ToyLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
-    type Params = ToyLanguageParams;
+    type Params<'de> = ToyLanguageParams;
 
-    fn generate_grammar(
-        &self,
-        _params: Self::Params,
+    fn generate_grammar<'de>(
+        _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         Ok(Grammar::new(
             "S".into(),

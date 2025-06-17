@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     errors::LangExplorerError,
     grammar::{Grammar, GrammarElement},
@@ -41,17 +43,16 @@ terminal_str!(ADDRESS_FAMILY_NETDEV, "netdev");
 
 pub struct NFTRulesetLanguage;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NFTRulesetParams {}
 
 impl GrammarBuilder for NFTRulesetLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
-    type Params = NFTRulesetParams;
+    type Params<'de> = NFTRulesetParams;
 
-    fn generate_grammar(
-        &self,
-        _params: Self::Params,
+    fn generate_grammar<'de>(
+        _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         todo!()
     }

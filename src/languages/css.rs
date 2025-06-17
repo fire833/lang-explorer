@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     errors::LangExplorerError,
     grammar::{
@@ -352,32 +354,31 @@ terminal_str!(SELECTION, "selection");
 
 pub struct CSSLanguage;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CSSLanguageParameters {
-    classes: Vec<StringValue>,
-    ids: Vec<StringValue>,
+    classes: Vec<String>,
+    ids: Vec<String>,
 }
 
 impl GrammarBuilder for CSSLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
-    type Params = CSSLanguageParameters;
+    type Params<'de> = CSSLanguageParameters;
 
-    fn generate_grammar(
-        &self,
-        params: Self::Params,
+    fn generate_grammar<'de>(
+        params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         let mut classes: Vec<ProductionRule<StringValue, StringValue>> = vec![];
         for var in params.classes.iter() {
             // Store this variable in the heap.
-            let term = GrammarElement::Terminal(var.clone());
+            let term = GrammarElement::Terminal(var.into());
             classes.push(production_rule!(term));
         }
 
         let mut ids: Vec<ProductionRule<StringValue, StringValue>> = vec![];
         for var in params.ids.iter() {
             // Store this variable in the heap.
-            let term = GrammarElement::Terminal(var.clone());
+            let term = GrammarElement::Terminal(var.into());
             ids.push(production_rule!(term));
         }
 

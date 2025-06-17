@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     errors::LangExplorerError,
     grammar::{
@@ -43,17 +45,16 @@ nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TacoExpressionLanguageParams {}
 
 impl GrammarBuilder for TacoExpressionLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
-    type Params = TacoExpressionLanguageParams;
+    type Params<'de> = TacoExpressionLanguageParams;
 
-    fn generate_grammar(
-        &self,
-        _params: Self::Params,
+    fn generate_grammar<'de>(
+        _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         let grammar = Grammar::new(
             "entrypoint".into(),

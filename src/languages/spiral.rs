@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     errors::LangExplorerError,
     grammar::Grammar,
@@ -24,17 +26,16 @@ use crate::{
 
 pub struct SpiralLanguage;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SpiralLanguageParams {}
 
 impl GrammarBuilder for SpiralLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
-    type Params = SpiralLanguageParams;
+    type Params<'de> = SpiralLanguageParams;
 
-    fn generate_grammar(
-        &self,
-        _params: Self::Params,
+    fn generate_grammar<'de>(
+        _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         todo!()
     }
