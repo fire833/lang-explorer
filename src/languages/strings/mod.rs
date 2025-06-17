@@ -30,6 +30,9 @@ use crate::grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal};
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct StringValue {
     s: &'static str,
+
+    /// For dynamic values, allow the string to be heap allocated.
+    other: Option<String>,
 }
 
 /// StringValue is a valid terminal.
@@ -40,6 +43,9 @@ impl NonTerminal for StringValue {}
 
 impl BinarySerialize for StringValue {
     fn serialize(&self) -> Vec<u8> {
+        if let Some(other) = &self.other {
+            return other.as_bytes().to_vec();
+        }
         self.s.as_bytes().to_vec()
     }
 
@@ -50,12 +56,26 @@ impl BinarySerialize for StringValue {
 
 impl StringValue {
     pub const fn from_static_str(value: &'static str) -> Self {
-        Self { s: value }
+        Self {
+            s: value,
+            other: None,
+        }
+    }
+
+    pub fn new(s: String) -> Self {
+        Self {
+            s: "",
+            other: Some(s),
+        }
     }
 }
 
 impl Debug for StringValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(other) = &self.other {
+            write!(f, "{}", other)?;
+        }
+
         write!(f, "{}", self.s)
     }
 }
@@ -66,42 +86,37 @@ impl From<&'static str> for StringValue {
     }
 }
 
-impl From<Box<&'static str>> for StringValue {
-    fn from(value: Box<&'static str>) -> Self {
-        Self { s: &value }
-    }
-}
-
 /// Macro to take a string literal and convert into a constant StringValue.
 /// This is useful for statically defining your terminals for easy reuse.
 macro_rules! terminal_str {
-     ($v:vis, $i:ident, $s:literal) => {
-         $v const $i: GrammarElement<StringValue, StringValue> =
-             GrammarElement::Terminal(StringValue::from_static_str($s));
-     };
-     ($i:ident, $s:literal) => {
-         const $i: GrammarElement<StringValue, StringValue> =
-             GrammarElement::Terminal(StringValue::from_static_str($s));
-     };
- }
-use serde::Deserialize;
+    ($v:vis, $i:ident, $s:literal) => {
+        $v const $i: GrammarElement<StringValue, StringValue> =
+            GrammarElement::Terminal(StringValue::from_static_str($s));
+    };
+    ($i:ident, $s:literal) => {
+        const $i: GrammarElement<StringValue, StringValue> =
+            GrammarElement::Terminal(StringValue::from_static_str($s));
+    };
+}
+
 pub(crate) use terminal_str;
 
 macro_rules! nterminal_str {
-     ($v:vis, $i:ident, $s:literal) => {
-         $v const $i: GrammarElement<StringValue, StringValue> =
-             GrammarElement::NonTerminal(StringValue::from_static_str($s));
-     };
-     ($i:ident, $s:literal) => {
-         const $i: GrammarElement<StringValue, StringValue> =
-             GrammarElement::NonTerminal(StringValue::from_static_str($s));
-     }
- }
+    ($v:vis, $i:ident, $s:literal) => {
+        $v fn $i: GrammarElement<StringValue, StringValue> =
+            GrammarElement::NonTerminal(StringValue::from_static_str($s));
+    };
+    ($i:ident, $s:literal) => {
+        const $i: GrammarElement<StringValue, StringValue> =
+            GrammarElement::NonTerminal(StringValue::from_static_str($s));
+    }
+}
 
 pub(crate) use nterminal_str;
 
 // Some common terminals/tokens that you can import for other grammars.
 pub const EPSILON: GrammarElement<StringValue, StringValue> = GrammarElement::Epsilon;
+
 terminal_str!(pub, COMMA, ",");
 terminal_str!(pub, DOT, ".");
 terminal_str!(pub, NOT, "!");
