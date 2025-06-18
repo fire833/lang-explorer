@@ -23,8 +23,8 @@ use crate::{
     errors::LangExplorerError,
     evaluators::{Evaluator, Metric},
     grammar::{
-        context_free_production, production_rule, Grammar, GrammarElement, Production,
-        ProductionLHS, ProductionRule,
+        elem::GrammarElement, lhs::ProductionLHS, prod::context_free_production,
+        prod::production_rule, prod::Production, rule::ProductionRule, Grammar,
     },
 };
 

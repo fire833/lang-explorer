@@ -17,8 +17,11 @@
  */
 
 use crate::{
-    grammar::{production_rule, Production, ProductionLHS, ProductionRule},
-    languages::strings::{terminal_str, GrammarElement, StringValue},
+    grammar::{
+        elem::GrammarElement, lhs::ProductionLHS, prod::production_rule, prod::Production,
+        rule::ProductionRule,
+    },
+    languages::strings::{terminal_str, StringValue},
 };
 
 terminal_str!(pub, NT_LO_A, "a");

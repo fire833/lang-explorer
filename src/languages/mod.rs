@@ -21,11 +21,12 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 use clap::ValueEnum;
 use serde::{de::Visitor, Deserialize, Serialize};
 
+use crate::grammar::program::WLKernelHashingOrder;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
     expanders::{mc::MonteCarloExpander, ExpanderWrapper, GrammarExpander},
-    grammar::{BinarySerialize, Grammar, NonTerminal, Terminal, WLKernelHashingOrder},
+    grammar::{BinarySerialize, Grammar, NonTerminal, Terminal},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},

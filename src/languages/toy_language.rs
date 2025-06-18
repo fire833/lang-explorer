@@ -21,7 +21,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     errors::LangExplorerError,
     grammar::{
-        production_rule, Grammar, GrammarElement, Production, ProductionLHS, ProductionRule,
+        elem::GrammarElement, lhs::ProductionLHS, prod::production_rule, prod::Production,
+        rule::ProductionRule, Grammar,
     },
 };
 

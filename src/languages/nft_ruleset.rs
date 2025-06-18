@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     errors::LangExplorerError,
-    grammar::{Grammar, GrammarElement},
+    grammar::{elem::GrammarElement, Grammar},
 };
 
 use super::{

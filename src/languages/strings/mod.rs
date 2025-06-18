@@ -20,7 +20,7 @@ use std::fmt::Debug;
 
 pub mod alphanumeric;
 
-use crate::grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal};
+use crate::grammar::{elem::GrammarElement, BinarySerialize, NonTerminal, Terminal};
 
 /// A generic terminal or non-terminal type which wraps a standard String.
 /// This is generally the base atomic types that are going to be referenced within

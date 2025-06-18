@@ -20,7 +20,7 @@ use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
     errors::LangExplorerError,
-    grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal},
+    grammar::{prod::Production, rule::ProductionRule, Grammar, NonTerminal, Terminal},
 };
 
 use super::GrammarExpander;

@@ -29,7 +29,7 @@ use burn::{
 use crate::{
     errors::LangExplorerError,
     expanders::GrammarExpander,
-    grammar::{Grammar, NonTerminal, Production, ProductionRule, Terminal},
+    grammar::{prod::Production, rule::ProductionRule, Grammar, NonTerminal, Terminal},
 };
 
 pub struct LearnedExpander<T, I, B>
