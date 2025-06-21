@@ -19,9 +19,9 @@
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use clap::ValueEnum;
-use serde::{de::Visitor, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
-use crate::grammar::program::WLKernelHashingOrder;
+use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -114,92 +114,21 @@ impl Display for LanguageWrapper {
     }
 }
 
-#[derive(Debug, clap::Subcommand, PartialEq)]
-pub enum GenerateSubcommand {
-    /// Generate one or more program instances using the given expander.
-    #[command()]
-    Program,
-
-    /// Generate a BNF grammar of the given language with the given input parameters.
-    #[command()]
-    Grammar,
-
-    /// Generate a new program, but also return extracted subgraphs/features
-    /// for use in downstream embeddings work.
-    #[command()]
-    ProgramWithFeatures,
-}
-
-impl Serialize for GenerateSubcommand {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(format!("{}", self).as_str())
-    }
-}
-
-impl<'de> Deserialize<'de> for GenerateSubcommand {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_str(SubcommandVisitor)
-    }
-}
-
-struct SubcommandVisitor;
-
-impl<'de> Visitor<'de> for SubcommandVisitor {
-    type Value = GenerateSubcommand;
-
-    fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "either of the strings 'program', 'grammar', or 'progwfeat'"
-        )
-    }
-
-    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        match GenerateSubcommand::from_str(v) {
-            Ok(s) => Ok(s),
-            Err(e) => Err(E::custom(e.to_string())),
-        }
-    }
-}
-
-impl FromStr for GenerateSubcommand {
-    type Err = LangExplorerError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "program" => Ok(Self::Program),
-            "grammar" => Ok(Self::Grammar),
-            "progwfeat" | "programwithfeat" | "pgfeat" => Ok(Self::ProgramWithFeatures),
-            _ => Err(LangExplorerError::General(
-                "invalid generate operation string".into(),
-            )),
-        }
-    }
-}
-
-impl Display for GenerateSubcommand {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Program => write!(f, "program"),
-            Self::Grammar => write!(f, "grammar"),
-            Self::ProgramWithFeatures => write!(f, "programfeatures"),
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateParams {
-    #[serde(alias = "operation", default = "default_op")]
-    op: GenerateSubcommand,
+    /// Toggle whether to return WL-kernel extracted features
+    /// along with each graph.
+    #[serde(alias = "return_features", default)]
+    return_features: bool,
+
+    /// Toggle whether to return edge lists along with each graph.
+    #[serde(alias = "return_edge_lists", default)]
+    return_edge_lists: bool,
+
+    /// Toggle whether to return the grammar in BNF form that was
+    /// used to generate programs.
+    #[serde(alias = "return_grammar", default)]
+    return_grammar: bool,
 
     #[serde(alias = "css", default)]
     css: CSSLanguageParameters,
@@ -234,10 +163,6 @@ fn default_wl_degree() -> u32 {
     3
 }
 
-fn default_op() -> GenerateSubcommand {
-    GenerateSubcommand::Program
-}
-
 impl GenerateParams {
     pub fn execute(
         self,
@@ -268,20 +193,23 @@ impl GenerateParams {
 
         let mut programs = vec![];
         let mut features = vec![];
+        let mut edge_lists = vec![];
 
-        if self.op == GenerateSubcommand::Program
-            || self.op == GenerateSubcommand::ProgramWithFeatures
-        {
+        if self.count > 0 {
             let start = SystemTime::now();
 
             for _ in 0..self.count {
                 match grammar.generate_program_instance(&mut exp) {
                     Ok(prog) => {
-                        if self.op == GenerateSubcommand::ProgramWithFeatures {
+                        if self.return_features {
                             features.push(prog.extract_words_wl_kernel(
                                 self.wl_degree,
                                 WLKernelHashingOrder::SelfChildrenOrdered,
                             ));
+                        }
+
+                        if self.return_edge_lists {
+                            edge_lists.push(prog.get_edge_list());
                         }
 
                         match String::from_utf8(prog.serialize()) {
@@ -305,33 +233,32 @@ impl GenerateParams {
             );
         }
 
-        match self.op {
-            GenerateSubcommand::Program => Ok(GenerateResults {
-                grammar: None,
-                programs: Some(programs),
-                features: None,
-            }),
-            GenerateSubcommand::Grammar => Ok(GenerateResults {
-                grammar: Some(format!("{}", grammar)),
-                programs: None,
-                features: None,
-            }),
-            GenerateSubcommand::ProgramWithFeatures => Ok(GenerateResults {
-                grammar: None,
-                programs: Some(programs),
-                features: Some(features),
-            }),
+        let grammar_fmt;
+        if self.return_grammar {
+            grammar_fmt = Some(format!("{}", grammar));
+        } else {
+            grammar_fmt = None;
         }
+
+        Ok(GenerateResults {
+            grammar: grammar_fmt,
+            programs: programs,
+            features: features,
+            edge_lists: edge_lists,
+        })
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateResults {
     #[serde(alias = "programs")]
-    programs: Option<Vec<String>>,
+    programs: Vec<String>,
 
     #[serde(alias = "features")]
-    features: Option<Vec<Vec<u64>>>,
+    features: Vec<Vec<u64>>,
+
+    #[serde(alias = "edge_lists")]
+    edge_lists: Vec<Vec<(InstanceId, InstanceId)>>,
 
     #[serde(alias = "grammar")]
     grammar: Option<String>,

@@ -17,9 +17,7 @@
  */
 
 use lang_explorer::{
-    errors::LangExplorerError,
-    expanders::ExpanderWrapper,
-    languages::{GenerateSubcommand, LanguageWrapper},
+    errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
 };
 
 use crate::api;
@@ -37,15 +35,10 @@ impl LangExplorerArgs {
                 Subcommand::Explore => todo!(),
                 Subcommand::MPIExplore => todo!(),
                 Subcommand::Generate {
-                    cmd,
                     language: _,
                     expander: _,
                     count: _,
-                } => match cmd {
-                    GenerateSubcommand::Program => todo!(),
-                    GenerateSubcommand::Grammar => todo!(),
-                    GenerateSubcommand::ProgramWithFeatures => todo!(),
-                },
+                } => Ok(()),
                 Subcommand::Serve { address, port } => {
                     Ok(api::start_server(address.as_str(), *port).await)
                 }
@@ -69,9 +62,6 @@ pub enum Subcommand {
     /// a given specification with a given expander.
     #[command()]
     Generate {
-        #[command(subcommand)]
-        cmd: GenerateSubcommand,
-
         #[arg(short, long, value_enum)]
         language: LanguageWrapper,
 
