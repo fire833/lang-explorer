@@ -85,6 +85,8 @@ where
         &self,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        let mut counter: u64 = 1;
+
         let prod = match self
             .productions
             .get(&ProductionLHS::new_context_free(self.root.clone()))
@@ -93,7 +95,7 @@ where
             None => return Err("no root non-terminal/production found".into()),
         };
 
-        match self.generate_program_instance_recursive(prod, expander) {
+        match self.generate_program_instance_recursive(prod, expander, &mut counter) {
             Ok(program) => Ok(program),
             Err(e) => Err(e),
         }
@@ -103,19 +105,22 @@ where
         &self,
         production: &Production<T, I>,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
+        mut counter: &mut u64,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let mut program = ProgramInstance::new(GrammarElement::NonTerminal(
-            production.non_terminal.non_terminal.clone(),
-        ));
+            production.non_terminal.non_terminal.clone()
+        ), *counter);
         let rule = expander.expand_rule(&self, production);
         let mut children: Vec<ProgramInstance<T, I>> = vec![];
         for item in rule.items.iter() {
+            *counter += 1;
+
             match item {
                 GrammarElement::NonTerminal(nt) => {
                     match self.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
             {
                 Some(prod) => {
-                    match self.generate_program_instance_recursive(prod, expander)  {
+                    match self.generate_program_instance_recursive(prod, expander, &mut counter)  {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
                     }                        
@@ -126,7 +131,7 @@ where
             }
                 }
                 GrammarElement::Epsilon | GrammarElement::Terminal(_) => {
-                    children.push(ProgramInstance::new(item.clone()))
+                    children.push(ProgramInstance::new_with_parent(item.clone(), *counter, program.get_id()))
                 }
             }
         }

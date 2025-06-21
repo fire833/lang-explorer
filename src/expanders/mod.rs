@@ -26,6 +26,7 @@ use crate::{
     grammar::{prod::Production, rule::ProductionRule, Grammar, NonTerminal, Terminal},
 };
 
+pub mod exhaustive;
 pub mod mc;
 pub mod ml;
 pub mod wmc;

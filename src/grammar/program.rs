@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
 };
@@ -42,6 +42,10 @@ where
     node: GrammarElement<T, I>,
     /// The list of children nodes.
     children: Vec<ProgramInstance<T, I>>,
+    /// A unique identifier for this program instance.
+    id: u64,
+    /// Optionally the ID of the parent for loopback.
+    parent_id: Option<u64>,
 }
 
 pub enum WLKernelHashingOrder {
@@ -55,11 +59,28 @@ where
 {
     /// Create a new program instance. This can be a root of a program tree,
     /// or a subtree.
-    pub fn new(root: GrammarElement<T, I>) -> Self {
+    pub fn new(root: GrammarElement<T, I>, id: u64) -> Self {
         Self {
             node: root,
             children: vec![],
+            id,
+            parent_id: None,
         }
+    }
+
+    /// Create a new program instance, but with a parent ID instantiated.
+    /// This can be a root of a program tree, or a subtree.
+    pub fn new_with_parent(root: GrammarElement<T, I>, id: u64, parent: u64) -> Self {
+        Self {
+            node: root,
+            children: vec![],
+            id,
+            parent_id: Some(parent),
+        }
+    }
+
+    pub fn get_id(&self) -> u64 {
+        self.id
     }
 
     /// Add a child node to this current program tree.
@@ -73,6 +94,8 @@ where
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
         let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
+
+        // let ids: HashSet<u64> = nodes.iter().for_each(|node| node.get_id()).collect();
 
         nodes.iter().for_each(|node| {
             let hash = city::hash64(node.serialize_bytes().as_slice());
@@ -160,7 +183,7 @@ where
     /// of degree d of a particular graph.
     pub fn get_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
         if degree == 0 {
-            return ProgramInstance::new(self.node.clone());
+            return ProgramInstance::new(self.node.clone(), self.id);
         } else {
             let mut newchildren = vec![];
             for child in self.children.iter() {
@@ -168,7 +191,7 @@ where
                 newchildren.push(subgraph);
             }
 
-            let mut prog = ProgramInstance::new(self.node.clone());
+            let mut prog = ProgramInstance::new(self.node.clone(), self.id);
             prog.children = newchildren;
             return prog;
         }
@@ -192,12 +215,12 @@ fn test_extract_words_wl_kernel() {
     nterminal_str!(BAZ, "baz");
     nterminal_str!(BUZZ, "buzz");
 
-    let mut program = ProgramInstance::new(FOO);
+    let mut program = ProgramInstance::new(FOO, 1);
     program.set_children(vec![
-        ProgramInstance::new(BAR),
-        ProgramInstance::new(BAZ),
-        ProgramInstance::new(FOO),
-        ProgramInstance::new(BUZZ),
+        ProgramInstance::new(BAR, 2),
+        ProgramInstance::new(BAZ, 3),
+        ProgramInstance::new(FOO, 4),
+        ProgramInstance::new(BUZZ, 5),
     ]);
 
     let words = program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenOrdered);
