@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
 };
@@ -28,6 +28,9 @@ use crate::grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal};
 
 #[allow(unused)]
 use crate::languages::strings::{nterminal_str, StringValue};
+
+/// Type alias for program instance unique identifiers.
+pub type InstanceId = u64;
 
 /// A program instance is a program generated via a particular grammar represented
 /// in tree form. This is equivalent to being an AST-representation of a program.
@@ -43,9 +46,9 @@ where
     /// The list of children nodes.
     children: Vec<ProgramInstance<T, I>>,
     /// A unique identifier for this program instance.
-    id: u64,
+    id: InstanceId,
     /// Optionally the ID of the parent for loopback.
-    parent_id: Option<u64>,
+    parent_id: Option<InstanceId>,
 }
 
 pub enum WLKernelHashingOrder {
@@ -59,7 +62,7 @@ where
 {
     /// Create a new program instance. This can be a root of a program tree,
     /// or a subtree.
-    pub fn new(root: GrammarElement<T, I>, id: u64) -> Self {
+    pub fn new(root: GrammarElement<T, I>, id: InstanceId) -> Self {
         Self {
             node: root,
             children: vec![],
@@ -70,7 +73,7 @@ where
 
     /// Create a new program instance, but with a parent ID instantiated.
     /// This can be a root of a program tree, or a subtree.
-    pub fn new_with_parent(root: GrammarElement<T, I>, id: u64, parent: u64) -> Self {
+    pub fn new_with_parent(root: GrammarElement<T, I>, id: InstanceId, parent: InstanceId) -> Self {
         Self {
             node: root,
             children: vec![],
@@ -79,7 +82,7 @@ where
         }
     }
 
-    pub fn get_id(&self) -> u64 {
+    pub fn get_id(&self) -> InstanceId {
         self.id
     }
 
@@ -147,6 +150,26 @@ where
         }
 
         found_features
+    }
+
+    /// Returns the current program in edge-list form. This will be useful for importing
+    /// into other graph processing software like networkx.
+    pub fn get_edge_list(&self) -> Vec<(InstanceId, InstanceId)> {
+        let mut edges = vec![];
+
+        if self.children.len() == 0 {
+            return edges;
+        }
+
+        for child in self.children.iter() {
+            edges.push((self.id, child.id));
+        }
+
+        for child in self.children.iter() {
+            edges.append(&mut child.get_edge_list());
+        }
+
+        edges
     }
 
     pub fn serialize_bytes(&self) -> Vec<u8> {

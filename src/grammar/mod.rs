@@ -27,7 +27,7 @@ use std::{collections::{HashMap, HashSet}, fmt::{Debug, Display}, hash::{ Hash}}
 #[allow(unused)]
 use crate::languages::strings::{nterminal_str, StringValue};
 
-use crate::{errors::LangExplorerError, expanders::GrammarExpander, grammar::{elem::GrammarElement, lhs::ProductionLHS, prod::Production, program::ProgramInstance}};
+use crate::{errors::LangExplorerError, expanders::GrammarExpander, grammar::{elem::GrammarElement, lhs::ProductionLHS, prod::Production, program::{InstanceId, ProgramInstance}}};
 
 /// Trait for non-terminals to implement in order to be serialized
 /// to an output program.
@@ -85,7 +85,7 @@ where
         &self,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
-        let mut counter: u64 = 1;
+        let mut counter: InstanceId = 1;
 
         let prod = match self
             .productions
@@ -105,7 +105,7 @@ where
         &self,
         production: &Production<T, I>,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
-        mut counter: &mut u64,
+        mut counter: &mut InstanceId,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let mut program = ProgramInstance::new(GrammarElement::NonTerminal(
             production.non_terminal.non_terminal.clone()
