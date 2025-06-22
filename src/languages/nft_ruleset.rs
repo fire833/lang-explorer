@@ -44,6 +44,7 @@ terminal_str!(ADDRESS_FAMILY_NETDEV, "netdev");
 
 pub struct NFTRulesetLanguage;
 
+/// Parameters for NFTables language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct NFTRulesetParams {}
 

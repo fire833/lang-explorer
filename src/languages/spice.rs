@@ -27,6 +27,7 @@ use crate::{
 
 pub struct SpiceLanguage;
 
+/// Parameters for SPICE language.
 #[derive(Default, Debug, Serialize, Deserialize, ToSchema)]
 pub struct SpiceLanguageParams {}
 

@@ -78,6 +78,7 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage;
 
+/// Parameters for Taco Schedule Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct TacoScheduleLanguageParams {
     index_variables: Vec<String>,

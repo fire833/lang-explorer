@@ -20,6 +20,8 @@ use std::{fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
 use clap::ValueEnum;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -61,7 +63,8 @@ where
 
 /// Enumeration of all supported expanders currently within lang-explorer.
 /// This will almost certainly grow and change with time.
-#[derive(Clone, Copy, ValueEnum)]
+#[derive(Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum ExpanderWrapper {
     MonteCarlo,
     ML,

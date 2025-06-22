@@ -355,6 +355,7 @@ terminal_str!(SELECTION, "selection");
 
 pub struct CSSLanguage;
 
+/// Parameters for CSS Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct CSSLanguageParameters {
     classes: Vec<String>,

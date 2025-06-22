@@ -98,8 +98,8 @@ pub async fn start_server(addr: &str, port: u16) {
         (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
     ),
     params(
-        ("language" = String, Path, description = "The language to use."),
-        ("expander" = String, Path, description = "The expander to utilize."),
+        ("language" = LanguageWrapper, Path, description = "The language to use."),
+        ("expander" = ExpanderWrapper, Path, description = "The expander to utilize."),
     )
 )]
 async fn generate(

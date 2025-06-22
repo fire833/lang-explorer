@@ -46,6 +46,7 @@ nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
 
+/// Parameters for Taco Expression Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct TacoExpressionLanguageParams {
     symbols: Vec<char>,

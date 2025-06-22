@@ -27,6 +27,7 @@ use crate::{
 
 pub struct SpiralLanguage;
 
+/// Parameters for SPIRAL Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct SpiralLanguageParams {}
 
