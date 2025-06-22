@@ -39,11 +39,13 @@ use warp::{
 #[derive(OpenApi)]
 #[openapi(
     paths(generate),
-    components(schemas()),
+    components(schemas(LanguageWrapper, ExpanderWrapper), responses()),
     info(
         description = "OpenAPI specification for the Language Explorer API.",
         title = "Language Explorer API",
-        version = "0.1.0"
+        version = "0.1.0",
+        contact(name = "Kendall Tauser", email = "kttpsy@gmail.com"),
+        license(name = "GPL2", identifier = "GPL2")
     )
 )]
 struct ExplorerAPIDocs;
@@ -94,7 +96,7 @@ pub async fn start_server(addr: &str, port: u16) {
     get, path = "/v1/generate/{language}/{expander}", 
     request_body = GenerateParams,
     responses(
-        (status = 200, description = "Successfully generated code", body = GenerateResults),
+        (status = 200, description = "Successfully generated code.", body = GenerateResults),
         (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
     ),
     params(
