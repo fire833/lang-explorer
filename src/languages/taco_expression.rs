@@ -47,7 +47,10 @@ nterminal_str!(INDEX, "index");
 pub struct TacoExpressionLanguage;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
-pub struct TacoExpressionLanguageParams {}
+pub struct TacoExpressionLanguageParams {
+    symbols: Vec<char>,
+    indices: Vec<char>,
+}
 
 impl GrammarBuilder for TacoExpressionLanguage {
     type Term = StringValue;

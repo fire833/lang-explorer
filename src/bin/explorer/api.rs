@@ -17,6 +17,7 @@
  */
 
 use std::{
+    convert::Infallible,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     str::FromStr,
 };
@@ -40,8 +41,8 @@ use warp::{
     paths(generate),
     components(schemas()),
     info(
-        description = "OpenAPI specification for the Explorer API.",
-        title = "Explorer API",
+        description = "OpenAPI specification for the Language Explorer API.",
+        title = "Language Explorer API",
         version = "0.1.0"
     )
 )]
@@ -50,36 +51,36 @@ struct ExplorerAPIDocs;
 impl OpenApiExtensions for ExplorerAPIDocs {}
 
 pub async fn start_server(addr: &str, port: u16) {
-    let get_local_vpn = warp::post()
+    let generate = warp::post()
         .and(warp::path!(
             "v1" / "generate" / LanguageWrapper / ExpanderWrapper
         ))
         .and(warp::path::end())
         .and(warp::body::json::<GenerateParams>())
-        .and_then(generate)
-        .recover(invalid_request_rejection);
+        .and_then(generate);
 
     let health = warp::get()
         .and(warp::path!("readyz"))
         .or(warp::path!("livez"))
         .and(warp::path::end())
-        .map(|_item| ready_ok());
+        .map(|_| ready_ok());
 
     let openapi = warp::get()
         .and(warp::path!("swagger.json"))
         .or(warp::path!("openapi.json"))
         .or(warp::path!("api-docs"))
         .and(warp::path::end())
-        .map(|_| return ExplorerAPIDocs::api_docs_reply());
+        .map(|_| ExplorerAPIDocs::api_docs_reply());
 
     let any_handler = warp::any().map(|| not_found());
 
-    let routes = get_local_vpn.or(health).or(openapi).or(any_handler).with(
-        warp::cors()
-            .allow_any_origin()
-            .allow_header("Content-Type")
-            .allow_methods(vec!["POST", "GET"]),
-    );
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_header("Content-Type")
+        .allow_header("Accept")
+        .allow_methods(vec!["POST", "GET"]);
+
+    let routes = generate.or(health).or(openapi).or(any_handler).with(cors);
 
     warp::serve(routes)
         .run(SocketAddr::V4(SocketAddrV4::new(
@@ -105,7 +106,7 @@ async fn generate(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
     params: GenerateParams,
-) -> Result<impl warp::Reply, warp::Rejection> {
+) -> Result<impl warp::Reply, Infallible> {
     match params.execute(language, expander) {
         Ok(resp) => Ok(warp::reply::with_status(
             warp::reply::json(&resp),
@@ -164,7 +165,8 @@ fn invalid_authorization() -> WithStatus<Json> {
     )
 }
 
-async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, Rejection> {
+#[allow(unused)]
+async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, Infallible> {
     let code = StatusCode::BAD_REQUEST;
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
