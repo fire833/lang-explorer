@@ -17,6 +17,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -26,7 +27,7 @@ use crate::{
 
 pub struct SpiralLanguage;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct SpiralLanguageParams {}
 
 impl GrammarBuilder for SpiralLanguage {

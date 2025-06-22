@@ -18,6 +18,7 @@
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -77,7 +78,7 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct TacoScheduleLanguageParams {
     index_variables: Vec<String>,
     workspace_index_variables: Vec<String>,

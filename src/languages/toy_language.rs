@@ -17,6 +17,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -37,7 +38,7 @@ terminal_str!(B, "b");
 
 pub struct ToyLanguage;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct ToyLanguageParams {}
 
 impl GrammarBuilder for ToyLanguage {

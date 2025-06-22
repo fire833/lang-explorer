@@ -17,6 +17,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -45,7 +46,7 @@ nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct TacoExpressionLanguageParams {}
 
 impl GrammarBuilder for TacoExpressionLanguage {

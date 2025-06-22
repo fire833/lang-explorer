@@ -17,6 +17,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -354,7 +355,7 @@ terminal_str!(SELECTION, "selection");
 
 pub struct CSSLanguage;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct CSSLanguageParameters {
     classes: Vec<String>,
     ids: Vec<String>,

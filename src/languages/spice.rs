@@ -17,6 +17,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -26,7 +27,7 @@ use crate::{
 
 pub struct SpiceLanguage;
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize, ToSchema)]
 pub struct SpiceLanguageParams {}
 
 impl GrammarBuilder for SpiceLanguage {

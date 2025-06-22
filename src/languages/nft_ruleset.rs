@@ -17,6 +17,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -43,7 +44,7 @@ terminal_str!(ADDRESS_FAMILY_NETDEV, "netdev");
 
 pub struct NFTRulesetLanguage;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct NFTRulesetParams {}
 
 impl GrammarBuilder for NFTRulesetLanguage {

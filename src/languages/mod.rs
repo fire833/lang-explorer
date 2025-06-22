@@ -20,6 +20,7 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::{
@@ -64,7 +65,7 @@ pub trait Language: GrammarBuilder + Evaluator {}
 pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
-    type Params<'de>: Default + Serialize + Deserialize<'de>;
+    type Params<'de>: Default + Serialize + Deserialize<'de> + ToSchema;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -114,7 +115,7 @@ impl Display for LanguageWrapper {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GenerateParams {
     /// Toggle whether to return WL-kernel extracted features
     /// along with each graph.
@@ -249,7 +250,7 @@ impl GenerateParams {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GenerateResults {
     #[serde(alias = "programs")]
     programs: Vec<String>,

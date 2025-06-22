@@ -21,17 +21,33 @@ use std::{
     str::FromStr,
 };
 
+use lang_explorer::languages::GenerateResults;
 use lang_explorer::{
     expanders::ExpanderWrapper,
     languages::{GenerateParams, LanguageWrapper},
 };
 use serde::{Deserialize, Serialize};
+use utoipa::{OpenApi, ToSchema};
 use warp::{
     http::StatusCode,
     reject::Rejection,
     reply::{Json, WithStatus},
     Filter,
 };
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(generate),
+    components(schemas()),
+    info(
+        description = "OpenAPI specification for the Explorer API.",
+        title = "Explorer API",
+        version = "0.1.0"
+    )
+)]
+struct ExplorerAPIDocs;
+
+impl OpenApiExtensions for ExplorerAPIDocs {}
 
 pub async fn start_server(addr: &str, port: u16) {
     let get_local_vpn = warp::post()
@@ -49,9 +65,16 @@ pub async fn start_server(addr: &str, port: u16) {
         .and(warp::path::end())
         .map(|_item| ready_ok());
 
+    let openapi = warp::get()
+        .and(warp::path!("swagger.json"))
+        .or(warp::path!("openapi.json"))
+        .or(warp::path!("api-docs"))
+        .and(warp::path::end())
+        .map(|_| return ExplorerAPIDocs::api_docs_reply());
+
     let any_handler = warp::any().map(|| not_found());
 
-    let routes = get_local_vpn.or(health).or(any_handler).with(
+    let routes = get_local_vpn.or(health).or(openapi).or(any_handler).with(
         warp::cors()
             .allow_any_origin()
             .allow_header("Content-Type")
@@ -66,6 +89,18 @@ pub async fn start_server(addr: &str, port: u16) {
         .await;
 }
 
+#[utoipa::path(
+    get, path = "/v1/generate/{language}/{expander}", 
+    request_body = GenerateParams,
+    responses(
+        (status = 200, description = "Successfully generated code", body = GenerateResults),
+        (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
+    ),
+    params(
+        ("language" = String, Path, description = "The language to use."),
+        ("expander" = String, Path, description = "The expander to utilize."),
+    )
+)]
 async fn generate(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
@@ -80,7 +115,7 @@ async fn generate(
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct ErrorMessage {
     code: u16,
     message: String,
@@ -161,4 +196,18 @@ fn internal_error(err: String) -> WithStatus<Json> {
         )),
         code,
     )
+}
+
+pub trait OpenApiExtensions: OpenApi {
+    fn api_docs_reply() -> WithStatus<Json> {
+        return warp::reply::with_status(warp::reply::json(&Self::openapi()), StatusCode::OK);
+    }
+
+    #[allow(unused)]
+    fn api_docs_print() {
+        println!(
+            "{}",
+            Self::openapi().to_pretty_json().unwrap_or("".to_string())
+        );
+    }
 }
