@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from src.utils.openapi_client.api.default_api import DefaultApi
 from argparse import ArgumentParser	
 import sys
 
