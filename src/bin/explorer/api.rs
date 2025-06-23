@@ -31,6 +31,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 use warp::{
     http::StatusCode,
+    hyper::body::Bytes,
     reject::Rejection,
     reply::{Json, WithStatus},
     Filter,
@@ -58,7 +59,7 @@ pub async fn start_server(addr: &str, port: u16) {
             "v1" / "generate" / LanguageWrapper / ExpanderWrapper
         ))
         .and(warp::path::end())
-        .and(warp::body::json::<GenerateParams>())
+        .and(warp::body::bytes())
         .and_then(generate);
 
     let health = warp::get()
@@ -107,8 +108,13 @@ pub async fn start_server(addr: &str, port: u16) {
 async fn generate(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
-    params: GenerateParams,
+    body: Bytes,
 ) -> Result<impl warp::Reply, Infallible> {
+    let params = match serde_json::from_slice::<GenerateParams>(&body) {
+        Ok(p) => p,
+        Err(e) => return Ok(invalid_request(e.to_string())),
+    };
+
     match params.execute(language, expander) {
         Ok(resp) => Ok(warp::reply::with_status(
             warp::reply::json(&resp),

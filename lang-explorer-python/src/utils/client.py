@@ -30,8 +30,8 @@ class GenerateParams:
 	wl_degree: int
 
 	css: CSSLanguageParameters
-	# taco_schedule: TacoScheduleParameters
-	# taco_expression: TacoExpressionParameters
+	taco_schedule: TacoScheduleParameters
+	taco_expression: TacoExpressionParameters
 
 @dataclass
 class GenerateResults:

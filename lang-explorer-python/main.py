@@ -15,9 +15,9 @@ def main():
 		css=CSSLanguageParameters(["foo", "bar", "baz"], ["1", "2", "3"]),
 		# taco_expression=TacoExpressionParameters(),
 		# taco_schedule=TacoScheduleParameters(),
-		# TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
-		# TacoExpressionParameters([], []),
-		))
+		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
+		taco_expression=TacoExpressionParameters([], []),
+))
 
 if __name__ == "__main__":
 	main()
