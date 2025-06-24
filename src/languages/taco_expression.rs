@@ -22,16 +22,21 @@ use utoipa::ToSchema;
 use crate::{
     errors::LangExplorerError,
     grammar::{
-        elem::GrammarElement, lhs::ProductionLHS, prod::context_free_production,
-        prod::production_rule, prod::Production, rule::ProductionRule, Grammar,
+        elem::GrammarElement,
+        lhs::ProductionLHS,
+        prod::{context_free_production, production_rule, Production},
+        rule::ProductionRule,
+        Grammar,
     },
     languages::{
         strings::{
             alphanumeric::{
                 alpha_character_production_context_free,
                 alpha_lower_character_production_context_free,
+                alpha_upper_character_production_context_free,
             },
-            nterminal_str, StringValue, COMMA, EQUALS, LPAREN, RPAREN, STAR,
+            nterminal_str, StringValue, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN,
+            STAR,
         },
         GrammarBuilder,
     },
@@ -41,7 +46,7 @@ nterminal_str!(NT_ENTRY, "entrypoint");
 nterminal_str!(NT_EXPR, "expression");
 nterminal_str!(NT_ELEMENT, "element");
 nterminal_str!(SYMBOL, "symbol");
-nterminal_str!(NT_INDEX, "index");
+nterminal_str!(NT_INDEX, "nt_index");
 nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
@@ -78,10 +83,13 @@ impl GrammarBuilder for TacoExpressionLanguage {
                 context_free_production!(
                     NT_EXPR,
                     production_rule!(NT_EXPR, STAR, NT_EXPR),
+                    production_rule!(NT_EXPR, PLUS, NT_EXPR),
+                    production_rule!(NT_EXPR, MINUS, NT_EXPR),
+                    production_rule!(NT_EXPR, FORWARDSLASH, NT_EXPR),
                     production_rule!(NT_ELEMENT)
                 ),
                 alpha_lower_character_production_context_free("index".into()),
-                alpha_character_production_context_free("symbol".into()),
+                alpha_upper_character_production_context_free("symbol".into()),
             ],
         );
 

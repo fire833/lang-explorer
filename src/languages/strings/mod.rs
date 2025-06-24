@@ -143,6 +143,8 @@ terminal_str!(pub, SEMICOLON, ";");
 terminal_str!(pub, COLON, ":");
 terminal_str!(pub, PLUS, "+");
 terminal_str!(pub, MINUS, "-");
+terminal_str!(pub, FORWARDSLASH, "/");
+terminal_str!(pub, BACKSLASH, "\\");
 terminal_str!(pub, EQUALS, "=");
 terminal_str!(pub, GREATER, ">");
 terminal_str!(pub, LESS, "<");
