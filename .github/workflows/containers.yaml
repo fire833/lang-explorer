@@ -32,6 +32,10 @@ on:
         default: ""
         type: string
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   lang-explorer:
     uses: fire833/cicd-templates/.github/workflows/containers_cd_v1.yaml@main
@@ -40,3 +44,4 @@ jobs:
       APP_NAME: lang-explorer
       VERSION: v0.1.0
       DOCKERFILE_PATH: src/bin/explorer/Dockerfile
+      RUNNER: fire833-lang-explorer
