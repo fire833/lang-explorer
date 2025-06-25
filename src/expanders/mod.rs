@@ -25,7 +25,7 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::{prod::Production, rule::ProductionRule, Grammar, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, prod::Production, rule::ProductionRule, NonTerminal, Terminal},
 };
 
 pub mod exhaustive;

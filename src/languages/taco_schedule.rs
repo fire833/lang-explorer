@@ -24,8 +24,8 @@ use crate::{
     errors::LangExplorerError,
     evaluators::{Evaluator, Metric},
     grammar::{
-        elem::GrammarElement, lhs::ProductionLHS, prod::context_free_production,
-        prod::production_rule, prod::Production, rule::ProductionRule, Grammar,
+        elem::GrammarElement, grammar::Grammar, lhs::ProductionLHS, prod::context_free_production,
+        prod::production_rule, prod::Production, rule::ProductionRule,
     },
 };
 

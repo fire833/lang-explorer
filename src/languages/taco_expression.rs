@@ -23,10 +23,10 @@ use crate::{
     errors::LangExplorerError,
     grammar::{
         elem::GrammarElement,
+        grammar::Grammar,
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
-        Grammar,
     },
     languages::{
         strings::{

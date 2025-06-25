@@ -35,7 +35,7 @@ where
     /// non-terminal for the rule.
     pub non_terminal: I,
 
-    /// optional siffx context for the rule.
+    /// optional suffix context for the rule.
     pub suffix: Option<Vec<GrammarElement<T, I>>>,
 }
 

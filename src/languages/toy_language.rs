@@ -22,8 +22,8 @@ use utoipa::ToSchema;
 use crate::{
     errors::LangExplorerError,
     grammar::{
-        elem::GrammarElement, lhs::ProductionLHS, prod::production_rule, prod::Production,
-        rule::ProductionRule, Grammar,
+        elem::GrammarElement, grammar::Grammar, lhs::ProductionLHS, prod::production_rule,
+        prod::Production, rule::ProductionRule,
     },
 };
 

@@ -21,7 +21,7 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::{elem::GrammarElement, Grammar},
+    grammar::{elem::GrammarElement, grammar::Grammar},
 };
 
 use super::{

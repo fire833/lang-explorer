@@ -27,7 +27,7 @@ use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
     expanders::{mc::MonteCarloExpander, ExpanderWrapper, GrammarExpander},
-    grammar::{BinarySerialize, Grammar, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, BinarySerialize, NonTerminal, Terminal},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},

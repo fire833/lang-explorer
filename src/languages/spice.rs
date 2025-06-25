@@ -21,7 +21,7 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::Grammar,
+    grammar::grammar::Grammar,
     languages::{strings::StringValue, GrammarBuilder},
 };
 
