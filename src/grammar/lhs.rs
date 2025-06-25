@@ -16,7 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fmt::Debug, hash::Hash};
+use std::{
+    fmt::Debug,
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
 
@@ -130,5 +133,33 @@ where
 {
     fn from(value: I) -> Self {
         Self::new_context_free(value)
+    }
+}
+
+impl<T, I> PartialOrd for ProductionLHS<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T, I> Ord for ProductionLHS<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        let shash = hasher.finish();
+
+        let mut hasher = DefaultHasher::new();
+        other.hash(&mut hasher);
+        let ohash = hasher.finish();
+
+        shash.cmp(&ohash)
     }
 }

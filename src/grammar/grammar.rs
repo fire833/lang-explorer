@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{HashMap, HashSet}, fmt::{Debug, Display}};
+use std::{collections::{BTreeMap, HashSet}, fmt::{Debug, Display}, io::Write};
 
 use sha2::{Digest, Sha256};
 
@@ -33,7 +33,7 @@ where
     root: I,
 
     /// The list of productions associated with this grammar.
-    productions: HashMap<ProductionLHS<T, I>, Production<T, I>>,
+    productions: BTreeMap<ProductionLHS<T, I>, Production<T, I>>,
 }
 
 impl<T, I> Grammar<T, I>
@@ -42,7 +42,7 @@ where
     I: NonTerminal,
 {
     pub fn new(root: I, mut productions: Vec<Production<T, I>>) -> Self {
-        let mut map: HashMap<ProductionLHS<T, I>, Production<T, I>> = HashMap::new();
+        let mut map: BTreeMap<ProductionLHS<T, I>, Production<T, I>> = BTreeMap::new();
 
         while let Some(p) = productions.pop() {
             map.insert(p.lhs(), p);
@@ -207,10 +207,19 @@ where
     /// on stuff, I choose to simply traverse the entire tree in in-order traversal, adding every
     /// node to the hash as I go.
     pub fn generate_uuid(&self) -> String {
-        let nodes = self.get_all_nodes();
         let mut hash = Sha256::new();
-        
-        "".into()
+
+        self.productions.iter().for_each(|(k ,v)| {
+            let _ = hash.write(format!("{:?}", k).as_bytes());
+
+            v.items.iter().for_each(|prod| {
+                let _ = hash.write(format!("{:?}", prod).as_bytes());
+            });
+        });
+
+        let digest = hex::encode(hash.finalize());
+
+        digest
     }
 }
 
