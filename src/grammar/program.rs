@@ -52,7 +52,8 @@ where
 }
 
 pub enum WLKernelHashingOrder {
-    SelfChildrenOrdered,
+    SelfChildrenParentOrdered,
+    ParentSelfChildrenOrdered,
 }
 
 impl<T, I> ProgramInstance<T, I>
@@ -98,7 +99,11 @@ where
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
         let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
 
-        // let ids: HashSet<u64> = nodes.iter().for_each(|node| node.get_id()).collect();
+        let mut ids: HashMap<u64, &ProgramInstance<T, I>> = HashMap::new();
+
+        nodes.iter().for_each(|node| {
+            ids.insert(node.get_id(), node);
+        });
 
         nodes.iter().for_each(|node| {
             let hash = city::hash64(node.serialize_bytes().as_slice());
@@ -110,24 +115,44 @@ where
 
         for _ in 0..degree {
             for node in nodes.iter() {
+                let self_bytes = node.serialize_bytes();
+                let parent_bytes = match node.parent_id {
+                    Some(id) => {
+                        let parent = ids.get(&id).unwrap();
+                        let parent_feature = node_features_old.get(*parent).unwrap();
+
+                        parent_feature.to_ne_bytes()
+                    }
+                    None => [0 as u8; 8],
+                };
+                let mut child_bytes: Vec<u64> = node
+                    .children
+                    .iter()
+                    .map(|child| node_features_old.get(child).unwrap())
+                    .map(|v| *v)
+                    .collect();
+
                 let mut hasher = city::Hasher64::new();
 
                 let new_label = match ordering {
-                    WLKernelHashingOrder::SelfChildrenOrdered => {
-                        // Write the current node into the hasher.
-                        hasher.write(node.serialize_bytes().as_slice());
+                    WLKernelHashingOrder::SelfChildrenParentOrdered => {
+                        hasher.write(self_bytes.as_slice());
 
-                        let mut child_values: Vec<u64> = node
-                            .children
+                        child_bytes.sort();
+                        child_bytes
                             .iter()
-                            .map(|child| node_features_old.get(child).unwrap())
-                            .map(|v| *v)
-                            .collect();
+                            .for_each(|child| hasher.write(&child.to_ne_bytes()));
 
-                        child_values.sort();
+                        hasher.write(&parent_bytes);
 
-                        // Write each child's feature value into the hash as well.
-                        child_values
+                        hasher.finish()
+                    }
+                    WLKernelHashingOrder::ParentSelfChildrenOrdered => {
+                        hasher.write(&parent_bytes);
+                        hasher.write(self_bytes.as_slice());
+
+                        child_bytes.sort();
+                        child_bytes
                             .iter()
                             .for_each(|child| hasher.write(&child.to_ne_bytes()));
 
@@ -246,7 +271,7 @@ fn test_extract_words_wl_kernel() {
         ProgramInstance::new(BUZZ, 5),
     ]);
 
-    let words = program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenOrdered);
+    let words = program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenParentOrdered);
     println!("{:?}", words);
 }
 

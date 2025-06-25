@@ -216,7 +216,7 @@ impl GenerateParams {
                         if self.return_features {
                             features.push(prog.extract_words_wl_kernel(
                                 self.wl_degree,
-                                WLKernelHashingOrder::SelfChildrenOrdered,
+                                WLKernelHashingOrder::SelfChildrenParentOrdered,
                             ));
                         }
 
