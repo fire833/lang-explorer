@@ -25,6 +25,7 @@ use burn::{
     record::{BinGzFileRecorder, FullPrecisionSettings},
     tensor::{activation::log_softmax, Device, Tensor},
 };
+use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
     errors::LangExplorerError,
@@ -51,6 +52,8 @@ where
     production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
 
     strategy: SamplingStrategy,
+
+    rng: ThreadRng,
 }
 
 impl<T, I, B> LearnedExpander<T, I, B>
@@ -65,6 +68,7 @@ where
             dev: Default::default(),
             production_to_model: HashMap::new(),
             strategy: SamplingStrategy::Random,
+            rng: rand::thread_rng(),
         }
     }
 }
@@ -122,6 +126,7 @@ where
             strategy: SamplingStrategy::Random,
             // Default this for now.
             dev: device,
+            rng: rand::thread_rng(),
         })
     }
 
@@ -141,12 +146,11 @@ where
             .to_vec()
             .unwrap();
 
-            // Sample in [0, 1].
-            let sample = rand::random::<f64>();
-
             // Depending on our strategy, choose the next expansion.
             let index: usize = match self.strategy {
                 SamplingStrategy::Random => {
+                    // Sample in [0, 1].
+                    let sample = self.rng.gen::<f64>() % 1.0;
                     let mut idx = production.len() - 1;
                     let mut cumsum = 0.0;
                     for (i, prob) in distribution.iter().enumerate() {

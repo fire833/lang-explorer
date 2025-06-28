@@ -67,6 +67,7 @@ where
 #[serde(rename_all = "lowercase")]
 pub enum ExpanderWrapper {
     MonteCarlo,
+    WeightedMonteCarlo,
     ML,
 }
 
@@ -77,6 +78,7 @@ impl FromStr for ExpanderWrapper {
         match s {
             "mc" | "montecarlo" => Ok(Self::MonteCarlo),
             "ml" => Ok(Self::ML),
+            "wmc" | "wieghtedmontecarlo" => Ok(Self::WeightedMonteCarlo),
             _ => Err(LangExplorerError::General("invalid expander string".into())),
         }
     }
@@ -87,6 +89,7 @@ impl Display for ExpanderWrapper {
         match self {
             Self::MonteCarlo => write!(f, "montecarlo"),
             Self::ML => write!(f, "ml"),
+            Self::WeightedMonteCarlo => write!(f, " weightedmontecarlo"),
         }
     }
 }

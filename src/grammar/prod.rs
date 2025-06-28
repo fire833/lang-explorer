@@ -33,9 +33,14 @@ where
 }
 
 macro_rules! production_rule {
-    ($($x:expr),+) => {
-        ProductionRule::new(vec![$($x),+])
+    ($logit:literal, $($x:expr),+) => {
+        // Create a production rule with logits.
+        ProductionRule::new_with_logit(vec![$($x),+], $logit as u64)
     };
+    ($($x:expr),+) => {
+        // Create a production rule withot logits.
+        ProductionRule::new(vec![$($x),+])
+    }
 }
 
 use std::fmt::{Debug, Display};

@@ -160,11 +160,11 @@ impl GrammarBuilder for TacoScheduleLanguage {
                 // Entrypoint rule
                 context_free_production!(
                     NT_ENTRYPOINT, // Optionally create no rules
-                    production_rule!(EPSILON),
+                    production_rule!(25, EPSILON),
                     // Or generate rule
-                    production_rule!(NT_ENTRYPOINT),
+                    production_rule!(35, NT_ENTRYPOINT),
                     // Or generate many rules
-                    production_rule!(NT_RULE, COMMA, NT_ENTRYPOINT)
+                    production_rule!(35, NT_RULE, COMMA, NT_ENTRYPOINT)
                 ),
                 // Rule definition rule
                 Production::new(

@@ -22,6 +22,7 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use crate::expanders::wmc::WeightedMonteCarloExpander;
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::{
     errors::LangExplorerError,
@@ -196,6 +197,7 @@ impl GenerateParams {
 
         let mut exp: Box<dyn GrammarExpander<StringValue, StringValue>> = match expander {
             ExpanderWrapper::MonteCarlo => Box::new(MonteCarloExpander::new()),
+            ExpanderWrapper::WeightedMonteCarlo => Box::new(WeightedMonteCarloExpander::new()),
             ExpanderWrapper::ML => {
                 return Err(LangExplorerError::General(
                     "ml method not implemented".into(),

@@ -30,6 +30,7 @@ where
     I: NonTerminal,
 {
     pub items: Vec<GrammarElement<T, I>>,
+    pub logit: Option<u64>,
 }
 
 impl<T, I> ProductionRule<T, I>
@@ -38,7 +39,17 @@ where
     I: NonTerminal,
 {
     pub const fn new(elements: Vec<GrammarElement<T, I>>) -> Self {
-        Self { items: elements }
+        Self {
+            items: elements,
+            logit: None,
+        }
+    }
+
+    pub const fn new_with_logit(elements: Vec<GrammarElement<T, I>>, logit: u64) -> Self {
+        Self {
+            items: elements,
+            logit: Some(logit),
+        }
     }
 }
 

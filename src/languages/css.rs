@@ -390,11 +390,11 @@ impl GrammarBuilder for CSSLanguage {
                 context_free_production!(
                     NT_ENTRYPOINT,
                     // Optionally create no blocks
-                    production_rule!(EPSILON),
+                    production_rule!(25, EPSILON),
                     // Or generate block
-                    production_rule!(NT_BLOCK),
+                    production_rule!(35, NT_BLOCK),
                     // Or generate multiple blocks
-                    production_rule!(NT_BLOCK, NT_ENTRYPOINT)
+                    production_rule!(35, NT_BLOCK, NT_ENTRYPOINT)
                 ),
                 context_free_production!(
                     NT_BLOCK,
