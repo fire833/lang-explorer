@@ -2959,6 +2959,7 @@ dependencies = [
  "lalrpop-util",
  "libloading",
  "mpi",
+ "num_cpus",
  "rand 0.8.5",
  "serde",
  "serde_json",
