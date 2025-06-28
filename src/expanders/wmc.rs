@@ -63,10 +63,14 @@ where
                     sum += logit;
                 }
                 logits.push(logit);
+                count += 1;
             } else {
                 logits.push(0);
             }
-            count += 1;
+        }
+
+        if count == 0 {
+            count = 1;
         }
 
         let mut avg = sum / count;
@@ -74,27 +78,24 @@ where
             avg = 1;
         }
 
-        let mut total = 0;
+        let mut total: f64 = 0.0;
 
         for (i, _) in production.items.iter().enumerate() {
             if logits[i] == 0 {
-                logits[i] = avg + 1; // Make sure we can't have zero for a logit.
+                logits[i] = avg; // Make sure we can't have zero for a logit.
             }
 
-            total += logits[i];
+            total += logits[i] as f64;
         }
 
         // Take the softmax
-        for (i, _) in production.items.iter().enumerate() {
-            logits[i] = logits[i] / total;
-        }
-
+        let distribution: Vec<f64> = logits.iter().map(|item| *item as f64 / total).collect();
         let sample = self.rng.gen::<f64>() % 1.0;
 
         let mut idx = production.len() - 1;
         let mut cumsum = 0.0;
-        for (i, prob) in logits.iter().enumerate() {
-            cumsum += *prob as f64;
+        for (i, prob) in distribution.iter().enumerate() {
+            cumsum += *prob;
             if sample <= cumsum {
                 idx = i;
                 break;
