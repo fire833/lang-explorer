@@ -15,7 +15,8 @@ dependencies = [
     "gensim (>=4.3.3,<5.0.0)",
     "joblib (>=1.5.1,<2.0.0)",
     "argparse (>=1.4.0,<2.0.0)",
-    "scikit-learn (>=1.7.0,<2.0.0)"
+    "scikit-learn (>=1.7.0,<2.0.0)",
+    "matplotlib (>=3.10.3,<4.0.0)"
 ]
 
 
