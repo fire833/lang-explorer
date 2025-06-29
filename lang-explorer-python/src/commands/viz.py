@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 import os
 import pandas as pd
 
@@ -39,3 +40,5 @@ def data_viz(args):
 		plt.tight_layout()
 		plt.legend()
 		plt.close()
+
+		# clusters = AgglomerativeClustering(n_clusters=11).fit(data.iloc[:,1:-1])
