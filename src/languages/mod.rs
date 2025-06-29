@@ -20,21 +20,20 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
-use crate::expanders::wmc::WeightedMonteCarloExpander;
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
-    expanders::{mc::MonteCarloExpander, ExpanderWrapper, GrammarExpander},
+    expanders::ExpanderWrapper,
     grammar::{grammar::Grammar, BinarySerialize, NonTerminal, Terminal},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
         spice::{SpiceLanguage, SpiceLanguageParams},
         spiral::{SpiralLanguage, SpiralLanguageParams},
-        strings::StringValue,
         taco_expression::{TacoExpressionLanguage, TacoExpressionLanguageParams},
         taco_schedule::{TacoScheduleLanguage, TacoScheduleLanguageParams},
     },
@@ -177,7 +176,7 @@ fn default_wl_degree() -> u32 {
 }
 
 impl GenerateParams {
-    pub fn execute(
+    pub async fn execute(
         self,
         language: LanguageWrapper,
         expander: ExpanderWrapper,
@@ -195,63 +194,87 @@ impl GenerateParams {
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
         }?;
 
-        let mut exp: Box<dyn GrammarExpander<StringValue, StringValue>> = match expander {
-            ExpanderWrapper::MonteCarlo => Box::new(MonteCarloExpander::new()),
-            ExpanderWrapper::WeightedMonteCarlo => Box::new(WeightedMonteCarloExpander::new()),
-            ExpanderWrapper::ML => {
-                return Err(LangExplorerError::General(
-                    "ml method not implemented".into(),
-                ))
-            }
-        };
-
         let mut programs = vec![];
         let mut features = vec![];
         let mut edge_lists = vec![];
 
+        let grammar_fmt;
+        if self.return_grammar {
+            grammar_fmt = Some(format!("{}", &grammar));
+        } else {
+            grammar_fmt = None;
+        }
+
         if self.count > 0 {
             let start = SystemTime::now();
+            let num_cpus = num_cpus::get() as u64;
+            let (tx, mut rx): (Sender<ProgramResult>, Receiver<ProgramResult>) =
+                channel((self.count / num_cpus) as usize);
 
-            for _ in 0..self.count {
-                match grammar.generate_program_instance(&mut exp) {
-                    Ok(prog) => {
-                        if self.return_features {
-                            features.push(prog.extract_words_wl_kernel(
-                                self.wl_degree,
-                                WLKernelHashingOrder::SelfChildrenParentOrdered,
-                            ));
+            for _ in 0..num_cpus {
+                let exp = expander.clone();
+                let gc = grammar.clone();
+                let txt = tx.clone();
+                tokio::spawn(async move {
+                    let mut expander = exp.get_expander().unwrap();
+                    let count = self.count / num_cpus; // TODO fix
+
+                    for _ in 0..count {
+                        let mut res = ProgramResult::new();
+                        match Grammar::generate_program_instance(&gc, &mut expander) {
+                            Ok(prog) => {
+                                if self.return_features {
+                                    res.set_features(prog.extract_words_wl_kernel(
+                                        self.wl_degree,
+                                        WLKernelHashingOrder::SelfChildrenParentOrdered,
+                                    ));
+                                }
+
+                                if self.return_edge_lists {
+                                    res.set_edge_list(prog.get_edge_list());
+                                }
+
+                                match String::from_utf8(prog.serialize()) {
+                                    Ok(data) => res.set_program(data),
+                                    Err(e) => return Err(e.into()),
+                                }
+                            }
+                            Err(e) => return Err(e),
                         }
 
-                        if self.return_edge_lists {
-                            edge_lists.push(prog.get_edge_list());
-                        }
-
-                        match String::from_utf8(prog.serialize()) {
-                            Ok(data) => programs.push(data),
-                            Err(e) => return Err(e.into()),
-                        }
+                        // Ship it off and keep going.
+                        txt.send(res).await.unwrap();
                     }
-                    Err(e) => return Err(e),
+
+                    Ok(())
+                });
+            }
+
+            // Need to drop the original sender since we don't move it over to a task.
+            drop(tx);
+
+            while let Some(res) = rx.recv().await {
+                if let Some(prog) = res.program {
+                    programs.push(prog);
+                }
+
+                if let Some(feat) = res.features {
+                    features.push(feat);
+                }
+
+                if let Some(edges) = res.edge_list {
+                    edge_lists.push(edges);
                 }
             }
 
             let elapsed = start.elapsed().unwrap();
 
             println!(
-                "generated {} programs and {} features for language {} with expander {} in {} seconds",
+                "generated {} programs and {} features for language {language} with expander {expander} in {} seconds",
                 programs.len(),
                 features.len(),
-                language,
-                expander,
                 elapsed.as_secs()
             );
-        }
-
-        let grammar_fmt;
-        if self.return_grammar {
-            grammar_fmt = Some(format!("{}", grammar));
-        } else {
-            grammar_fmt = None;
         }
 
         Ok(GenerateResults {
@@ -286,4 +309,38 @@ pub struct GenerateResults {
     /// to generate all programs within this batch.
     #[serde(alias = "grammar")]
     grammar: Option<String>,
+}
+
+struct ProgramResult {
+    /// If enabeld, the string representation of the generated program.
+    program: Option<String>,
+
+    /// If enabled, returns a list of all features extracted from
+    /// the program.
+    features: Option<Vec<u64>>,
+
+    /// If enabled, returns the program graph in edge-list foramt.
+    edge_list: Option<Vec<(InstanceId, InstanceId)>>,
+}
+
+impl ProgramResult {
+    fn new() -> Self {
+        Self {
+            program: None,
+            features: None,
+            edge_list: None,
+        }
+    }
+
+    fn set_program(&mut self, program: String) {
+        self.program = Some(program);
+    }
+
+    fn set_features(&mut self, features: Vec<u64>) {
+        self.features = Some(features);
+    }
+
+    fn set_edge_list(&mut self, edge_list: Vec<(InstanceId, InstanceId)>) {
+        self.edge_list = Some(edge_list);
+    }
 }

@@ -115,7 +115,7 @@ async fn generate(
         Err(e) => return Ok(invalid_request(e.to_string())),
     };
 
-    match params.execute(language, expander) {
+    match params.execute(language, expander).await {
         Ok(resp) => Ok(warp::reply::with_status(
             warp::reply::json(&resp),
             StatusCode::OK,

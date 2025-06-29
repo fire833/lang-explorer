@@ -42,7 +42,7 @@ pub trait BinarySerialize {
 }
 
 /// Wrapper trait for all terminal elements to implement.
-pub trait Terminal: Sized + Clone + Debug + Hash + Eq + PartialEq + BinarySerialize {}
+pub trait Terminal: Sized + Clone + Debug + Hash + Eq + PartialEq + Send + BinarySerialize {}
 
 /// Wrapper trait for all non-terminal elements to implement.
-pub trait NonTerminal: Sized + Clone + Debug + Hash + Eq + PartialEq {}
+pub trait NonTerminal: Sized + Clone + Debug + Hash + Eq + PartialEq + Send {}

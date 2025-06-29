@@ -25,6 +25,7 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
+    expanders::{mc::MonteCarloExpander, wmc::WeightedMonteCarloExpander},
     grammar::{grammar::Grammar, prod::Production, rule::ProductionRule, NonTerminal, Terminal},
 };
 
@@ -39,7 +40,7 @@ pub mod wmc;
 /// that should be utilized from the list of possible production
 /// rules that are implemented by this production.
 #[async_trait]
-pub trait GrammarExpander<T, I>
+pub trait GrammarExpander<T, I>: Send
 where
     T: Terminal,
     I: NonTerminal,
@@ -69,6 +70,22 @@ pub enum ExpanderWrapper {
     MonteCarlo,
     WeightedMonteCarlo,
     ML,
+}
+
+impl ExpanderWrapper {
+    pub fn get_expander<T: Terminal, I: NonTerminal>(
+        &self,
+    ) -> Result<Box<dyn GrammarExpander<T, I>>, LangExplorerError> {
+        match self {
+            ExpanderWrapper::MonteCarlo => Ok(Box::new(MonteCarloExpander::new())),
+            ExpanderWrapper::WeightedMonteCarlo => Ok(Box::new(WeightedMonteCarloExpander::new())),
+            ExpanderWrapper::ML => {
+                return Err(LangExplorerError::General(
+                    "ml method not implemented".into(),
+                ))
+            }
+        }
+    }
 }
 
 impl FromStr for ExpanderWrapper {
