@@ -3,6 +3,7 @@
 from src.utils.client import GenerateParams, GenerateResults, CSSLanguageParameters, TacoScheduleParameters, TacoExpressionParameters
 from argparse import ArgumentParser	
 import sys
+from src.commands.viz import data_viz
 from src.commands.embeddings import generate_embeddings
 
 def main():
@@ -19,6 +20,10 @@ def main():
 	embed.add_argument("--down-sampling", type=float, default=0.0001, help="Down sampling rate of features. Default is 0.0001.")
 	embed.add_argument("--workers", type=int, default=8, help="Number of workers. Default is 8.")
 	embed.set_defaults(func=generate_embeddings)
+
+	viz = sub.add_parser("data_viz", help="Visualize embedding spaces.")
+	viz.add_argument("--output", nargs="?", default="images", help="Images path.")
+	viz.set_defaults(func=data_viz)
 
 	args = parser.parse_args(sys.argv[1:])
 	args.func(args)
