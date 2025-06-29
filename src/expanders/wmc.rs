@@ -27,15 +27,11 @@ use crate::{
 /// A Weighted Monte Carlo explorer is a slightly less naive expander
 /// that selects paths to go down using a weighted sample from the possible
 /// expansion paths available at any given step.
-pub struct WeightedMonteCarloExpander {
-    rng: ThreadRng,
-}
+pub struct WeightedMonteCarloExpander {}
 
 impl WeightedMonteCarloExpander {
     pub fn new() -> Self {
-        Self {
-            rng: rand::thread_rng(),
-        }
+        Self {}
     }
 }
 
@@ -90,7 +86,7 @@ where
 
         // Take the softmax
         let distribution: Vec<f64> = logits.iter().map(|item| *item as f64 / total).collect();
-        let sample = self.rng.gen::<f64>() % 1.0;
+        let sample = rand::random::<f64>() % 1.0;
 
         let mut idx = production.len() - 1;
         let mut cumsum = 0.0;

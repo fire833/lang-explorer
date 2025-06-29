@@ -52,8 +52,6 @@ where
     production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
 
     strategy: SamplingStrategy,
-
-    rng: ThreadRng,
 }
 
 impl<T, I, B> LearnedExpander<T, I, B>
@@ -68,7 +66,6 @@ where
             dev: Default::default(),
             production_to_model: HashMap::new(),
             strategy: SamplingStrategy::Random,
-            rng: rand::thread_rng(),
         }
     }
 }
@@ -126,7 +123,6 @@ where
             strategy: SamplingStrategy::Random,
             // Default this for now.
             dev: device,
-            rng: rand::thread_rng(),
         })
     }
 
@@ -150,7 +146,7 @@ where
             let index: usize = match self.strategy {
                 SamplingStrategy::Random => {
                     // Sample in [0, 1].
-                    let sample = self.rng.gen::<f64>() % 1.0;
+                    let sample = rand::random::<f64>() % 1.0;
                     let mut idx = production.len() - 1;
                     let mut cumsum = 0.0;
                     for (i, prob) in distribution.iter().enumerate() {

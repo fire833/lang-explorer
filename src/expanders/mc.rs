@@ -16,8 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rand::{rngs::ThreadRng, Rng};
-
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, prod::Production, rule::ProductionRule, NonTerminal, Terminal},
@@ -29,15 +27,11 @@ use super::GrammarExpander;
 /// selects paths to go down within the range of possible outcomes.
 /// This could lead to very dumb outputs, and take a very long time to
 /// create fully terminated words in a particular language.
-pub struct MonteCarloExpander {
-    rng: ThreadRng,
-}
+pub struct MonteCarloExpander {}
 
 impl MonteCarloExpander {
     pub fn new() -> Self {
-        Self {
-            rng: rand::thread_rng(),
-        }
+        Self {}
     }
 }
 
@@ -59,7 +53,7 @@ where
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
         let len = production.len();
-        let val = self.rng.gen::<u64>() % len as u64;
+        let val = rand::random::<u64>() % len as u64;
         if let Some(rule) = production.get(val as usize) {
             return rule;
         } else {
