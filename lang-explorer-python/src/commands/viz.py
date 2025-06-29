@@ -15,6 +15,9 @@ def data_viz(args):
 
 		psize = [len(str(x)) for x in data["type"]]
 		data["plen"] = data["type"].apply(strlen)
+		data = data.drop_duplicates()
+
+		print(data.shape)
 
 		embedding = TSNE(2).fit_transform(data.iloc[:,1:-1])
 		plt.title(f"t-SNE (2D) of {plain} dataset")
