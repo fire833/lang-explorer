@@ -26,16 +26,16 @@ WORKDIR /usr/src/lang-explorer
 RUN wget -O /usr/local/bin/dumb-init https://static.tauser.us/init/dumb-init-x86 && chmod +x /usr/local/bin/dumb-init
 
 # Compile for musl so it works on alpine: https://stackoverflow.com/questions/59766239/how-to-build-a-rust-app-free-of-shared-libraries#59766875
-RUN RUSTFLAGS='-C link-arg=-s' cargo build --release --bin explorer
+RUN RUSTFLAGS='-C link-arg=-s' cargo build --release --bin evaluator
 
 FROM docker.io/ubuntu:noble
 
 COPY --from=builder /usr/local/bin/dumb-init /usr/local/bin/dumb-init
-COPY --from=builder /usr/src/lang-explorer/target/release/explorer /usr/local/bin/explorer
+COPY --from=builder /usr/src/lang-explorer/target/release/evaluator /usr/local/bin/evaluator
 USER 1000:1000
 
 LABEL org.opencontainers.image.author="Kendall Tauser"
-LABEL org.opencontainers.image.title="Language Explorer API."
+LABEL org.opencontainers.image.title="Language Evaluator API."
 LABEL org.opencontainers.image.source="https://github.com/fire833/lang-explorer"
 
-ENTRYPOINT [ "dumb-init", "explorer" ]
+ENTRYPOINT [ "dumb-init", "evaluator" ]

@@ -49,7 +49,7 @@ impl LangExplorerArgs {
 }
 
 #[derive(clap::Subcommand)]
-pub enum Subcommand {
+enum Subcommand {
     /// Run lang-explorer to explore a problem space.
     #[command()]
     Explore,

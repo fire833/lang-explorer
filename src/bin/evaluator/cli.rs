@@ -16,14 +16,19 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use clap::Parser;
 use lang_explorer::errors::LangExplorerError;
 
-mod api;
-mod cli;
-
-#[tokio::main]
-async fn main() -> Result<(), LangExplorerError> {
-    let args = cli::EvaluatorArgs::parse();
-    return args.entry().await;
+#[derive(clap::Parser)]
+pub struct EvaluatorArgs {
+    #[command(subcommand)]
+    cmd: Option<Subcommand>,
 }
+
+impl EvaluatorArgs {
+    pub async fn entry(&self) -> Result<(), LangExplorerError> {
+        Ok(())
+    }
+}
+
+#[derive(clap::Subcommand)]
+enum Subcommand {}
