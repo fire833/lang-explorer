@@ -11,6 +11,9 @@ def strlen(x):
 def data_viz(args):
 	for file in os.listdir("results/"):
 		plain = file.removesuffix(".csv")
+		if args.input != "" and plain != args.input:
+			continue
+ 
 		data = pd.read_csv(f"results/{plain}.csv", skiprows=0, delimiter=',')
 
 		psize = [len(str(x)) for x in data["type"]]

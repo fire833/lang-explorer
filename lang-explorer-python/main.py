@@ -23,6 +23,7 @@ def main():
 
 	viz = sub.add_parser("data_viz", help="Visualize embedding spaces.")
 	viz.add_argument("--output", nargs="?", default="images", help="Images path.")
+	viz.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	viz.set_defaults(func=data_viz)
 
 	args = parser.parse_args(sys.argv[1:])
