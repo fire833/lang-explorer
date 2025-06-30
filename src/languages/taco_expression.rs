@@ -30,11 +30,6 @@ use crate::{
     },
     languages::{
         strings::{
-            alphanumeric::{
-                alpha_character_production_context_free,
-                alpha_lower_character_production_context_free,
-                alpha_upper_character_production_context_free,
-            },
             nterminal_str, StringValue, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN,
             STAR,
         },
@@ -64,8 +59,21 @@ impl GrammarBuilder for TacoExpressionLanguage {
     type Params<'de> = TacoExpressionLanguageParams;
 
     fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
+        params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+        let mut symbols: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in params.symbols.iter() {
+            // Store this variable in the heap.
+            let term = GrammarElement::Terminal(String::from(*var).into());
+            symbols.push(production_rule!(term));
+        }
+
+        let mut indices: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in params.indices.iter() {
+            let term = GrammarElement::Terminal(String::from(*var).into());
+            indices.push(production_rule!(term));
+        }
+
         let grammar = Grammar::new(
             "entrypoint".into(),
             vec![
@@ -76,20 +84,20 @@ impl GrammarBuilder for TacoExpressionLanguage {
                 ),
                 context_free_production!(
                     NT_INDEX,
-                    production_rule!(NT_INDEX),
-                    production_rule!(NT_INDEX, COMMA, NT_INDEX),
-                    production_rule!(INDEX)
+                    production_rule!(30, NT_INDEX, COMMA, NT_INDEX),
+                    production_rule!(70, INDEX)
                 ),
                 context_free_production!(
                     NT_EXPR,
-                    production_rule!(NT_EXPR, STAR, NT_EXPR),
-                    production_rule!(NT_EXPR, PLUS, NT_EXPR),
-                    production_rule!(NT_EXPR, MINUS, NT_EXPR),
-                    production_rule!(NT_EXPR, FORWARDSLASH, NT_EXPR),
-                    production_rule!(NT_ELEMENT)
+                    production_rule!(10, NT_EXPR, STAR, NT_EXPR),
+                    production_rule!(10, NT_EXPR, PLUS, NT_EXPR),
+                    production_rule!(10, NT_EXPR, MINUS, NT_EXPR),
+                    production_rule!(10, NT_EXPR, FORWARDSLASH, NT_EXPR),
+                    production_rule!(50, NT_ELEMENT)
                 ),
-                alpha_lower_character_production_context_free("index".into()),
-                alpha_upper_character_production_context_free("symbol".into()),
+                // Fused index variable
+                Production::new(ProductionLHS::new_context_free_elem(INDEX), indices),
+                Production::new(ProductionLHS::new_context_free_elem(SYMBOL), symbols),
             ],
         );
 
