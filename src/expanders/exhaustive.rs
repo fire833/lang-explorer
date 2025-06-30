@@ -33,7 +33,7 @@ where
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
@@ -44,8 +44,8 @@ where
     /// make a decision on what the next expansion should be.
     fn expand_rule<'a>(
         &mut self,
-        grammar: &'a Grammar<T, I>,
-        production: &'a Production<T, I>,
+        _grammar: &'a Grammar<T, I>,
+        _production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
         todo!()
     }

@@ -25,7 +25,6 @@ use burn::{
     record::{BinGzFileRecorder, FullPrecisionSettings},
     tensor::{activation::log_softmax, Device, Tensor},
 };
-use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
     errors::LangExplorerError,

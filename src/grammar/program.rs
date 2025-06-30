@@ -94,6 +94,8 @@ where
 
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
+    ///
+    /// Reference: https://blog.quarkslab.com/weisfeiler-lehman-graph-kernel-for-binary-function-analysis.html#weisfeiler-lehman%20graph%20kernel_1
     pub fn extract_words_wl_kernel(&self, degree: u32, ordering: WLKernelHashingOrder) -> Vec<u64> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
