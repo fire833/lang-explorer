@@ -6,9 +6,9 @@ import pandas as pd
 
 def generate_embeddings(args):
 	print("making call to explorer")
-	res = generate("http://localhost:8080", "tacosched", "wmc", 
-		GenerateParams(10000, True, True, False, 3, 
-		css=CSSLanguageParameters(["foo", "bar", "baz"], ["1", "2", "3"]),
+	res = generate("http://localhost:8080", args.language, "wmc", 
+		GenerateParams(args.count, True, True, False, 3, 
+		css=CSSLanguageParameters(["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"]),
 		# taco_expression=TacoExpressionParameters(),
 		# taco_schedule=TacoScheduleParameters(),
 		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
