@@ -9,10 +9,8 @@ def generate_embeddings(args):
 	res = generate("http://localhost:8080", args.language, "wmc", 
 		GenerateParams(args.count, True, True, False, 3, 
 		css=CSSLanguageParameters(["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"]),
-		# taco_expression=TacoExpressionParameters(),
-		# taco_schedule=TacoScheduleParameters(),
-		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
-		taco_expression=TacoExpressionParameters([], [])))
+		taco_expression=TacoExpressionParameters(["A", "B", "C", "D", "E", "F", "G"], ["i", "k", "j", "l", "x", "y", "z"]),
+		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"])))
 
 	document_collections = []
 
