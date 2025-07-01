@@ -6,9 +6,7 @@ from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 import os
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
-
-def strlen(x):
-	return len(str(x))
+from src.utils.strlen import strlen
 
 def data_viz(args):
 	plain = args.input.removeprefix("results/")

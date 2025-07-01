@@ -5,6 +5,10 @@ from argparse import ArgumentParser
 import sys
 from src.commands.viz import data_viz
 from src.commands.embeddings import generate_embeddings
+from src.commands.interact import interactive_tsne
+import matplotlib
+
+# %matplotlib qt
 
 def main():
 	parser = ArgumentParser(description="Lang-Explorer Python stuff")
@@ -27,6 +31,10 @@ def main():
 	viz.add_argument("--output", nargs="?", default="images", help="Images path.")
 	viz.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	viz.set_defaults(func=data_viz)
+
+	interactive = sub.add_parser("dataint", help="Interact with TSNE data.")
+	interactive.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
+	interactive.set_defaults(func=interactive_tsne)
 
 	args = parser.parse_args(sys.argv[1:])
 	args.func(args)
