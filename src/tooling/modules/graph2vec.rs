@@ -18,32 +18,33 @@
 
 use burn::{
     config::Config,
-    nn::{Embedding, EmbeddingConfig},
+    module::Module,
     tensor::{backend::Backend, Tensor},
 };
 
-pub struct Graph2Vec<B: Backend> {
-    _embed: Embedding<B>,
-}
+use crate::tooling::modules::pvdbow::Doc2VecDBOW;
 
 #[derive(Debug, Config)]
 pub struct Graph2VecConfig {
-    embedding_dim: u64,
-    num_graphs: u64,
+    /// The number of
+    pub n_graphs: usize,
+    pub d_model: usize,
 }
 
 impl Graph2VecConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Graph2Vec<B> {
-        Graph2Vec {
-            _embed: EmbeddingConfig::new(self.num_graphs as usize, self.embedding_dim as usize)
-                .init(device),
-        }
+        todo!()
     }
 }
 
+#[derive(Debug, Module)]
+pub struct Graph2Vec<B: Backend> {
+    doc: Doc2VecDBOW<B>,
+}
+
 impl<B: Backend> Graph2Vec<B> {
-    pub fn forward(&self, graphs: Tensor<B, 2>) -> Tensor<B, 3> {
-        let [_dim, _num_samples] = graphs.dims();
+    pub fn forward(&self, input: Tensor<B, 2>) -> Tensor<B, 3> {
+        let [_dim, _num_samples] = input.dims();
         todo!()
         // let x = graphs.reshape([]);
         // self.embed.forward(graphs)

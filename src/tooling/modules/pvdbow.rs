@@ -16,4 +16,9 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-pub mod modules;
+use burn::{module::Module, nn::Embedding, prelude::Backend};
+
+#[derive(Debug, Module)]
+pub struct Doc2VecDBOW<B: Backend> {
+    embed: Embedding<B>,
+}
