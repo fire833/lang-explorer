@@ -16,6 +16,12 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+// Notes: https://towardsdatascience.com/word2vec-with-pytorch-implementing-original-paper-2cd7040120b0/
+// https://github.com/OlgaChernytska/word2vec-pytorch/blob/87b0418fcc6a0f5b8ac96698f6fc1079014b4615/utils/trainer.py
+// https://github.com/piskvorky/gensim/blob/develop/gensim/models/word2vec.py
+// https://github.com/mklf/word2vec-rs
+// https://radimrehurek.com/gensim/auto_examples/tutorials/run_word2vec.html
+
 use burn::{
     config::Config,
     module::Module,

@@ -16,6 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+// Notes: https://github.com/piskvorky/gensim/blob/develop/gensim/models/doc2vec.py
+// https://github.com/cbowdon/doc2vec-pytorch/blob/master/doc2vec.py
+// https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html
+
 use burn::{module::Module, nn::Embedding, prelude::Backend};
 
 #[derive(Debug, Module)]
