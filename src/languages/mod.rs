@@ -208,8 +208,13 @@ impl GenerateParams {
         if self.count > 0 {
             let start = SystemTime::now();
             let num_cpus = num_cpus::get() as u64;
-            let (tx, mut rx): (Sender<ProgramResult>, Receiver<ProgramResult>) =
-                channel((self.count / num_cpus) as usize);
+
+            let size = match self.count / num_cpus {
+                0 => 1,
+                o => o,
+            } as usize;
+
+            let (tx, mut rx): (Sender<ProgramResult>, Receiver<ProgramResult>) = channel(size);
 
             for _ in 0..num_cpus {
                 let exp = expander.clone();

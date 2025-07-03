@@ -1016,7 +1016,7 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(T_LO_R, T_LO_E, T_LO_M),         // rem
                         production_rule!(T_LO_V, T_LO_W),                 // vw
                         production_rule!(T_LO_V, T_LO_H),                 // vh
-                        production_rule!(T_LO_V, T_LO_M, T_LO_I, T_LO_M), // vmin
+                        production_rule!(T_LO_V, T_LO_M, T_LO_I, T_LO_N), // vmin
                         production_rule!(T_LO_V, T_LO_M, T_LO_A, T_LO_X), // vmax
                     ],
                 ),
