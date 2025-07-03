@@ -151,3 +151,4 @@ terminal_str!(pub, LESS, "<");
 terminal_str!(pub, STAR, "*");
 terminal_str!(pub, HASH, "#");
 terminal_str!(pub, SPACE, " ");
+terminal_str!(pub, PERCENT, "%");

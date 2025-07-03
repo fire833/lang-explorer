@@ -22,13 +22,20 @@ use utoipa::ToSchema;
 use crate::{
     errors::LangExplorerError,
     grammar::{
-        elem::GrammarElement, grammar::Grammar, lhs::ProductionLHS, prod::context_free_production,
-        prod::production_rule, prod::Production, rule::ProductionRule,
+        elem::GrammarElement,
+        grammar::Grammar,
+        lhs::ProductionLHS,
+        prod::{context_free_production, production_rule, Production},
+        rule::ProductionRule,
     },
     languages::{
         strings::{
+            alphanumeric::{
+                numeric_character_production_context_free, T_LO_A, T_LO_C, T_LO_E, T_LO_H, T_LO_I,
+                T_LO_M, T_LO_N, T_LO_P, T_LO_R, T_LO_T, T_LO_V, T_LO_W, T_LO_X,
+            },
             nterminal_str, terminal_str, StringValue, COLON, COMMA, EPSILON, GREATER, LBRACKET,
-            MINUS, PLUS, RBRACKET, SEMICOLON, SPACE,
+            MINUS, PERCENT, PLUS, RBRACKET, SEMICOLON, SPACE,
         },
         GrammarBuilder,
     },
@@ -47,6 +54,18 @@ nterminal_str!(NT_PSEUDO_ELEMENTS, "pseudo_element");
 nterminal_str!(NT_PSEUDO_CLASSES, "pseudo_class");
 nterminal_str!(NT_CLASS, "class");
 nterminal_str!(NT_ID, "id");
+nterminal_str!(NT_COLOR, "color");
+nterminal_str!(NT_DISPLAY_TYPE, "display_type");
+nterminal_str!(NT_ALIGN_CONTENT_TYPE, "align_content_type");
+nterminal_str!(NT_ALIGN_ITEMS_TYPE, "align_items_type");
+nterminal_str!(NT_ALIGN_SELF_TYPE, "align_self_type");
+nterminal_str!(NT_FLOAT_TYPE, "float_type");
+nterminal_str!(NT_JUSTIFY_CONTENT_TYPE, "justify_content_type");
+nterminal_str!(NT_JUSTIFY_ITEMS_TYPE, "justify_items_type");
+nterminal_str!(NT_JUSTIFY_SELF_TYPE, "justify_self_type");
+nterminal_str!(NT_SIZE, "nt_size");
+nterminal_str!(NT_NUMBER, "nt_number");
+nterminal_str!(NT_SIZE_SUFFIX, "nt-size_suffix");
 
 // Enumeration of properties
 terminal_str!(ALIGN_CONTENT, "align-content");
@@ -151,6 +170,8 @@ terminal_str!(FONT_WEIGHT, "font-weight");
 terminal_str!(HANGING_PUNCTUATION, "hanging-punctuation");
 terminal_str!(HEIGHT, "height");
 terminal_str!(JUSTIFY_CONTENT, "justify-content");
+terminal_str!(JUSTIFY_ITEMS, "justify-items");
+terminal_str!(JUSTIFY_SELF, "justify-self");
 terminal_str!(KEYFRAMES, "@keyframes");
 terminal_str!(LEFT, "left");
 terminal_str!(LETTER_SPACING, "letter-spacing");
@@ -353,11 +374,69 @@ terminal_str!(BEFORE, "before");
 terminal_str!(AFTER, "after");
 terminal_str!(SELECTION, "selection");
 
+// Enumeration of display types.
+terminal_str!(INLINE, "inline");
+terminal_str!(BLOCK, "block");
+terminal_str!(CONTENTS, "contents");
+// terminal_str!(FLEX, "flex"); // This is already a property.
+terminal_str!(GRID, "grid");
+terminal_str!(INLINE_BLOCK, "inline-block");
+terminal_str!(INLINE_FLEX, "inline-flex");
+terminal_str!(INLINE_GRID, "inline-grid");
+terminal_str!(INLINE_TABLE, "inline-table");
+terminal_str!(LIST_ITEM, "list-item");
+terminal_str!(RUN_IN, "run-in");
+// terminal_str!(TABLE, "table"); // This is already a property.
+terminal_str!(TABLE_CAPTION, "table-caption");
+terminal_str!(TABLE_COLUMN_GROUP, "table-column-group");
+terminal_str!(TABLE_HEADER_GROUP, "table-header-group");
+terminal_str!(TABLE_FOOTER_GROUP, "table-footer-group");
+terminal_str!(TABLE_ROW_GROUP, "table-row-group");
+terminal_str!(TABLE_CELL, "table-cell");
+terminal_str!(TABLE_COLUMN, "table-column");
+terminal_str!(TABLE_ROW, "table-row");
+terminal_str!(NONE, "none");
+terminal_str!(INITIAL, "initial");
+terminal_str!(INHERIT, "inherit");
+
+// Enumeration of align-content options
+terminal_str!(STRETCH, "stretch");
+terminal_str!(CENTER, "center");
+terminal_str!(FLEX_START, "flex-start");
+terminal_str!(FLEX_END, "flex-end");
+terminal_str!(SPACE_BETWEEN, "space-between");
+terminal_str!(SPACE_AROUND, "space-around");
+terminal_str!(SPACE_EVENLY, "space-evenly");
+// terminal_str!(INHERIT, "inherit");
+
+// Enumeration of align-items options
+terminal_str!(NORMAL, "normal");
+// terminal_str!(STRETCH, "stretch");
+// terminal_str!(CENTER, "center");
+// terminal_str!(FLEX_START, "flex-start");
+// terminal_str!(FLEX_END, "flex-end");
+terminal_str!(START, "start");
+terminal_str!(END, "end");
+terminal_str!(BASELINE, "baseline");
+// terminal_str!(INITIAL, "initial");
+// terminal_str!(INHERIT, "inherit");
+
+// Enumeration of align-self items
+terminal_str!(AUTO, "auto");
+// terminal_str!(STRETCH, "stretch");
+// terminal_str!(CENTER, "center");
+// terminal_str!(FLEX_START, "flex-start");
+// terminal_str!(FLEX_END, "flex-end");
+// terminal_str!(BASELINE, "baseline");
+// terminal_str!(INITIAL, "initial");
+// terminal_str!(INHERIT, "inherit");
+
 pub struct CSSLanguage;
 
 /// Parameters for CSS Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct CSSLanguageParameters {
+    colors: Vec<String>,
     classes: Vec<String>,
     ids: Vec<String>,
 }
@@ -382,6 +461,13 @@ impl GrammarBuilder for CSSLanguage {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.into());
             ids.push(production_rule!(term));
+        }
+
+        let mut colors: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        for var in params.colors.iter() {
+            // Store this variable in the heap.
+            let term = GrammarElement::Terminal(var.into());
+            colors.push(production_rule!(term));
         }
 
         let grammar = Grammar::new(
@@ -441,9 +527,9 @@ impl GrammarBuilder for CSSLanguage {
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_PROPERTY),
                     vec![
-                        production_rule!(ALIGN_CONTENT, COLON, SEMICOLON),
-                        production_rule!(ALIGN_ITEMS, COLON, SEMICOLON),
-                        production_rule!(ALIGN_SELF, COLON, SEMICOLON),
+                        production_rule!(ALIGN_CONTENT, COLON, NT_ALIGN_CONTENT_TYPE, SEMICOLON),
+                        production_rule!(ALIGN_ITEMS, COLON, NT_ALIGN_ITEMS_TYPE, SEMICOLON),
+                        production_rule!(ALIGN_SELF, COLON, NT_ALIGN_SELF_TYPE, SEMICOLON),
                         production_rule!(ALL, COLON, SEMICOLON),
                         production_rule!(ANIMATION, COLON, SEMICOLON),
                         production_rule!(ANIMATION_DELAY, COLON, SEMICOLON),
@@ -455,11 +541,11 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(ANIMATION_PLAY_STATE, COLON, SEMICOLON),
                         production_rule!(ANIMATION_TIMING_FUNCTION, COLON, SEMICOLON),
                         production_rule!(BACKFACE_VISIBILITY, COLON, SEMICOLON),
-                        production_rule!(BACKGROUND, COLON, SEMICOLON),
+                        production_rule!(BACKGROUND, COLON, NT_COLOR, SEMICOLON),
                         production_rule!(BACKGROUND_ATTACHMENT, COLON, SEMICOLON),
                         production_rule!(BACKGROUND_BLEND_MODE, COLON, SEMICOLON),
                         production_rule!(BACKGROUND_CLIP, COLON, SEMICOLON),
-                        production_rule!(BACKGROUND_COLOR, COLON, SEMICOLON),
+                        production_rule!(BACKGROUND_COLOR, COLON, NT_COLOR, SEMICOLON),
                         production_rule!(BACKGROUND_IMAGE, COLON, SEMICOLON),
                         production_rule!(BACKGROUND_ORIGIN, COLON, SEMICOLON),
                         production_rule!(BACKGROUND_POSITION, COLON, SEMICOLON),
@@ -473,7 +559,7 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(BORDER_BOTTOM_STYLE, COLON, SEMICOLON),
                         production_rule!(BORDER_BOTTOM_WIDTH, COLON, SEMICOLON),
                         production_rule!(BORDER_COLLAPSE, COLON, SEMICOLON),
-                        production_rule!(BORDER_COLOR, COLON, SEMICOLON),
+                        production_rule!(BORDER_COLOR, COLON, NT_COLOR, SEMICOLON),
                         production_rule!(BORDER_IMAGE, COLON, SEMICOLON),
                         production_rule!(BORDER_IMAGE_OUTSET, COLON, SEMICOLON),
                         production_rule!(BORDER_IMAGE_REPEAT, COLON, SEMICOLON),
@@ -504,7 +590,7 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(CAPTION_SIDE, COLON, SEMICOLON),
                         production_rule!(CLEAR, COLON, SEMICOLON),
                         production_rule!(CLIP, COLON, SEMICOLON),
-                        production_rule!(COLOR, COLON, SEMICOLON),
+                        production_rule!(COLOR, COLON, NT_COLOR, SEMICOLON),
                         production_rule!(COLUMN_COUNT, COLON, SEMICOLON),
                         production_rule!(COLUMN_FILL, COLON, SEMICOLON),
                         production_rule!(COLUMN_GAP, COLON, SEMICOLON),
@@ -513,14 +599,14 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(COLUMN_RULE_STYLE, COLON, SEMICOLON),
                         production_rule!(COLUMN_RULE_WIDTH, COLON, SEMICOLON),
                         production_rule!(COLUMN_SPAN, COLON, SEMICOLON),
-                        production_rule!(COLUMN_WIDTH, COLON, SEMICOLON),
+                        production_rule!(COLUMN_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(COLUMNS, COLON, SEMICOLON),
                         production_rule!(CONTENT, COLON, SEMICOLON),
                         production_rule!(COUNTER_INCREMENT, COLON, SEMICOLON),
                         production_rule!(COUNTER_RESET, COLON, SEMICOLON),
                         production_rule!(CURSOR, COLON, SEMICOLON),
                         production_rule!(DIRECTION, COLON, SEMICOLON),
-                        production_rule!(DISPLAY, COLON, SEMICOLON),
+                        production_rule!(DISPLAY, COLON, NT_DISPLAY_TYPE, SEMICOLON),
                         production_rule!(EMPTY_CELLS, COLON, SEMICOLON),
                         production_rule!(FILTER, COLON, SEMICOLON),
                         production_rule!(FLEX, COLON, SEMICOLON),
@@ -530,37 +616,44 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(FLEX_GROW, COLON, SEMICOLON),
                         production_rule!(FLEX_SHRINK, COLON, SEMICOLON),
                         production_rule!(FLEX_WRAP, COLON, SEMICOLON),
-                        production_rule!(FLOAT, COLON, SEMICOLON),
+                        production_rule!(FLOAT, COLON, NT_FLOAT_TYPE, SEMICOLON),
                         production_rule!(FONT, COLON, SEMICOLON),
                         production_rule!(FONT_FACE, COLON, SEMICOLON),
                         production_rule!(FONT_FAMILY, COLON, SEMICOLON),
-                        production_rule!(FONT_SIZE, COLON, SEMICOLON),
+                        production_rule!(FONT_SIZE, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(FONT_SIZE_ADJUST, COLON, SEMICOLON),
                         production_rule!(FONT_STRETCH, COLON, SEMICOLON),
                         production_rule!(FONT_STYLE, COLON, SEMICOLON),
                         production_rule!(FONT_VARIANT, COLON, SEMICOLON),
                         production_rule!(FONT_WEIGHT, COLON, SEMICOLON),
                         production_rule!(HANGING_PUNCTUATION, COLON, SEMICOLON),
-                        production_rule!(HEIGHT, COLON, SEMICOLON),
-                        production_rule!(JUSTIFY_CONTENT, COLON, SEMICOLON),
+                        production_rule!(HEIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(
+                            JUSTIFY_CONTENT,
+                            COLON,
+                            NT_JUSTIFY_CONTENT_TYPE,
+                            SEMICOLON
+                        ),
+                        production_rule!(JUSTIFY_ITEMS, COLON, NT_JUSTIFY_ITEMS_TYPE, SEMICOLON),
+                        production_rule!(JUSTIFY_SELF, COLON, NT_JUSTIFY_SELF_TYPE, SEMICOLON),
                         production_rule!(KEYFRAMES, COLON, SEMICOLON),
-                        production_rule!(LEFT, COLON, SEMICOLON),
+                        production_rule!(LEFT, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(LETTER_SPACING, COLON, SEMICOLON),
-                        production_rule!(LINE_HEIGHT, COLON, SEMICOLON),
+                        production_rule!(LINE_HEIGHT, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(LIST_STYLE, COLON, SEMICOLON),
                         production_rule!(LIST_STYLE_IMAGE, COLON, SEMICOLON),
                         production_rule!(LIST_STYLE_POSITION, COLON, SEMICOLON),
                         production_rule!(LIST_STYLE_TYPE, COLON, SEMICOLON),
-                        production_rule!(MARGIN, COLON, SEMICOLON),
-                        production_rule!(MARGIN_BOTTOM, COLON, SEMICOLON),
-                        production_rule!(MARGIN_LEFT, COLON, SEMICOLON),
-                        production_rule!(MARGIN_RIGHT, COLON, SEMICOLON),
-                        production_rule!(MARGIN_TOP, COLON, SEMICOLON),
-                        production_rule!(MAX_HEIGHT, COLON, SEMICOLON),
-                        production_rule!(MAX_WIDTH, COLON, SEMICOLON),
+                        production_rule!(MARGIN, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MARGIN_BOTTOM, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MARGIN_LEFT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MARGIN_RIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MARGIN_TOP, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MAX_HEIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MAX_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(MEDIA, COLON, SEMICOLON),
-                        production_rule!(MIN_HEIGHT, COLON, SEMICOLON),
-                        production_rule!(MIN_WIDTH, COLON, SEMICOLON),
+                        production_rule!(MIN_HEIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(MIN_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(NAV_DOWN, COLON, SEMICOLON),
                         production_rule!(NAV_INDEX, COLON, SEMICOLON),
                         production_rule!(NAV_LEFT, COLON, SEMICOLON),
@@ -576,11 +669,11 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(OVERFLOW, COLON, SEMICOLON),
                         production_rule!(OVERFLOW_X, COLON, SEMICOLON),
                         production_rule!(OVERFLOW_Y, COLON, SEMICOLON),
-                        production_rule!(PADDING, COLON, SEMICOLON),
-                        production_rule!(PADDING_BOTTOM, COLON, SEMICOLON),
-                        production_rule!(PADDING_LEFT, COLON, SEMICOLON),
-                        production_rule!(PADDING_RIGHT, COLON, SEMICOLON),
-                        production_rule!(PADDING_TOP, COLON, SEMICOLON),
+                        production_rule!(PADDING, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(PADDING_BOTTOM, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(PADDING_LEFT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(PADDING_RIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(PADDING_TOP, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(PAGE_BREAK_AFTER, COLON, SEMICOLON),
                         production_rule!(PAGE_BREAK_BEFORE, COLON, SEMICOLON),
                         production_rule!(PAGE_BREAK_INSIDE, COLON, SEMICOLON),
@@ -589,7 +682,7 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(POSITION, COLON, SEMICOLON),
                         production_rule!(QUOTES, COLON, SEMICOLON),
                         production_rule!(RESIZE, COLON, SEMICOLON),
-                        production_rule!(RIGHT, COLON, SEMICOLON),
+                        production_rule!(RIGHT, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(TAB_SIZE, COLON, SEMICOLON),
                         production_rule!(TABLE_LAYOUT, COLON, SEMICOLON),
                         production_rule!(TEXT_ALIGN, COLON, SEMICOLON),
@@ -613,11 +706,11 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(VERTICAL_ALIGN, COLON, SEMICOLON),
                         production_rule!(VISIBILITY, COLON, SEMICOLON),
                         production_rule!(WHITE_SPACE, COLON, SEMICOLON),
-                        production_rule!(WIDTH, COLON, SEMICOLON),
+                        production_rule!(WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(WORD_BREAK, COLON, SEMICOLON),
                         production_rule!(WORD_SPACING, COLON, SEMICOLON),
                         production_rule!(WORD_WRAP, COLON, SEMICOLON),
-                        production_rule!(Z_INDEX, COLON, SEMICOLON),
+                        production_rule!(Z_INDEX, COLON, NT_NUMBER, SEMICOLON),
                     ],
                 ),
                 Production::new(
@@ -638,6 +731,127 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(BEFORE),
                         production_rule!(AFTER),
                         production_rule!(SELECTION),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_DISPLAY_TYPE),
+                    vec![
+                        production_rule!(INLINE),
+                        production_rule!(BLOCK),
+                        production_rule!(CONTENTS),
+                        production_rule!(FLEX),
+                        production_rule!(GRID),
+                        production_rule!(INLINE_BLOCK),
+                        production_rule!(INLINE_FLEX),
+                        production_rule!(INLINE_GRID),
+                        production_rule!(INLINE_TABLE),
+                        production_rule!(LIST_ITEM),
+                        production_rule!(RUN_IN),
+                        production_rule!(TABLE),
+                        production_rule!(TABLE_CAPTION),
+                        production_rule!(TABLE_COLUMN_GROUP),
+                        production_rule!(TABLE_HEADER_GROUP),
+                        production_rule!(TABLE_FOOTER_GROUP),
+                        production_rule!(TABLE_ROW_GROUP),
+                        production_rule!(TABLE_CELL),
+                        production_rule!(TABLE_COLUMN),
+                        production_rule!(TABLE_ROW),
+                        production_rule!(NONE),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_ALIGN_CONTENT_TYPE),
+                    vec![
+                        production_rule!(STRETCH),
+                        production_rule!(CENTER),
+                        production_rule!(FLEX_START),
+                        production_rule!(FLEX_END),
+                        production_rule!(SPACE_BETWEEN),
+                        production_rule!(SPACE_AROUND),
+                        production_rule!(SPACE_EVENLY),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_ALIGN_ITEMS_TYPE),
+                    vec![
+                        production_rule!(NORMAL),
+                        production_rule!(STRETCH),
+                        production_rule!(CENTER),
+                        production_rule!(FLEX_START),
+                        production_rule!(FLEX_END),
+                        production_rule!(START),
+                        production_rule!(END),
+                        production_rule!(BASELINE),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_ALIGN_SELF_TYPE),
+                    vec![
+                        production_rule!(AUTO),
+                        production_rule!(STRETCH),
+                        production_rule!(CENTER),
+                        production_rule!(FLEX_START),
+                        production_rule!(FLEX_END),
+                        production_rule!(BASELINE),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_FLOAT_TYPE),
+                    vec![
+                        production_rule!(NONE),
+                        production_rule!(LEFT),
+                        production_rule!(RIGHT),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_JUSTIFY_CONTENT_TYPE),
+                    vec![
+                        production_rule!(FLEX_START),
+                        production_rule!(FLEX_END),
+                        production_rule!(CENTER),
+                        production_rule!(SPACE_BETWEEN),
+                        production_rule!(SPACE_AROUND),
+                        production_rule!(SPACE_EVENLY),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_JUSTIFY_ITEMS_TYPE),
+                    vec![
+                        production_rule!(NORMAL),
+                        production_rule!(STRETCH),
+                        production_rule!(START),
+                        production_rule!(LEFT),
+                        production_rule!(CENTER),
+                        production_rule!(END),
+                        production_rule!(RIGHT),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_JUSTIFY_SELF_TYPE),
+                    vec![
+                        production_rule!(AUTO),
+                        production_rule!(NORMAL),
+                        production_rule!(STRETCH),
+                        production_rule!(START),
+                        production_rule!(LEFT),
+                        production_rule!(CENTER),
+                        production_rule!(END),
+                        production_rule!(RIGHT),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
                     ],
                 ),
                 Production::new(
@@ -773,6 +987,37 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(VAR),
                         production_rule!(VIDEO),
                         production_rule!(WBR),
+                    ],
+                ),
+                numeric_character_production_context_free("nt_number".into()),
+                Production::new(ProductionLHS::new_context_free_elem(NT_COLOR), colors),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_SIZE),
+                    vec![
+                        production_rule!(NT_NUMBER, PERCENT),
+                        production_rule!(NT_NUMBER, NT_NUMBER, PERCENT),
+                        production_rule!(NT_NUMBER, NT_SIZE_SUFFIX),
+                        production_rule!(NT_NUMBER, NT_NUMBER, NT_SIZE_SUFFIX),
+                        production_rule!(NT_NUMBER, NT_NUMBER, NT_NUMBER, NT_SIZE_SUFFIX),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_SIZE_SUFFIX),
+                    vec![
+                        production_rule!(T_LO_C, T_LO_M),                 // cm
+                        production_rule!(T_LO_M, T_LO_M),                 // mm
+                        production_rule!(T_LO_I, T_LO_N),                 // in
+                        production_rule!(T_LO_P, T_LO_X),                 // px
+                        production_rule!(T_LO_P, T_LO_T),                 // pt
+                        production_rule!(T_LO_P, T_LO_C),                 // pc
+                        production_rule!(T_LO_E, T_LO_M),                 // em
+                        production_rule!(T_LO_E, T_LO_X),                 // ex
+                        production_rule!(T_LO_C, T_LO_H),                 // ch
+                        production_rule!(T_LO_R, T_LO_E, T_LO_M),         // rem
+                        production_rule!(T_LO_V, T_LO_W),                 // vw
+                        production_rule!(T_LO_V, T_LO_H),                 // vh
+                        production_rule!(T_LO_V, T_LO_M, T_LO_I, T_LO_M), // vmin
+                        production_rule!(T_LO_V, T_LO_M, T_LO_A, T_LO_X), // vmax
                     ],
                 ),
             ],
