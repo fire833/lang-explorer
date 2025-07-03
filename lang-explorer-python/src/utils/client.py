@@ -6,6 +6,7 @@ import requests
 class CSSLanguageParameters:
 	classes: list[str]
 	ids: list[str]
+	colors: list[str]
 
 @dataclass
 class TacoScheduleParameters:

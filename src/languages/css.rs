@@ -1104,7 +1104,7 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(WBR),
                     ],
                 ),
-                numeric_character_production_context_free("nt_number".into()),
+                numeric_character_production_context_free("number".into()),
                 Production::new(ProductionLHS::new_context_free_elem(NT_COLOR), colors),
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_SIZE),
