@@ -63,9 +63,11 @@ nterminal_str!(NT_FLOAT_TYPE, "float_type");
 nterminal_str!(NT_JUSTIFY_CONTENT_TYPE, "justify_content_type");
 nterminal_str!(NT_JUSTIFY_ITEMS_TYPE, "justify_items_type");
 nterminal_str!(NT_JUSTIFY_SELF_TYPE, "justify_self_type");
-nterminal_str!(NT_SIZE, "nt_size");
-nterminal_str!(NT_NUMBER, "nt_number");
-nterminal_str!(NT_SIZE_SUFFIX, "nt-size_suffix");
+nterminal_str!(NT_SIZE, "size");
+nterminal_str!(NT_NUMBER, "number");
+nterminal_str!(NT_SIZE_SUFFIX, "size_suffix");
+nterminal_str!(NT_BORDER_TYPE, "border_type");
+nterminal_str!(NT_OVERFLOW_TYPE, "overflow_type");
 
 // Enumeration of properties
 terminal_str!(ALIGN_CONTENT, "align-content");
@@ -431,6 +433,29 @@ terminal_str!(AUTO, "auto");
 // terminal_str!(INITIAL, "initial");
 // terminal_str!(INHERIT, "inherit");
 
+// Enumeration of border styles
+// terminal_str!(NONE, "none");
+terminal_str!(HIDDEN, "hidden");
+terminal_str!(DOTTED, "dotted");
+terminal_str!(DASHED, "dashed");
+terminal_str!(SOLID, "solid");
+terminal_str!(DOUBLE, "double");
+terminal_str!(GROOVE, "groove");
+terminal_str!(RIDGE, "ridge");
+terminal_str!(INSET, "inset");
+terminal_str!(OUTSET, "outset");
+// terminal_str!(INITIAL, "initial");
+// terminal_str!(INHERIT, "inherit");
+
+// Enumeration of overflow items
+terminal_str!(VISIBLE, "visible");
+// terminal_str!(HIDDEN, "hidden");
+// terminal_str!(CLIP, "clip");
+terminal_str!(SCROLL, "scroll");
+// terminal_str!(AUTO, "auto");
+// terminal_str!(INITIAL, "initial");
+// terminal_str!(INHERIT, "inherit");
+
 pub struct CSSLanguage;
 
 /// Parameters for CSS Language.
@@ -585,12 +610,19 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(BACKGROUND_REPEAT, COLON, SEMICOLON),
                         production_rule!(BACKGROUND_SIZE, COLON, SEMICOLON),
                         production_rule!(BORDER, COLON, SEMICOLON),
-                        production_rule!(BORDER_BOTTOM, COLON, SEMICOLON),
-                        production_rule!(BORDER_BOTTOM_COLOR, COLON, SEMICOLON),
-                        production_rule!(BORDER_BOTTOM_LEFT_RADIUS, COLON, SEMICOLON),
-                        production_rule!(BORDER_BOTTOM_RIGHT_RADIUS, COLON, SEMICOLON),
-                        production_rule!(BORDER_BOTTOM_STYLE, COLON, SEMICOLON),
-                        production_rule!(BORDER_BOTTOM_WIDTH, COLON, SEMICOLON),
+                        production_rule!(
+                            BORDER_BOTTOM,
+                            COLON,
+                            NT_SIZE,
+                            NT_BORDER_TYPE,
+                            NT_COLOR,
+                            SEMICOLON
+                        ),
+                        production_rule!(BORDER_BOTTOM_COLOR, COLON, NT_COLOR, SEMICOLON),
+                        production_rule!(BORDER_BOTTOM_LEFT_RADIUS, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(BORDER_BOTTOM_RIGHT_RADIUS, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(BORDER_BOTTOM_STYLE, COLON, NT_BORDER_TYPE, SEMICOLON),
+                        production_rule!(BORDER_BOTTOM_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(BORDER_COLLAPSE, COLON, SEMICOLON),
                         production_rule!(BORDER_COLOR, COLON, NT_COLOR, SEMICOLON),
                         production_rule!(BORDER_IMAGE, COLON, SEMICOLON),
@@ -598,25 +630,46 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(BORDER_IMAGE_REPEAT, COLON, SEMICOLON),
                         production_rule!(BORDER_IMAGE_SLICE, COLON, SEMICOLON),
                         production_rule!(BORDER_IMAGE_SOURCE, COLON, SEMICOLON),
-                        production_rule!(BORDER_IMAGE_WIDTH, COLON, SEMICOLON),
-                        production_rule!(BORDER_LEFT, COLON, SEMICOLON),
-                        production_rule!(BORDER_LEFT_COLOR, COLON, SEMICOLON),
-                        production_rule!(BORDER_LEFT_STYLE, COLON, SEMICOLON),
-                        production_rule!(BORDER_LEFT_WIDTH, COLON, SEMICOLON),
+                        production_rule!(BORDER_IMAGE_WIDTH, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(
+                            BORDER_LEFT,
+                            COLON,
+                            NT_SIZE,
+                            NT_BORDER_TYPE,
+                            NT_COLOR,
+                            SEMICOLON
+                        ),
+                        production_rule!(BORDER_LEFT_COLOR, COLON, NT_COLOR, SEMICOLON),
+                        production_rule!(BORDER_LEFT_STYLE, COLON, NT_BORDER_TYPE, SEMICOLON),
+                        production_rule!(BORDER_LEFT_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(BORDER_RADIUS, COLON, SEMICOLON),
-                        production_rule!(BORDER_RIGHT, COLON, SEMICOLON),
-                        production_rule!(BORDER_RIGHT_COLOR, COLON, SEMICOLON),
-                        production_rule!(BORDER_RIGHT_STYLE, COLON, SEMICOLON),
-                        production_rule!(BORDER_RIGHT_WIDTH, COLON, SEMICOLON),
+                        production_rule!(
+                            BORDER_RIGHT,
+                            COLON,
+                            NT_SIZE,
+                            NT_BORDER_TYPE,
+                            NT_COLOR,
+                            SEMICOLON
+                        ),
+                        production_rule!(BORDER_RIGHT_COLOR, COLON, NT_COLOR, SEMICOLON),
+                        production_rule!(BORDER_RIGHT_STYLE, COLON, NT_BORDER_TYPE, SEMICOLON),
+                        production_rule!(BORDER_RIGHT_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(BORDER_SPACING, COLON, SEMICOLON),
                         production_rule!(BORDER_STYLE, COLON, SEMICOLON),
-                        production_rule!(BORDER_TOP, COLON, SEMICOLON),
-                        production_rule!(BORDER_TOP_COLOR, COLON, SEMICOLON),
-                        production_rule!(BORDER_TOP_LEFT_RADIUS, COLON, SEMICOLON),
-                        production_rule!(BORDER_TOP_RIGHT_RADIUS, COLON, SEMICOLON),
-                        production_rule!(BORDER_TOP_STYLE, COLON, SEMICOLON),
-                        production_rule!(BORDER_TOP_WIDTH, COLON, SEMICOLON),
-                        production_rule!(BORDER_WIDTH, COLON, SEMICOLON),
+                        production_rule!(
+                            BORDER_TOP,
+                            COLON,
+                            NT_SIZE,
+                            NT_BORDER_TYPE,
+                            NT_COLOR,
+                            SEMICOLON
+                        ),
+                        production_rule!(BORDER_TOP_COLOR, COLON, NT_COLOR, SEMICOLON),
+                        production_rule!(BORDER_TOP_LEFT_RADIUS, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(BORDER_TOP_RIGHT_RADIUS, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(BORDER_TOP_STYLE, COLON, NT_BORDER_TYPE, SEMICOLON),
+                        production_rule!(BORDER_TOP_WIDTH, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(BORDER_WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(BOTTOM, COLON, SEMICOLON),
                         production_rule!(BOX_SHADOW, COLON, SEMICOLON),
                         production_rule!(BOX_SIZING, COLON, SEMICOLON),
@@ -695,13 +748,13 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(OPACITY, COLON, SEMICOLON),
                         production_rule!(ORDER, COLON, SEMICOLON),
                         production_rule!(OUTLINE, COLON, SEMICOLON),
-                        production_rule!(OUTLINE_COLOR, COLON, SEMICOLON),
+                        production_rule!(OUTLINE_COLOR, COLON, NT_COLOR, SEMICOLON),
                         production_rule!(OUTLINE_OFFSET, COLON, SEMICOLON),
-                        production_rule!(OUTLINE_STYLE, COLON, SEMICOLON),
-                        production_rule!(OUTLINE_WIDTH, COLON, SEMICOLON),
-                        production_rule!(OVERFLOW, COLON, SEMICOLON),
-                        production_rule!(OVERFLOW_X, COLON, SEMICOLON),
-                        production_rule!(OVERFLOW_Y, COLON, SEMICOLON),
+                        production_rule!(OUTLINE_STYLE, COLON, NT_BORDER_TYPE, SEMICOLON),
+                        production_rule!(OUTLINE_WIDTH, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(OVERFLOW, COLON, NT_OVERFLOW_TYPE, SEMICOLON),
+                        production_rule!(OVERFLOW_X, COLON, NT_OVERFLOW_TYPE, SEMICOLON),
+                        production_rule!(OVERFLOW_Y, COLON, NT_OVERFLOW_TYPE, SEMICOLON),
                         production_rule!(PADDING, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(PADDING_BOTTOM, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(PADDING_LEFT, COLON, NT_SIZE, SEMICOLON),
@@ -883,6 +936,35 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(CENTER),
                         production_rule!(END),
                         production_rule!(RIGHT),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_BORDER_TYPE),
+                    vec![
+                        production_rule!(NONE),
+                        production_rule!(HIDDEN),
+                        production_rule!(DOTTED),
+                        production_rule!(DASHED),
+                        production_rule!(SOLID),
+                        production_rule!(DOUBLE),
+                        production_rule!(GROOVE),
+                        production_rule!(RIDGE),
+                        production_rule!(INSET),
+                        production_rule!(OUTSET),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_OVERFLOW_TYPE),
+                    vec![
+                        production_rule!(VISIBLE),
+                        production_rule!(HIDDEN),
+                        production_rule!(CLIP),
+                        production_rule!(SCROLL),
+                        production_rule!(AUTO),
                         production_rule!(INITIAL),
                         production_rule!(INHERIT),
                     ],
