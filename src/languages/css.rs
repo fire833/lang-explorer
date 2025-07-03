@@ -434,11 +434,44 @@ terminal_str!(AUTO, "auto");
 pub struct CSSLanguage;
 
 /// Parameters for CSS Language.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CSSLanguageParameters {
     colors: Vec<String>,
     classes: Vec<String>,
     ids: Vec<String>,
+}
+
+impl Default for CSSLanguageParameters {
+    fn default() -> Self {
+        Self {
+            colors: vec![
+                "#842d5b".into(),
+                "#20b01c".into(),
+                "#7d1dc1".into(),
+                "#42a1dc".into(),
+                "#da8454".into(),
+                "#8ec5d2".into(),
+                "#a69657".into(),
+                "#a69657".into(),
+                "#664ba3".into(),
+                "#3b6a42".into(),
+                "rgb(39, 37, 193)".into(),
+                "rgb(37, 138, 166)".into(),
+                "rgb(84, 183, 126)".into(),
+                "rgb(104, 36, 170)".into(),
+                "rgb(207, 106, 144)".into(),
+                "rgb(203, 135, 198)".into(),
+                "rgb(231, 100, 187)".into(),
+                "rgb(143, 143, 143)".into(),
+                "rgb(68, 68, 68)".into(),
+                "rgb(160, 160, 160)".into(),
+                "rgb(141, 141, 141)".into(),
+                "rgb(95, 95, 95)".into(),
+            ],
+            classes: vec!["buttons".into(), "footers".into()],
+            ids: vec!["content".into(), "header".into(), "btn".into()],
+        }
+    }
 }
 
 impl GrammarBuilder for CSSLanguage {

@@ -79,7 +79,7 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 pub struct TacoScheduleLanguage;
 
 /// Parameters for Taco Schedule Language.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TacoScheduleLanguageParams {
     index_variables: Vec<String>,
     workspace_index_variables: Vec<String>,
@@ -87,6 +87,19 @@ pub struct TacoScheduleLanguageParams {
     split_factor_variables: Vec<String>,
     divide_factor_variables: Vec<String>,
     unroll_factor_variables: Vec<String>,
+}
+
+impl Default for TacoScheduleLanguageParams {
+    fn default() -> Self {
+        Self {
+            index_variables: vec!["i".into(), "j".into(), "k".into(), "x".into(), "y".into()],
+            workspace_index_variables: Default::default(),
+            fused_index_variables: Default::default(),
+            split_factor_variables: Default::default(),
+            divide_factor_variables: Default::default(),
+            unroll_factor_variables: Default::default(),
+        }
+    }
 }
 
 impl TacoScheduleLanguageParams {
