@@ -562,24 +562,24 @@ impl GrammarBuilder for CSSLanguage {
                     ProductionLHS::new_context_free_elem(NT_SELECTOR),
                     vec![
                         // Only one HTML element
-                        production_rule!(NT_BASE_HTML_ELEMENT),
+                        production_rule!(50, NT_BASE_HTML_ELEMENT),
                         // All elements of specified one level deep from parent element type
-                        production_rule!(NT_BASE_HTML_ELEMENT, GREATER, NT_BASE_HTML_ELEMENT),
-                        production_rule!(NT_BASE_HTML_ELEMENT, PLUS, NT_BASE_HTML_ELEMENT),
-                        production_rule!(NT_BASE_HTML_ELEMENT, MINUS, NT_BASE_HTML_ELEMENT),
-                        production_rule!(NT_MULTI_CSHE),
-                        production_rule!(NT_MULTI_SSHE),
+                        production_rule!(10, NT_BASE_HTML_ELEMENT, GREATER, NT_BASE_HTML_ELEMENT),
+                        production_rule!(10, NT_BASE_HTML_ELEMENT, PLUS, NT_BASE_HTML_ELEMENT),
+                        production_rule!(10, NT_BASE_HTML_ELEMENT, MINUS, NT_BASE_HTML_ELEMENT),
+                        production_rule!(10, NT_MULTI_CSHE),
+                        production_rule!(10, NT_MULTI_SSHE),
                     ],
                 ),
                 Production::new(
                     ProductionLHS::new_context_free_elem(NT_PROPERTIES),
                     vec![
                         // Optionally no properties
-                        production_rule!(EPSILON),
+                        production_rule!(30, EPSILON),
                         // Or one property
-                        production_rule!(NT_PROPERTY),
+                        production_rule!(40, NT_PROPERTY),
                         // Or many properties
-                        production_rule!(NT_PROPERTY, NT_PROPERTY),
+                        production_rule!(40, NT_PROPERTY, NT_PROPERTY),
                     ],
                 ),
                 Production::new(
