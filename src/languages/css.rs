@@ -221,6 +221,29 @@ terminal_str!(POSITION, "position");
 terminal_str!(QUOTES, "quotes");
 terminal_str!(RESIZE, "resize");
 terminal_str!(RIGHT, "right");
+terminal_str!(SCROLL_BEHAVIOR, "scroll-behavior");
+terminal_str!(SCROLL_MARGIN, "scroll-margin");
+terminal_str!(SCROLL_MARGIN_BLOCK, "scroll-margin-block");
+terminal_str!(SCROLL_MARGIN_BLOCK_END, "scroll-margin-block-end");
+terminal_str!(SCROLL_MARGIN_BLOCK_START, "scroll-margin-block-start");
+terminal_str!(SCROLL_MARGIN_BOTTOM, "scroll-margin-bottom");
+terminal_str!(SCROLL_MARGIN_INLINE, "scroll-margin-inline");
+terminal_str!(SCROLL_MARGIN_INLINE_END, "scroll-margin-inline-end");
+terminal_str!(SCROLL_MARGIN_INLINE_START, "scroll-margin-inline-start");
+terminal_str!(SCROLL_MARGIN_LEFT, "scroll-margin-left");
+terminal_str!(SCROLL_MARGIN_RIGHT, "scroll-margin-right");
+terminal_str!(SCROLL_MARGIN_TOP, "scroll-margin-top");
+terminal_str!(SCROLL_PADDING, "scroll-padding");
+terminal_str!(SCROLL_PADDING_BLOCK, "scroll-padding-block");
+terminal_str!(SCROLL_PADDING_BLOCK_END, "scroll-padding-block-end");
+terminal_str!(SCROLL_PADDING_BLOCK_START, "scroll-padding-block-start");
+terminal_str!(SCROLL_PADDING_BOTTOM, "scroll-padding-bottom");
+terminal_str!(SCROLL_PADDING_INLINE, "scroll-padding-inline");
+terminal_str!(SCROLL_PADDING_INLINE_END, "scroll-padding-inline-end");
+terminal_str!(SCROLL_PADDING_INLINE_START, "scroll-padding-inline-start");
+terminal_str!(SCROLL_PADDING_LEFT, "scroll-padding-left");
+terminal_str!(SCROLL_PADDING_RIGHT, "scroll-padding-right");
+terminal_str!(SCROLL_PADDING_TOP, "scroll-padding-top");
 terminal_str!(TAB_SIZE, "tab-size");
 terminal_str!(TABLE_LAYOUT, "table-layout");
 terminal_str!(TEXT_ALIGN, "text-align");
@@ -769,6 +792,29 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(QUOTES, COLON, SEMICOLON),
                         production_rule!(RESIZE, COLON, SEMICOLON),
                         production_rule!(RIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_BEHAVIOR, COLON, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_BLOCK, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_BLOCK_END, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_BLOCK_START, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_BOTTOM, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_INLINE, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_INLINE_END, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_INLINE_START, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_LEFT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_RIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_MARGIN_TOP, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_BLOCK, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_BLOCK_END, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_BLOCK_START, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_BOTTOM, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_INLINE, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_INLINE_END, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_INLINE_START, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_LEFT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_RIGHT, COLON, NT_SIZE, SEMICOLON),
+                        production_rule!(SCROLL_PADDING_TOP, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(TAB_SIZE, COLON, SEMICOLON),
                         production_rule!(TABLE_LAYOUT, COLON, SEMICOLON),
                         production_rule!(TEXT_ALIGN, COLON, SEMICOLON),
