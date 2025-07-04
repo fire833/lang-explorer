@@ -30,6 +30,8 @@ use burn::{
     tensor::{Float, Int, Tensor},
 };
 
+use crate::tooling::modules::AggregationMethod;
+
 #[derive(Debug, Config)]
 pub struct Word2VecCBOWConfig {
     /// The number of embedding vectors.
@@ -58,9 +60,12 @@ pub struct Word2VecCBOW<B: Backend> {
 }
 
 impl<B: Backend> Word2VecCBOW<B> {
-    pub fn forward(&self, input: Tensor<B, 2, Int>) -> Tensor<B, 1, Float> {
+    pub fn forward(&self, input: Tensor<B, 2, Int>, agg: AggregationMethod) -> Tensor<B, 3, Float> {
         let vecs = self.embed.forward(input);
-        let int = vecs.mean();
+        let int = match agg {
+            AggregationMethod::Average => vecs.mean_dim(1),
+            AggregationMethod::Sum => vecs.sum_dim(1),
+        };
         let out = self.hidden.forward(int);
         return out;
     }

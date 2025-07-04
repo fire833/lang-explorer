@@ -19,6 +19,7 @@
 // Notes: https://github.com/piskvorky/gensim/blob/develop/gensim/models/doc2vec.py
 // https://github.com/cbowdon/doc2vec-pytorch/blob/master/doc2vec.py
 // https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html
+// https://github.com/cbowdon/doc2vec-pytorch/blob/master/doc2vec.ipynb
 
 use burn::{
     config::Config,
@@ -27,6 +28,8 @@ use burn::{
     prelude::Backend,
     tensor::{Float, Int, Tensor},
 };
+
+use crate::tooling::modules::AggregationMethod;
 
 #[derive(Debug, Config)]
 pub struct Doc2VecDMConfig {
@@ -61,7 +64,22 @@ pub struct Doc2VecDM<B: Backend> {
 }
 
 impl<B: Backend> Doc2VecDM<B> {
-    pub fn forward(&self, input: Tensor<B, 2, Int>) -> Tensor<B, 2, Float> {
-        todo!()
+    pub fn forward(
+        &self,
+        word_inputs: Tensor<B, 2, Int>,
+        doc_inputs: Tensor<B, 2, Int>,
+        agg: AggregationMethod,
+    ) -> Tensor<B, 3, Float> {
+        let docs = self.documents.forward(doc_inputs);
+        let words = self.words.forward(word_inputs);
+
+        let words_summed = match agg {
+            AggregationMethod::Average => words.mean_dim(1),
+            AggregationMethod::Sum => words.sum_dim(1),
+        };
+
+        let int = docs.add(words_summed);
+        let out = self.hidden.forward(int);
+        return out;
     }
 }
