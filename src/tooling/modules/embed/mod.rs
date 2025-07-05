@@ -18,6 +18,7 @@
 
 use burn::config::Config;
 
+pub mod code2vec;
 pub mod graph2vec;
 pub mod pvdbow;
 pub mod pvdm;
