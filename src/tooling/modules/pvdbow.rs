@@ -28,6 +28,9 @@ use burn::{
     tensor::{Float, Int, Tensor},
 };
 
+#[allow(unused)]
+use burn::backend::NdArray;
+
 #[derive(Debug, Config)]
 pub struct Doc2VecDBOWConfig {
     /// The number of word vectors.
@@ -58,9 +61,29 @@ pub struct Doc2VecDBOW<B: Backend> {
 }
 
 impl<B: Backend> Doc2VecDBOW<B> {
-    pub fn forward(&self, doc_inputs: Tensor<B, 2, Int>) -> Tensor<B, 3, Float> {
-        let docs = self.documents.forward(doc_inputs);
+    /// Applies the forward pass to the input tensor.
+    ///
+    /// More specifically, takes a list of document vectors indices.
+    /// The corresponding vector will be passed through the classifier
+    /// and for each batch item and array of logits of size `n_words` will
+    /// be returned.
+    ///
+    /// # Shapes
+    ///
+    /// - doc_inputs: `[batch_size]`
+    /// - output: `[batch_size, n_words]`
+    pub fn forward(&self, doc_inputs: Tensor<B, 1, Int>) -> Tensor<B, 2, Float> {
+        let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(docs);
-        return out;
+        return out.squeeze::<2>(0);
     }
+}
+
+#[test]
+fn test_forward() {
+    let dev = Default::default();
+    let model = Doc2VecDBOWConfig::new(10, 5, 3).init::<NdArray>(&dev);
+
+    let out = model.forward(Tensor::from_data([0, 1, 2, 3, 4], &dev));
+    println!("{out}");
 }

@@ -60,13 +60,28 @@ pub struct Word2VecCBOW<B: Backend> {
 }
 
 impl<B: Backend> Word2VecCBOW<B> {
-    pub fn forward(&self, input: Tensor<B, 2, Int>, agg: AggregationMethod) -> Tensor<B, 3, Float> {
+    /// Applies the forward pass to the input tensor.
+    ///
+    /// Specifically, takes an array of an array of context word indices
+    /// (of size `word_context_size`), whose embeddings will be summed
+    /// and passed through the classifier to return for each batch item
+    /// the logits for size `n_words` corresponding to the probability of
+    /// a word being the center word.
+    ///
+    /// # Shapes
+    ///
+    /// - input: `[batch_size, word_context_size]`
+    /// - output: `[batch_size, n_words]`
+    pub fn forward(&self, input: Tensor<B, 2, Int>, agg: AggregationMethod) -> Tensor<B, 2, Float> {
         let vecs = self.embed.forward(input);
         let int = match agg {
             AggregationMethod::Average => vecs.mean_dim(1),
             AggregationMethod::Sum => vecs.sum_dim(1),
         };
         let out = self.hidden.forward(int);
-        return out;
+        return out.squeeze::<2>(0);
     }
 }
+
+#[test]
+fn test_forward() {}

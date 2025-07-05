@@ -58,9 +58,23 @@ pub struct Word2VecSG<B: Backend> {
 }
 
 impl<B: Backend> Word2VecSG<B> {
-    pub fn forward(&self, input: Tensor<B, 2, Int>) -> Tensor<B, 3, Float> {
-        let vecs = self.embed.forward(input);
+    /// Applies the forward pass to the input tensor.
+    ///
+    /// More specifically, the forward pass expects an array of indices
+    /// of middle words, and returns an array of the logits for each `batch_item`
+    /// of size `n_words` corresponding to the probability of each word
+    /// being the context word.
+    ///
+    /// # Shapes
+    ///
+    /// - input: `[batch_size]`
+    /// - output: `[batch_size, n_words]`
+    pub fn forward(&self, input: Tensor<B, 1, Int>) -> Tensor<B, 2, Float> {
+        let vecs = self.embed.forward(input.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(vecs);
-        return out;
+        return out.squeeze::<2>(0);
     }
 }
+
+#[test]
+fn test_forward() {}
