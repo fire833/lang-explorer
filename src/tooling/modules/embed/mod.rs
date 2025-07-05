@@ -16,6 +16,16 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-pub mod embed;
-pub mod expander;
-pub mod loss;
+use burn::config::Config;
+
+pub mod graph2vec;
+pub mod pvdbow;
+pub mod pvdm;
+pub mod wvcbow;
+pub mod wvsg;
+
+#[derive(Debug, Config)]
+pub enum AggregationMethod {
+    Average,
+    Sum,
+}

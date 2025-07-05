@@ -30,7 +30,7 @@ use burn::{
     tensor::{Float, Int, Tensor},
 };
 
-use crate::tooling::modules::AggregationMethod;
+use crate::tooling::modules::embed::AggregationMethod;
 
 #[derive(Debug, Config)]
 pub struct Word2VecCBOWConfig {

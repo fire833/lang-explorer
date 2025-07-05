@@ -32,7 +32,7 @@ use burn::{
 #[allow(unused)]
 use burn::backend::NdArray;
 
-use crate::tooling::modules::AggregationMethod;
+use crate::tooling::modules::embed::AggregationMethod;
 
 #[derive(Debug, Config)]
 pub struct Doc2VecDMConfig {

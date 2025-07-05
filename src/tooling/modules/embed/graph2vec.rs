@@ -22,7 +22,7 @@ use burn::{
     tensor::{backend::Backend, Tensor},
 };
 
-use crate::tooling::modules::pvdbow::Doc2VecDBOW;
+use crate::tooling::modules::embed::pvdbow::Doc2VecDBOW;
 
 #[derive(Debug, Config)]
 pub struct Graph2VecConfig {
