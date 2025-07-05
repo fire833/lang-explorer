@@ -15,11 +15,9 @@ def main():
 	sub = parser.add_subparsers(dest="cmd", required=True)
 
 	embed = sub.add_parser("embedgen", help="Generate embeddings.")
-	embed.add_argument("--output-path", nargs="?", default="results/embeddings.csv", help="Embeddings path.")
 	embed.add_argument("--dimensions", type=int, default=128, help="Number of dimensions. Default is 128.")
 	embed.add_argument("--epochs", type=int, default=10, help="Number of epochs. Default is 10.")
 	embed.add_argument("--min-count", type=int, default=5, help="Minimal structural feature count. Default is 5.")
-	embed.add_argument("--wl-iterations", type=int, default=2, help="Number of Weisfeiler-Lehman iterations. Default is 2.")
 	embed.add_argument("--learning-rate", type=float, default=0.025, help="Initial learning rate. Default is 0.025.")
 	embed.add_argument("--down-sampling", type=float, default=0.0001, help="Down sampling rate of features. Default is 0.0001.")
 	embed.add_argument("--workers", type=int, default=8, help="Number of workers. Default is 8.")

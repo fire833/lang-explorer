@@ -55,7 +55,8 @@ def generate_embeddings(args):
 		epochs=args.epochs,
 		alpha=args.learning_rate)
 
-	save_embedding(args.output_path, model, res.programs, args.dimensions)
+	output = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}.csv"
+	save_embedding(output, model, res.programs, args.dimensions)
 
 def save_embedding(output_path, model, programs, dimensions):
     """
