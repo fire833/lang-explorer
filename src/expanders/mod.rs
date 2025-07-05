@@ -106,7 +106,7 @@ impl Display for ExpanderWrapper {
         match self {
             Self::MonteCarlo => write!(f, "montecarlo"),
             Self::ML => write!(f, "ml"),
-            Self::WeightedMonteCarlo => write!(f, " weightedmontecarlo"),
+            Self::WeightedMonteCarlo => write!(f, "weightedmontecarlo"),
         }
     }
 }
