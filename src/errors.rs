@@ -22,11 +22,14 @@ use std::{
     string::FromUtf8Error,
 };
 
+use burn::record::RecorderError;
+
 pub enum LangExplorerError {
     General(String),
     IOError(io::Error),
     CCError(cc::Error),
     FromUtf8Error(FromUtf8Error),
+    RecorderError(RecorderError),
 }
 
 impl Display for LangExplorerError {
@@ -36,6 +39,7 @@ impl Display for LangExplorerError {
             Self::IOError(e) => write!(f, "io: {}", e),
             Self::CCError(e) => write!(f, "cc: {}", e),
             Self::FromUtf8Error(e) => write!(f, "utf8: {}", e),
+            Self::RecorderError(e) => write!(f, "recorder: {}", e),
         }
     }
 }
@@ -73,5 +77,11 @@ impl From<cc::Error> for LangExplorerError {
 impl From<FromUtf8Error> for LangExplorerError {
     fn from(value: FromUtf8Error) -> Self {
         Self::FromUtf8Error(value)
+    }
+}
+
+impl From<RecorderError> for LangExplorerError {
+    fn from(value: RecorderError) -> Self {
+        Self::RecorderError(value)
     }
 }

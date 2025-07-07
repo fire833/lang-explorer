@@ -20,16 +20,21 @@
 // https://github.com/cbowdon/doc2vec-pytorch/blob/master/doc2vec.py
 // https://radimrehurek.com/gensim/auto_examples/tutorials/run_doc2vec_lee.html
 
+use std::path::PathBuf;
+
 use burn::{
     config::Config,
     module::Module,
     nn::{Embedding, EmbeddingConfig, Linear, LinearConfig},
     prelude::Backend,
+    record::FileRecorder,
     tensor::{Float, Int, Tensor},
 };
 
 #[allow(unused)]
 use burn::backend::NdArray;
+
+use crate::errors::LangExplorerError;
 
 #[derive(Debug, Config)]
 pub struct Doc2VecDBOWConfig {
@@ -76,6 +81,18 @@ impl<B: Backend> Doc2VecDBOW<B> {
         let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(docs);
         return out.squeeze::<2>(0);
+    }
+
+    /// Save the current embeddings to a separate file.
+    pub fn save_embeddings<FR: FileRecorder<B>, PB: Into<PathBuf>>(
+        &self,
+        file_path: PB,
+        recorder: &FR,
+    ) -> Result<(), LangExplorerError> {
+        match self.documents.clone().save_file(file_path, recorder) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 

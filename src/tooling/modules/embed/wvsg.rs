@@ -22,13 +22,18 @@
 // https://github.com/mklf/word2vec-rs
 // https://radimrehurek.com/gensim/auto_examples/tutorials/run_word2vec.html
 
+use std::path::PathBuf;
+
 use burn::{
     config::Config,
     module::Module,
     nn::{Embedding, EmbeddingConfig, Linear, LinearConfig},
     prelude::Backend,
+    record::FileRecorder,
     tensor::{Float, Int, Tensor},
 };
+
+use crate::errors::LangExplorerError;
 
 #[derive(Debug, Config)]
 pub struct Word2VecSGConfig {
@@ -73,6 +78,18 @@ impl<B: Backend> Word2VecSG<B> {
         let vecs = self.embed.forward(input.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(vecs);
         return out.squeeze::<2>(0);
+    }
+
+    /// Save the current embeddings to a separate file.
+    pub fn save_embeddings<FR: FileRecorder<B>, PB: Into<PathBuf>>(
+        &self,
+        file_path: PB,
+        recorder: &FR,
+    ) -> Result<(), LangExplorerError> {
+        match self.embed.clone().save_file(file_path, recorder) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
