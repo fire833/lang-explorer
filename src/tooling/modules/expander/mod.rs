@@ -15,3 +15,11 @@
 *	with this program; if not, write to the Free Software Foundation, Inc.,
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+
+pub mod lin2;
+pub mod lin3;
+
+pub enum Activation {
+    Sigmoid,
+    ReLU,
+}
