@@ -16,12 +16,25 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::{BTreeMap, HashSet}, fmt::{Debug, Display}, io::Write};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fmt::{Debug, Display},
+    io::Write,
+};
 
 use sha2::{Digest, Sha256};
 
-use crate::{errors::LangExplorerError, expanders::GrammarExpander, grammar::{elem::GrammarElement, lhs::ProductionLHS, prod::Production, program::{InstanceId, ProgramInstance}, NonTerminal, Terminal}};
-
+use crate::{
+    errors::LangExplorerError,
+    expanders::GrammarExpander,
+    grammar::{
+        elem::GrammarElement,
+        lhs::ProductionLHS,
+        prod::Production,
+        program::{InstanceId, ProgramInstance},
+        NonTerminal, Terminal,
+    },
+};
 
 #[derive(Clone)]
 pub struct Grammar<T, I>
@@ -84,9 +97,10 @@ where
         expander: &mut Box<dyn GrammarExpander<T, I>>,
         mut counter: &mut InstanceId,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
-        let mut program = ProgramInstance::new(GrammarElement::NonTerminal(
-            production.non_terminal.non_terminal.clone()
-        ), *counter);
+        let mut program = ProgramInstance::new(
+            GrammarElement::NonTerminal(production.non_terminal.non_terminal.clone()),
+            *counter,
+        );
         let rule = expander.expand_rule(grammar, production);
         let mut children: Vec<ProgramInstance<T, I>> = vec![];
         for item in rule.items.iter() {
@@ -100,16 +114,16 @@ where
                     match Grammar::generate_program_instance_recursive(grammar, prod, expander, &mut counter)  {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
-                    }                        
+                    }
                 }
                 None => {
                     return Err(format!("non-terminal {:?} not found in productions", nt).into())
                 }
             }
                 }
-                GrammarElement::Epsilon | GrammarElement::Terminal(_) => {
-                    children.push(ProgramInstance::new_with_parent(item.clone(), *counter, program.get_id()))
-                }
+                GrammarElement::Epsilon | GrammarElement::Terminal(_) => children.push(
+                    ProgramInstance::new_with_parent(item.clone(), *counter, program.get_id()),
+                ),
             }
         }
 
@@ -119,7 +133,9 @@ where
 
     /// Deprecated: use to generate raw program outputs directly rather
     /// than constructing ASTs.
-    #[deprecated(note = "Please use generate_program_instance to generate ASTs which can then be serialized to output programs. ")]
+    #[deprecated(
+        note = "Please use generate_program_instance to generate ASTs which can then be serialized to output programs. "
+    )]
     pub fn generate_program(
         &self,
         expander: &mut dyn GrammarExpander<T, I>,
@@ -202,14 +218,14 @@ where
         return set;
     }
 
-    /// Generate a unique hash for a given grammar. Essentially it just creates a hash 
+    /// Generate a unique hash for a given grammar. Essentially it just creates a hash
     /// by deterministically hashing all productions. To do this without implementing orderings
     /// on stuff, I choose to simply traverse the entire tree in in-order traversal, adding every
     /// node to the hash as I go.
     pub fn generate_uuid(&self) -> String {
         let mut hash = Sha256::new();
 
-        self.productions.iter().for_each(|(k ,v)| {
+        self.productions.iter().for_each(|(k, v)| {
             let _ = hash.write(format!("{:?}", k).as_bytes());
 
             v.items.iter().for_each(|prod| {
@@ -240,7 +256,7 @@ where
 }
 
 /// Displays the grammar in BNF form for easier insertion into the appendices.
-impl<T, I> Display for Grammar<T, I> 
+impl<T, I> Display for Grammar<T, I>
 where
     T: Terminal,
     I: NonTerminal,
@@ -260,7 +276,7 @@ where
             }
             writeln!(f, "<{:?}> ::= {}\n", nt, rules)?;
         }
-        
+
         Ok(())
     }
 }
