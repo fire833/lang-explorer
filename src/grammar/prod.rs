@@ -32,37 +32,9 @@ where
     pub items: Vec<ProductionRule<T, I>>,
 }
 
-macro_rules! production_rule {
-    ($logit:literal, $($x:expr),+) => {
-        // Create a production rule with logits.
-        ProductionRule::new_with_logit(vec![$($x),+], $logit as u64)
-    };
-    ($($x:expr),+) => {
-        // Create a production rule withot logits.
-        ProductionRule::new(vec![$($x),+])
-    }
-}
-
 use std::fmt::{Debug, Display};
 
 use burn::{module::Module, nn, prelude::Backend};
-pub(crate) use production_rule;
-
-macro_rules! context_free_production {
-    ($nt:expr, $($x:expr),+) => {
-        Production::new(
-            ProductionLHS::new_context_free_elem($nt), vec![$($x),+],
-        )
-    };
-    // ($nt:expr, $rules:expr) => {
-    //     Production::new(
-    //         ProductionLHS::new_context_free_elem($nt),
-    //         $rules,
-    //     )
-    // }
-}
-
-pub(crate) use context_free_production;
 
 use crate::grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal};
 
@@ -148,3 +120,38 @@ where
         Ok(())
     }
 }
+
+macro_rules! production_rule {
+    ($logit:literal, $($x:expr),+) => {
+        // Create a production rule with logits.
+        ProductionRule::new_with_logit(vec![$($x),+], $logit as u64)
+    };
+    ($($x:expr),+) => {
+        // Create a production rule withot logits.
+        ProductionRule::new(vec![$($x),+])
+    }
+}
+
+pub(crate) use production_rule;
+
+macro_rules! context_free_production {
+    ($nt:expr, $($rules:expr),+) => {
+        Production::new(ProductionLHS::new_context_free_elem($nt), vec![$($rules),+])
+    };
+    // ($nt:expr, $rules:expr) => {
+    //     Production::new(
+    //         ProductionLHS::new_context_free_elem($nt),
+    //         $rules,
+    //     )
+    // }
+}
+
+pub(crate) use context_free_production;
+
+macro_rules! context_sensitive_production {
+    (($($prefix:expr),*), $nt:expr, ($($suffix:expr),*), $($rules:expr),+) => {
+        Production::new(ProductionLHS::new_with_prefix_and_suffix(vec![$($prefix),+], $nt, vec![$($suffix),+]), vec![$($rules),+])
+    };
+}
+
+pub(crate) use context_sensitive_production;

@@ -90,6 +90,19 @@ where
             suffix: Some(suffix),
         }
     }
+
+    /// Create a new ProductionLHS with both prefix and suffix context.
+    pub const fn new_with_prefix_and_suffix(
+        prefix: Vec<GrammarElement<T, I>>,
+        non_terminal: I,
+        suffix: Vec<GrammarElement<T, I>>,
+    ) -> Self {
+        Self {
+            prefix: Some(prefix),
+            non_terminal,
+            suffix: Some(suffix),
+        }
+    }
 }
 
 impl<T, I> Debug for ProductionLHS<T, I>
