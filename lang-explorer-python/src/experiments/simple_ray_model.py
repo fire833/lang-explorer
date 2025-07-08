@@ -93,7 +93,7 @@ def train_func():
 	trainer.fit(model, train_dataloaders=train, val_dataloaders=validate)
 
 def main():
-	ray.init(f"ray://10.0.2.221:10001", runtime_env={
+	ray.init(f"ray://client.ray.soonerhpclab.org:10001", runtime_env={
 		"pip": ["torch", "lightning"],
 	})
 	scaling_config = ScalingConfig(num_workers=10, use_gpu=True)

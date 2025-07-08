@@ -25,7 +25,7 @@ def pi4_sample(sample_count):
     return Fraction(in_count, sample_count)
 
 def main():
-	ray.init(f"ray://10.0.2.221:10001")
+	ray.init(f"ray://client.ray.soonerhpclab.org:10001")
 
 	SAMPLE_COUNT = 1000 * 10000
 	# start = time.time() 

@@ -77,7 +77,7 @@ def main():
 	model = XORLearner()
 	trainer.fit(model, train, validate)
 
-	# ray.init(f"ray://10.0.2.221:10001")
+	# ray.init(f"ray://client.ray.soonerhpclab.org:10001")
 
 	# conf = ScalingConfig(num_workers=12, use_gpu=False)
 	# trainer = TorchTrainer(scaling_config=conf)

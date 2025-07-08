@@ -8,7 +8,7 @@ def init_ray():
 	addr = os.getenv("RAY_URL")
 
 	if addr == None:
-		addr = "10.0.2.221:10001"
+		addr = "client.ray.soonerhpclab.org:10001"
 
 	if not ray.is_initialized():
 		ray.init(f"ray://{addr}")
