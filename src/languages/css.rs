@@ -32,7 +32,7 @@ use crate::{
         strings::{
             alphanumeric::{
                 numeric_character_production_context_free, T_LO_A, T_LO_C, T_LO_E, T_LO_H, T_LO_I,
-                T_LO_M, T_LO_N, T_LO_P, T_LO_R, T_LO_T, T_LO_V, T_LO_W, T_LO_X,
+                T_LO_M, T_LO_N, T_LO_P, T_LO_R, T_LO_S, T_LO_T, T_LO_V, T_LO_W, T_LO_X,
             },
             nterminal_str, terminal_str, StringValue, COLON, COMMA, EPSILON, GREATER, LBRACKET,
             MINUS, PERCENT, PLUS, RBRACKET, SEMICOLON, SPACE,
@@ -68,6 +68,7 @@ nterminal_str!(NT_NUMBER, "number");
 nterminal_str!(NT_SIZE_SUFFIX, "size_suffix");
 nterminal_str!(NT_BORDER_TYPE, "border_type");
 nterminal_str!(NT_OVERFLOW_TYPE, "overflow_type");
+nterminal_str!(NT_TEXT_ALIGN_TYPE, "text_align_type");
 
 // Enumeration of properties
 terminal_str!(ALIGN_CONTENT, "align-content");
@@ -269,6 +270,7 @@ terminal_str!(VISIBILITY, "visibility");
 terminal_str!(WHITE_SPACE, "white-space");
 terminal_str!(WIDTH, "width");
 terminal_str!(WORD_BREAK, "word-break");
+terminal_str!(WIDOWS, "widows");
 terminal_str!(WORD_SPACING, "word-spacing");
 terminal_str!(WORD_WRAP, "word-wrap");
 terminal_str!(Z_INDEX, "z-index");
@@ -478,6 +480,15 @@ terminal_str!(SCROLL, "scroll");
 // terminal_str!(AUTO, "auto");
 // terminal_str!(INITIAL, "initial");
 // terminal_str!(INHERIT, "inherit");
+
+// Enumeration of text-align items
+// terminal_str!(LEFT, "left");
+// terminal_str!(RIGHT, "right");s
+terminal_str!(JUSTIFY, "justify");
+// terminal_str!(INITIAL, "initial");
+// terminal_str!(INHERIT, "inherit");
+
+// Enumeration of
 
 pub struct CSSLanguage;
 
@@ -815,32 +826,33 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(SCROLL_PADDING_LEFT, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(SCROLL_PADDING_RIGHT, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(SCROLL_PADDING_TOP, COLON, NT_SIZE, SEMICOLON),
-                        production_rule!(TAB_SIZE, COLON, SEMICOLON),
+                        production_rule!(TAB_SIZE, COLON, NT_NUMBER, SEMICOLON),
                         production_rule!(TABLE_LAYOUT, COLON, SEMICOLON),
-                        production_rule!(TEXT_ALIGN, COLON, SEMICOLON),
+                        production_rule!(TEXT_ALIGN, COLON, NT_TEXT_ALIGN_TYPE, SEMICOLON),
                         production_rule!(TEXT_ALIGN_LAST, COLON, SEMICOLON),
                         production_rule!(TEXT_DECORATION, COLON, SEMICOLON),
                         production_rule!(TEXT_INDENT, COLON, SEMICOLON),
                         production_rule!(TEXT_OVERFLOW, COLON, SEMICOLON),
                         production_rule!(TEXT_SHADOW, COLON, SEMICOLON),
                         production_rule!(TEXT_TRANSFORM, COLON, SEMICOLON),
-                        production_rule!(TOP, COLON, SEMICOLON),
+                        production_rule!(TOP, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(TRANSFORM, COLON, SEMICOLON),
                         production_rule!(TRANSFORM_ORIGIN, COLON, SEMICOLON),
                         production_rule!(TRANSFORM_STYLE, COLON, SEMICOLON),
                         production_rule!(TRANSITION, COLON, SEMICOLON),
-                        production_rule!(TRANSITION_DELAY, COLON, SEMICOLON),
-                        production_rule!(TRANSITION_DURATION, COLON, SEMICOLON),
+                        production_rule!(TRANSITION_DELAY, COLON, NT_NUMBER, T_LO_S, SEMICOLON),
+                        production_rule!(TRANSITION_DURATION, COLON, NT_NUMBER, T_LO_S, SEMICOLON),
                         production_rule!(TRANSITION_PROPERTY, COLON, SEMICOLON),
                         production_rule!(TRANSITION_TIMING_FUNCTION, COLON, SEMICOLON),
                         production_rule!(UNICODE_BIDI, COLON, SEMICOLON),
                         production_rule!(USER_SELECT, COLON, SEMICOLON),
                         production_rule!(VERTICAL_ALIGN, COLON, SEMICOLON),
                         production_rule!(VISIBILITY, COLON, SEMICOLON),
+                        production_rule!(WIDOWS, COLON, NT_NUMBER, SEMICOLON),
                         production_rule!(WHITE_SPACE, COLON, SEMICOLON),
                         production_rule!(WIDTH, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(WORD_BREAK, COLON, SEMICOLON),
-                        production_rule!(WORD_SPACING, COLON, SEMICOLON),
+                        production_rule!(WORD_SPACING, COLON, NT_SIZE, SEMICOLON),
                         production_rule!(WORD_WRAP, COLON, SEMICOLON),
                         production_rule!(Z_INDEX, COLON, NT_NUMBER, SEMICOLON),
                     ],
@@ -1011,6 +1023,16 @@ impl GrammarBuilder for CSSLanguage {
                         production_rule!(CLIP),
                         production_rule!(SCROLL),
                         production_rule!(AUTO),
+                        production_rule!(INITIAL),
+                        production_rule!(INHERIT),
+                    ],
+                ),
+                Production::new(
+                    ProductionLHS::new_context_free_elem(NT_TEXT_ALIGN_TYPE),
+                    vec![
+                        production_rule!(LEFT),
+                        production_rule!(RIGHT),
+                        production_rule!(JUSTIFY),
                         production_rule!(INITIAL),
                         production_rule!(INHERIT),
                     ],
