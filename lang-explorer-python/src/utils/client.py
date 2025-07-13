@@ -40,6 +40,7 @@ class ProgramResult:
 	program: str
 	features: list[int]
 	edge_lists: list[str]
+	is_partial: bool
 
 @dataclass
 class GenerateResults:
