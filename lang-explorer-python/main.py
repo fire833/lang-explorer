@@ -6,6 +6,7 @@ import sys
 from src.commands.viz import data_viz
 from src.commands.embeddings import generate_embeddings
 from src.commands.interact import interactive_tsne
+from src.commands.nearest import nearest_neighbors
 import matplotlib
 
 # %matplotlib qt
@@ -34,6 +35,12 @@ def main():
 	interactive = sub.add_parser("dataint", help="Interact with TSNE data.")
 	interactive.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	interactive.set_defaults(func=interactive_tsne)
+
+	neighbors = sub.add_parser("neigh", help="Get nearest neighbors for a particular set of neighbors")
+	neighbors.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
+	neighbors.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
+	neighbors.add_argument("--count", type=int, default=10, help="Number of nearest neighbors to retrieve.")
+	neighbors.set_defaults(func=nearest_neighbors)
 
 	args = parser.parse_args(sys.argv[1:])
 	args.func(args)
