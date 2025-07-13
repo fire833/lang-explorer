@@ -409,7 +409,7 @@ where
     fn to_string(&self) -> String {
         let mut res = format!("{:?}", self.node);
         for child in self.children.iter() {
-            res.push_str(&format!("{:?}", child));
+            res.push_str(&child.to_string());
         }
 
         res
