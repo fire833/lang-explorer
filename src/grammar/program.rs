@@ -17,14 +17,18 @@
  */
 
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
 };
 
 use fasthash::{city, FastHasher};
 
-use crate::grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal};
+use crate::{
+    errors::LangExplorerError,
+    grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal},
+    languages::ProgramResult,
+};
 
 #[allow(unused)]
 use crate::languages::strings::{nterminal_str, StringValue};
@@ -209,7 +213,7 @@ where
     }
 
     /// Essentially run BFS on the graph to get all nodes.
-    fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
+    pub fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
         let mut nodes = vec![];
 
         // Since these will all be acyclic trees, we don't need to worry about keeping a visited set. Haha I say that now.
@@ -226,6 +230,38 @@ where
         }
 
         nodes
+    }
+
+    pub(crate) fn to_result(
+        &self,
+        return_features: bool,
+        return_edge_lists: bool,
+        is_complete: bool,
+        wl_degree: u32,
+    ) -> Result<ProgramResult, LangExplorerError> {
+        let mut res = ProgramResult::new();
+
+        if return_features {
+            res.set_features(self.extract_words_wl_kernel(
+                wl_degree,
+                WLKernelHashingOrder::SelfChildrenParentOrdered,
+            ));
+        }
+
+        if return_edge_lists {
+            res.set_edge_list(self.get_edge_list());
+        }
+
+        if is_complete {
+            match String::from_utf8(self.serialize()) {
+                Ok(data) => res.set_program(data),
+                Err(e) => return Err(e.into()),
+            }
+        } else {
+            res.set_program(self.to_string());
+        }
+
+        Ok(res)
     }
 
     /// Extract a rooted sub-program from this program instance of degree d.
@@ -258,21 +294,6 @@ where
         }
 
         return subgraphs;
-    }
-
-    pub fn get_all_sub_programs(&self) -> HashSet<String> {
-        let mut set = HashSet::new();
-        self.get_all_subprograms_recursive(&mut set);
-
-        set
-    }
-
-    fn get_all_subprograms_recursive(&self, results: &mut HashSet<String>) {
-        results.insert(self.to_string());
-
-        for child in self.children.iter() {
-            results.insert(child.to_string());
-        }
     }
 }
 

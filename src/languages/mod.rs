@@ -16,10 +16,11 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::HashSet;
+use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use clap::ValueEnum;
+use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
@@ -191,6 +192,121 @@ impl GenerateParams {
         self,
         language: LanguageWrapper,
         expander: ExpanderWrapper,
+    ) -> Result<GenerateResultsV2, LangExplorerError> {
+        let grammar = match language {
+            LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
+            LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
+            LanguageWrapper::Spiral => SpiralLanguage::generate_grammar(self.spiral),
+            LanguageWrapper::TacoExpression => {
+                TacoExpressionLanguage::generate_grammar(self.taco_expr)
+            }
+            LanguageWrapper::TacoSchedule => {
+                TacoScheduleLanguage::generate_grammar(self.taco_sched)
+            }
+            LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
+        }?;
+
+        let mut results = GenerateResultsV2 {
+            grammar: None,
+            programs: vec![],
+        };
+
+        if self.return_grammar {
+            results.grammar = Some(format!("{}", &grammar));
+        }
+
+        let all_programs: Arc<DashMap<String, u8>> = Arc::new(DashMap::new());
+
+        if self.count > 0 {
+            let start = SystemTime::now();
+            let num_cpus = num_cpus::get() as u64;
+
+            let size = match self.count / num_cpus {
+                0 => 1,
+                o => o,
+            } as usize;
+
+            let (tx, mut rx): (Sender<ProgramResult>, Receiver<ProgramResult>) = channel(size);
+
+            for _ in 0..num_cpus {
+                let exp = expander.clone();
+                let gc = grammar.clone();
+                let txt = tx.clone();
+                let all_progs = all_programs.clone(); // Need to do this twice, idk
+                tokio::spawn(async move {
+                    let mut expander = exp.get_expander().unwrap();
+                    let all_programs = all_progs.clone();
+                    let count = self.count / num_cpus; // TODO fix
+
+                    for _ in 0..count {
+                        match Grammar::generate_program_instance(&gc, &mut expander) {
+                            Ok(prog) => {
+                                let s = prog.to_string();
+                                if !all_programs.contains_key(&s) {
+                                    all_programs.insert(s, 1);
+                                    match prog.to_result(
+                                        self.return_features,
+                                        self.return_edge_lists,
+                                        true,
+                                        self.wl_degree,
+                                    ) {
+                                        // Ship it off and keep going.
+                                        Ok(res) => txt.send(res).await.unwrap(),
+                                        Err(e) => return Err(e),
+                                    }
+                                }
+
+                                if self.return_partial_graphs {
+                                    // Go through all child nodes and try and add them to the output.
+                                    for partial in prog.get_all_nodes().iter().skip(1) {
+                                        let s = partial.to_string();
+                                        if !all_programs.contains_key(&s) {
+                                            all_programs.insert(s, 1);
+                                            match partial.to_result(
+                                                self.return_features,
+                                                self.return_edge_lists,
+                                                false,
+                                                self.wl_degree,
+                                            ) {
+                                                Ok(res) => txt.send(res).await.unwrap(),
+                                                Err(e) => return Err(e),
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => return Err(e),
+                        }
+                    }
+
+                    Ok(())
+                });
+            }
+
+            // Need to drop the original sender since we don't move it over to a task.
+            drop(tx);
+
+            while let Some(res) = rx.recv().await {
+                results.programs.push(res);
+            }
+
+            let elapsed = start.elapsed().unwrap();
+
+            println!(
+                "generated {} programs for language {language} with expander {expander} in {} seconds",
+                results.programs.len(),
+                elapsed.as_secs()
+            );
+        }
+
+        Ok(results)
+    }
+
+    #[deprecated()]
+    pub async fn execute_legacy(
+        self,
+        language: LanguageWrapper,
+        expander: ExpanderWrapper,
     ) -> Result<GenerateResults, LangExplorerError> {
         let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
@@ -208,7 +324,6 @@ impl GenerateParams {
         let mut programs = vec![];
         let mut features = vec![];
         let mut edge_lists = vec![];
-        let mut partial_programs = HashSet::new();
 
         let grammar_fmt;
         if self.return_grammar {
@@ -251,10 +366,6 @@ impl GenerateParams {
                                     res.set_edge_list(prog.get_edge_list());
                                 }
 
-                                if self.return_partial_graphs {
-                                    res.set_partial_programs(prog.get_all_sub_programs());
-                                }
-
                                 match String::from_utf8(prog.serialize()) {
                                     Ok(data) => res.set_program(data),
                                     Err(e) => return Err(e.into()),
@@ -286,12 +397,6 @@ impl GenerateParams {
                 if let Some(edges) = res.edge_list {
                     edge_lists.push(edges);
                 }
-
-                if let Some(mut partials) = res.partial_programs {
-                    for prog in partials.drain() {
-                        partial_programs.insert(prog);
-                    }
-                }
             }
 
             let elapsed = start.elapsed().unwrap();
@@ -307,7 +412,6 @@ impl GenerateParams {
         Ok(GenerateResults {
             grammar: grammar_fmt,
             programs: programs,
-            partial_programs,
             features: features,
             edge_lists: edge_lists,
         })
@@ -321,11 +425,6 @@ pub struct GenerateResults {
     /// were generated by the API.
     #[serde(alias = "programs")]
     programs: Vec<String>,
-
-    /// If configured, returns the set of partial programs generated
-    /// alongside complete programs.
-    #[serde(alias = "partial_programs")]
-    partial_programs: HashSet<String>,
 
     /// If enabled, returns a list of all features extracted from
     /// each program. Every ith array in dimension 1 corresponds
@@ -349,16 +448,17 @@ pub struct GenerateResultsV2 {
     /// The list of programs that have been generated.
     #[serde(alias = "programs")]
     programs: Vec<ProgramResult>,
+
+    /// If enabled, returns a BNF copy of the grammar that was used
+    /// to generate all programs within this batch.
+    #[serde(alias = "grammar")]
+    grammar: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-struct ProgramResult {
+pub(crate) struct ProgramResult {
     /// If enabled, the string representation of the generated program.
     program: Option<String>,
-
-    /// If enabled, returns all deduplicated sub-programs that are
-    /// created from the main generated program.
-    partial_programs: Option<HashSet<String>>,
 
     /// If enabled, returns a list of all features extracted from
     /// the program.
@@ -366,31 +466,30 @@ struct ProgramResult {
 
     /// If enabled, returns the program graph in edge-list foramt.
     edge_list: Option<Vec<(InstanceId, InstanceId)>>,
+
+    /// Toggle whether or not the generated program is a partial program or not.
+    is_partial: bool,
 }
 
 impl ProgramResult {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             program: None,
-            partial_programs: None,
             features: None,
             edge_list: None,
+            is_partial: false,
         }
     }
 
-    fn set_program(&mut self, program: String) {
+    pub fn set_program(&mut self, program: String) {
         self.program = Some(program);
     }
 
-    fn set_partial_programs(&mut self, programs: HashSet<String>) {
-        self.partial_programs = Some(programs);
-    }
-
-    fn set_features(&mut self, features: Vec<u64>) {
+    pub fn set_features(&mut self, features: Vec<u64>) {
         self.features = Some(features);
     }
 
-    fn set_edge_list(&mut self, edge_list: Vec<(InstanceId, InstanceId)>) {
+    pub fn set_edge_list(&mut self, edge_list: Vec<(InstanceId, InstanceId)>) {
         self.edge_list = Some(edge_list);
     }
 }

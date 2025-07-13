@@ -22,7 +22,7 @@ use std::{
     str::FromStr,
 };
 
-use lang_explorer::languages::GenerateResults;
+use lang_explorer::languages::{GenerateResults, GenerateResultsV2};
 use lang_explorer::{
     expanders::ExpanderWrapper,
     languages::{GenerateParams, LanguageWrapper},
@@ -39,12 +39,12 @@ use warp::{
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(generate),
+    paths(generate, generate_legacy),
     components(schemas(LanguageWrapper, ExpanderWrapper), responses()),
     info(
         description = "OpenAPI specification for the Language Explorer API.",
         title = "Language Explorer API",
-        version = "0.1.0",
+        version = "0.2.0",
         contact(name = "Kendall Tauser", email = "kttpsy@gmail.com"),
         license(name = "GPL2", identifier = "GPL2")
     )
@@ -55,9 +55,17 @@ impl OpenApiExtensions for ExplorerAPIDocs {}
 
 pub async fn start_server(addr: &str, port: u16) {
     #[allow(deprecated)]
-    let generate = warp::post()
+    let generate1 = warp::post()
         .and(warp::path!(
             "v1" / "generate" / LanguageWrapper / ExpanderWrapper
+        ))
+        .and(warp::path::end())
+        .and(warp::body::bytes())
+        .and_then(generate_legacy);
+
+    let generate2 = warp::post()
+        .and(warp::path!(
+            "v2" / "generate" / LanguageWrapper / ExpanderWrapper
         ))
         .and(warp::path::end())
         .and(warp::body::bytes())
@@ -84,7 +92,12 @@ pub async fn start_server(addr: &str, port: u16) {
         .allow_header("Accept")
         .allow_methods(vec!["POST", "GET"]);
 
-    let routes = generate.or(health).or(openapi).or(any_handler).with(cors);
+    let routes = generate1
+        .or(generate2)
+        .or(health)
+        .or(openapi)
+        .or(any_handler)
+        .with(cors);
 
     warp::serve(routes)
         .run(SocketAddr::V4(SocketAddrV4::new(
@@ -107,6 +120,38 @@ pub async fn start_server(addr: &str, port: u16) {
     )
 )]
 #[deprecated()]
+async fn generate_legacy(
+    language: LanguageWrapper,
+    expander: ExpanderWrapper,
+    body: Bytes,
+) -> Result<impl warp::Reply, Infallible> {
+    let params = match serde_json::from_slice::<GenerateParams>(&body) {
+        Ok(p) => p,
+        Err(e) => return Ok(invalid_request(e.to_string())),
+    };
+
+    #[allow(deprecated)]
+    match params.execute_legacy(language, expander).await {
+        Ok(resp) => Ok(warp::reply::with_status(
+            warp::reply::json(&resp),
+            StatusCode::OK,
+        )),
+        Err(e) => Ok(invalid_request(e.to_string())),
+    }
+}
+
+#[utoipa::path(
+    get, path = "/v2/generate/{language}/{expander}", 
+    request_body = GenerateParams,
+    responses(
+        (status = 200, description = "Successfully generated code.", body = GenerateResultsV2),
+        (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
+    ),
+    params(
+        ("language" = LanguageWrapper, Path, description = "The language to use."),
+        ("expander" = ExpanderWrapper, Path, description = "The expander to utilize."),
+    )
+)]
 async fn generate(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
