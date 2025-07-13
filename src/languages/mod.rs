@@ -243,7 +243,7 @@ impl GenerateParams {
                             Ok(prog) => {
                                 let s = prog.to_string();
                                 if !all_programs.contains_key(&s) {
-                                    all_programs.insert(s, 1);
+                                    all_programs.insert(s, 0);
                                     match prog.to_result(
                                         self.return_features,
                                         self.return_edge_lists,
@@ -251,7 +251,10 @@ impl GenerateParams {
                                         self.wl_degree,
                                     ) {
                                         // Ship it off and keep going.
-                                        Ok(res) => txt.send(res).await.unwrap(),
+                                        Ok(res) => match txt.send(res).await {
+                                            Ok(_) => {}
+                                            Err(e) => return Err(e.into()),
+                                        },
                                         Err(e) => return Err(e),
                                     }
                                 }
@@ -261,14 +264,17 @@ impl GenerateParams {
                                     for partial in prog.get_all_nodes().iter().skip(1) {
                                         let s = partial.to_string();
                                         if !all_programs.contains_key(&s) {
-                                            all_programs.insert(s, 1);
+                                            all_programs.insert(s, 0);
                                             match partial.to_result(
                                                 self.return_features,
                                                 self.return_edge_lists,
                                                 false,
                                                 self.wl_degree,
                                             ) {
-                                                Ok(res) => txt.send(res).await.unwrap(),
+                                                Ok(res) => match txt.send(res).await {
+                                                    Ok(_) => {}
+                                                    Err(e) => return Err(e.into()),
+                                                },
                                                 Err(e) => return Err(e),
                                             }
                                         }
@@ -458,16 +464,20 @@ pub struct GenerateResultsV2 {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub(crate) struct ProgramResult {
     /// If enabled, the string representation of the generated program.
+    #[serde(alias = "program")]
     program: Option<String>,
 
     /// If enabled, returns a list of all features extracted from
     /// the program.
+    #[serde(alias = "features")]
     features: Option<Vec<u64>>,
 
-    /// If enabled, returns the program graph in edge-list foramt.
+    /// If enabled, returns the program graph in edge-list format.
+    #[serde(alias = "edge_list")]
     edge_list: Option<Vec<(InstanceId, InstanceId)>>,
 
     /// Toggle whether or not the generated program is a partial program or not.
+    #[serde(alias = "is_partial")]
     is_partial: bool,
 }
 

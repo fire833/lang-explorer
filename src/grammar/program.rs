@@ -124,8 +124,13 @@ where
                 let self_bytes = node.serialize_bytes();
                 let parent_bytes = match node.parent_id {
                     Some(id) => {
-                        let parent = ids.get(&id).unwrap();
-                        let parent_feature = node_features_old.get(*parent).unwrap();
+                        let parent_feature = match ids.get(&id) {
+                            Some(parent) => match node_features_old.get(*parent) {
+                                Some(parent_feature) => parent_feature,
+                                None => &(0 as u64),
+                            },
+                            None => &(0 as u64),
+                        };
 
                         parent_feature.to_ne_bytes()
                     }
@@ -402,9 +407,9 @@ where
     I: NonTerminal,
 {
     fn to_string(&self) -> String {
-        let mut res = self.node.to_string();
+        let mut res = format!("{:?}", self.node);
         for child in self.children.iter() {
-            res.push_str(&child.to_string());
+            res.push_str(&format!("{:?}", child));
         }
 
         res

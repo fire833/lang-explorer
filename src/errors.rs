@@ -23,6 +23,9 @@ use std::{
 };
 
 use burn::record::RecorderError;
+use tokio::sync::mpsc::error::SendError;
+
+use crate::languages::ProgramResult;
 
 pub enum LangExplorerError {
     General(String),
@@ -30,6 +33,8 @@ pub enum LangExplorerError {
     CCError(cc::Error),
     FromUtf8Error(FromUtf8Error),
     RecorderError(RecorderError),
+    #[allow(private_interfaces)]
+    SendError(SendError<ProgramResult>),
 }
 
 impl Display for LangExplorerError {
@@ -40,6 +45,7 @@ impl Display for LangExplorerError {
             Self::CCError(e) => write!(f, "cc: {}", e),
             Self::FromUtf8Error(e) => write!(f, "utf8: {}", e),
             Self::RecorderError(e) => write!(f, "recorder: {}", e),
+            Self::SendError(e) => write!(f, "sender: {}", e),
         }
     }
 }
@@ -83,5 +89,11 @@ impl From<FromUtf8Error> for LangExplorerError {
 impl From<RecorderError> for LangExplorerError {
     fn from(value: RecorderError) -> Self {
         Self::RecorderError(value)
+    }
+}
+
+impl From<SendError<ProgramResult>> for LangExplorerError {
+    fn from(value: SendError<ProgramResult>) -> Self {
+        Self::SendError(value)
     }
 }
