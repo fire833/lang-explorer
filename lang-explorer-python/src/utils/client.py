@@ -28,6 +28,7 @@ class GenerateParams:
 	return_edge_lists: bool
 	return_features: bool
 	return_grammar: bool
+	return_partial_graphs: bool
 	wl_degree: int
 
 	css: CSSLanguageParameters
@@ -35,14 +36,18 @@ class GenerateParams:
 	taco_expression: TacoExpressionParameters
 
 @dataclass
+class ProgramResult:
+	program: str
+	features: list[int]
+	edge_lists: list[str]
+
+@dataclass
 class GenerateResults:
-	edge_lists: list
-	features: list
+	programs: list[ProgramResult]
 	grammar: str
-	programs: list
 
 def generate(url: str, language: str, expander: str, params: GenerateParams):
-	url = f"{url}/v1/generate/{language}/{expander}"
+	url = f"{url}/v2/generate/{language}/{expander}"
 
 	res = requests.post(url, json=asdict(params), headers={"Content-Type": "application/json"})
 

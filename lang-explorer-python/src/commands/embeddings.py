@@ -7,7 +7,7 @@ import pandas as pd
 def generate_embeddings(args):
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc", 
-		GenerateParams(args.count, True, True, False, 3, 
+		GenerateParams(args.count, True, True, False, True, args.wl_count, 
 		css=CSSLanguageParameters(["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
             "#20b01c",
@@ -38,9 +38,9 @@ def generate_embeddings(args):
 	document_collections = []
 
 	print("extracting explorer response")
-	for i, feat in enumerate(res.features):
-		graph = res.programs[i]
-		doc = TaggedDocument(words=feat, tags=[graph])
+	for i, res in enumerate(res.programs):
+		graph = res.program
+		doc = TaggedDocument(words=res.features, tags=[graph])
 		document_collections.append(doc)
 
 	print("\nOptimization started.\n")
