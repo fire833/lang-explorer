@@ -54,6 +54,7 @@ struct ExplorerAPIDocs;
 impl OpenApiExtensions for ExplorerAPIDocs {}
 
 pub async fn start_server(addr: &str, port: u16) {
+    #[allow(deprecated)]
     let generate = warp::post()
         .and(warp::path!(
             "v1" / "generate" / LanguageWrapper / ExpanderWrapper
@@ -105,6 +106,7 @@ pub async fn start_server(addr: &str, port: u16) {
         ("expander" = ExpanderWrapper, Path, description = "The expander to utilize."),
     )
 )]
+#[deprecated()]
 async fn generate(
     language: LanguageWrapper,
     expander: ExpanderWrapper,

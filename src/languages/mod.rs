@@ -322,7 +322,8 @@ pub struct GenerateResults {
     #[serde(alias = "programs")]
     programs: Vec<String>,
 
-    /// If configured,
+    /// If configured, returns the set of partial programs generated
+    /// alongside complete programs.
     #[serde(alias = "partial_programs")]
     partial_programs: HashSet<String>,
 
@@ -343,6 +344,14 @@ pub struct GenerateResults {
     grammar: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct GenerateResultsV2 {
+    /// The list of programs that have been generated.
+    #[serde(alias = "programs")]
+    programs: Vec<ProgramResult>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct ProgramResult {
     /// If enabled, the string representation of the generated program.
     program: Option<String>,
