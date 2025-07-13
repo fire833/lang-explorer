@@ -472,7 +472,7 @@ pub(crate) struct ProgramResult {
 }
 
 impl ProgramResult {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             program: None,
             features: None,
@@ -481,15 +481,15 @@ impl ProgramResult {
         }
     }
 
-    pub fn set_program(&mut self, program: String) {
+    pub(crate) fn set_program(&mut self, program: String) {
         self.program = Some(program);
     }
 
-    pub fn set_features(&mut self, features: Vec<u64>) {
+    pub(crate) fn set_features(&mut self, features: Vec<u64>) {
         self.features = Some(features);
     }
 
-    pub fn set_edge_list(&mut self, edge_list: Vec<(InstanceId, InstanceId)>) {
+    pub(crate) fn set_edge_list(&mut self, edge_list: Vec<(InstanceId, InstanceId)>) {
         self.edge_list = Some(edge_list);
     }
 }
