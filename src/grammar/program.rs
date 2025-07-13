@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
 };
@@ -231,7 +231,8 @@ where
     /// Extract a rooted sub-program from this program instance of degree d.
     /// Used for graph2vec implementation, where we need all rooted subgraphs
     /// of degree d of a particular graph.
-    pub fn get_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
+    #[deprecated()]
+    fn get_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
         if degree == 0 {
             return ProgramInstance::new(self.node.clone(), self.id);
         } else {
@@ -248,13 +249,30 @@ where
     }
 
     /// Returns all rooted subgraphs for the provided graph of degree d.
+    #[deprecated()]
     pub fn get_all_subgraphs(&self, degree: u32) -> Vec<ProgramInstance<T, I>> {
+        #[allow(deprecated)]
         let mut subgraphs = vec![self.get_subgraph(degree)];
         for child in self.children.iter() {
             subgraphs.append(&mut child.get_all_subgraphs(degree));
         }
 
         return subgraphs;
+    }
+
+    pub fn get_all_sub_programs(&self) -> HashSet<String> {
+        let mut set = HashSet::new();
+        self.get_all_subprograms_recursive(&mut set);
+
+        set
+    }
+
+    fn get_all_subprograms_recursive(&self, results: &mut HashSet<String>) {
+        results.insert(self.to_string());
+
+        for child in self.children.iter() {
+            results.insert(child.to_string());
+        }
     }
 }
 
@@ -354,5 +372,20 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.node)
+    }
+}
+
+impl<T, I> ToString for ProgramInstance<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn to_string(&self) -> String {
+        let mut res = self.node.to_string();
+        for child in self.children.iter() {
+            res.push_str(&child.to_string());
+        }
+
+        res
     }
 }
