@@ -3102,6 +3102,7 @@ dependencies = [
  "burn",
  "cc",
  "clap",
+ "dashmap",
  "fasthash",
  "hex",
  "lalrpop",

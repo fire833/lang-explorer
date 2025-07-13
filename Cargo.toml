@@ -10,6 +10,7 @@ async-trait = "0.1.82"
 burn = { version = "0.17.1", features = ["autodiff", "cuda", "metrics", "ndarray", "network", "router", "train", "tui"] }
 cc = "1.1.20"
 clap = { version = "4.5.17", features = ["derive"] }
+dashmap = "6.1.0"
 fasthash = "0.4.0"
 hex = "0.4.3"
 lalrpop-util = { version = "0.22.2", features = ["lexer"] }
