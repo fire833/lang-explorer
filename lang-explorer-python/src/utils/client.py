@@ -27,6 +27,7 @@ class GenerateParams:
 	count: int
 	return_edge_lists: bool
 	return_features: bool
+	return_graphviz: bool
 	return_grammar: bool
 	return_partial_graphs: bool
 	wl_degree: int
@@ -38,6 +39,7 @@ class GenerateParams:
 @dataclass
 class ProgramResult:
 	program: str
+	graphviz: str
 	features: list[int]
 	edge_lists: list[str]
 	is_partial: bool

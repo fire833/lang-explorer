@@ -7,7 +7,7 @@ import pandas as pd
 def generate_embeddings(args):
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc", 
-		GenerateParams(args.count, False, True, False, True, args.wl_count, 
+		GenerateParams(args.count, False, True, True, False, True, args.wl_count, 
 		css=CSSLanguageParameters(["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
             "#20b01c",
@@ -39,7 +39,7 @@ def generate_embeddings(args):
 
 	print("extracting explorer response")
 	for i, v in enumerate(res.programs):
-		graph = v["program"]
+		graph = v["graphviz"]
 		doc = TaggedDocument(words=v["features"], tags=[graph])
 		document_collections.append(doc)
 
@@ -68,7 +68,7 @@ def save_embedding(output_path, model, programs, dimensions):
     """
     out = []
     for prog in programs:
-        out.append([prog["program"]] + list(model.docvecs[prog["program"]]))
+        out.append([prog["graphviz"]] + list(model.docvecs[prog["graphviz"]]))
     column_names = ["type"]+["x_"+str(dim) for dim in range(dimensions)]
     out = pd.DataFrame(out, columns=column_names)
     out = out.sort_values(["type"])
