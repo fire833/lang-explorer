@@ -19,9 +19,9 @@ def nearest_neighbors(args):
 
 	neigh = NearestNeighbors(n_neighbors=args.count, metric="euclidean")
 	print("loading model...")
-	neigh.fit(data.iloc[:,1:-1])
+	neigh.fit(data.iloc[:,2:-1])
 
-	query = data.iloc[indices, 1:-1]
+	query = data.iloc[indices, 2:-1]
 	print(query.shape)
 
 	(dist, neighind) = neigh.kneighbors(query)

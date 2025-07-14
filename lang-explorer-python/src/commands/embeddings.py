@@ -69,8 +69,8 @@ def save_embedding(output_path, model, programs, dimensions):
     """
     out = []
     for prog in programs:
-        out.append([prog["program"]] + list(model.docvecs[prog["program"]]))
-    column_names = ["type"]+["x_"+str(dim) for dim in range(dimensions)]
+        out.append([prog["program"], prog["graphviz"]] + list(model.docvecs[prog["program"]])) 
+    column_names = ["type" ,"graphviz"] + ["x_"+str(dim) for dim in range(dimensions)]
     out = pd.DataFrame(out, columns=column_names)
     out = out.sort_values(["type"])
     out.to_csv(output_path, index=None)

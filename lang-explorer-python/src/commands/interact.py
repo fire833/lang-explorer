@@ -28,7 +28,7 @@ def interactive_tsne(args):
 
 	print(data.shape)
 
-	embedding2 = TSNE(2).fit_transform(data.iloc[:,1:-1])
+	embedding2 = TSNE(2).fit_transform(data.iloc[:,2:-1])
 
 	fig, ax = plt.subplots()
 	sc = ax.scatter(embedding2[:,0], embedding2[:,1], c=data["plen"])

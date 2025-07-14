@@ -20,14 +20,14 @@ def data_viz(args):
 
 	print(data.shape)
 
-	embedding2 = TSNE(2).fit_transform(data.iloc[:,1:-1])
+	embedding2 = TSNE(2).fit_transform(data.iloc[:,2:-1])
 	plt.title(f"t-SNE (2D) of {plain} dataset")
 	plt.scatter(embedding2[:,0], embedding2[:,1], c=data["plen"])
 	plt.tight_layout()
 	plt.savefig(f"{args.output}/tsne2d{plain}colors.png", dpi=300)
 	plt.close()
 
-	embedding3 = TSNE(3).fit_transform(data.iloc[:,1:-1])
+	embedding3 = TSNE(3).fit_transform(data.iloc[:,2:-1])
 	fig = plt.figure(figsize=(8,6))
 	ax = fig.add_subplot(111, projection='3d')
 	ax.scatter3D(embedding3[:,0], embedding3[:,1], embedding3[:,2], c=data["plen"])
@@ -36,7 +36,7 @@ def data_viz(args):
 	plt.savefig(f"{args.output}/tsne3d{plain}colors.png", dpi=300)
 	plt.close()
 
-	clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=0).fit(data.iloc[:,1:-1])
+	clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=0).fit(data.iloc[:,2:-1])
 	plt.title("Hierarchical Clustering Dendrogram")
 	# plot the top three levels of the dendrogram
 	plot_dendrogram(clusters, truncate_mode="level", p=3, leaf_rotation=90)
@@ -65,7 +65,7 @@ def plot_similarity_scores(count: int, data: pd.DataFrame, name: str, output: st
 	# vectors = data.sample(count, replace=False)
 	vectors = data.iloc[5:count,0:-1]
 
-	similarity = euclidean_distances(vectors.iloc[:,1:-1])
+	similarity = euclidean_distances(vectors.iloc[:,2:-1])
 
 	plt.title(f"Euclidean distances between {count} vectors from {name}")
 	plt.xticks(range(len(vectors)), labels=vectors["type"],
