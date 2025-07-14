@@ -247,19 +247,19 @@ where
 
         while let Some(node) = queue.pop_front() {
             let color: &str = match node.node {
-                GrammarElement::Terminal(_) => "firebrick2",
-                GrammarElement::NonTerminal(_) => "deepskyblue2",
-                GrammarElement::Epsilon => "firebrick2",
+                GrammarElement::Terminal(_) => "red",
+                GrammarElement::NonTerminal(_) => "blue",
+                GrammarElement::Epsilon => "yellow",
             };
 
             s.push_str(&format!(
-                "{} [color={color}, label=\"{:?}\"]; ",
-                node.id, node.node
+                "n{} [color={color}, label=\"{:?}\"]; ",
+                node.id, node.node,
             ));
 
             for child in node.children.iter() {
                 queue.push_back(child);
-                s.push_str(&format!("{} -> {}; ", node.id, child.id));
+                s.push_str(&format!("n{} -> n{}; ", node.id, child.id));
             }
         }
 
