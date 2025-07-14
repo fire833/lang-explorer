@@ -221,7 +221,8 @@ where
     pub fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
         let mut nodes = vec![];
 
-        // Since these will all be acyclic trees, we don't need to worry about keeping a visited set. Haha I say that now.
+        // Since these will all be acyclic trees, we don't need to worry about
+        // keeping a visited set. Haha I say that now.
         // let mut visited: HashSet<&ProgramInstance<T, I>> = HashSet::new();
         let mut queue: VecDeque<&ProgramInstance<T, I>> = VecDeque::new();
         queue.push_back(self);
@@ -237,10 +238,41 @@ where
         nodes
     }
 
+    /// Serialize the current program instance into a graphviz graph string.
+    pub fn serialize_to_graphviz(&self) -> String {
+        let mut s: String = "digraph { ".into();
+
+        let mut queue = VecDeque::new();
+        queue.push_back(self);
+
+        while let Some(node) = queue.pop_front() {
+            let color: &str = match node.node {
+                GrammarElement::Terminal(_) => "firebrick2",
+                GrammarElement::NonTerminal(_) => "deepskyblue2",
+                GrammarElement::Epsilon => "firebrick2",
+            };
+
+            s.push_str(&format!(
+                "{} [color={color}, label=\"{:?}\"]; ",
+                node.id, node.node
+            ));
+
+            for child in node.children.iter() {
+                queue.push_back(child);
+                s.push_str(&format!("{} -> {}; ", node.id, child.id));
+            }
+        }
+
+        s.push_str(" }");
+
+        s
+    }
+
     pub(crate) fn to_result(
         &self,
         return_features: bool,
         return_edge_lists: bool,
+        return_graphviz: bool,
         is_complete: bool,
         wl_degree: u32,
     ) -> Result<ProgramResult, LangExplorerError> {
@@ -255,6 +287,10 @@ where
 
         if return_edge_lists {
             res.set_edge_list(self.get_edge_list());
+        }
+
+        if return_graphviz {
+            res.set_graphviz(self.serialize_to_graphviz());
         }
 
         if is_complete {

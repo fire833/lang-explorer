@@ -136,6 +136,11 @@ pub struct GenerateParams {
     #[serde(alias = "return_grammar", default)]
     return_grammar: bool,
 
+    /// Toggle whether to return graphviz graph representations of
+    /// generated programs.
+    #[serde(alias = "return_graphviz", default)]
+    return_graphviz: bool,
+
     /// Toggle whether or not to return partial graphs for each program
     /// that is generated.
     #[serde(alias = "return_partial_graphs", default = "default_return_partials")]
@@ -247,6 +252,7 @@ impl GenerateParams {
                                     match prog.to_result(
                                         self.return_features,
                                         self.return_edge_lists,
+                                        self.return_graphviz,
                                         true,
                                         self.wl_degree,
                                     ) {
@@ -268,6 +274,7 @@ impl GenerateParams {
                                             match partial.to_result(
                                                 self.return_features,
                                                 self.return_edge_lists,
+                                                self.return_graphviz,
                                                 false,
                                                 self.wl_degree,
                                             ) {
@@ -467,6 +474,10 @@ pub(crate) struct ProgramResult {
     #[serde(alias = "program")]
     program: Option<String>,
 
+    /// Optional graphviz representation for the generated program.
+    #[serde(alias = "graphviz")]
+    graphviz: Option<String>,
+
     /// If enabled, returns a list of all features extracted from
     /// the program.
     #[serde(alias = "features")]
@@ -485,6 +496,7 @@ impl ProgramResult {
     pub(crate) fn new() -> Self {
         Self {
             program: None,
+            graphviz: None,
             features: None,
             edge_list: None,
             is_partial: false,
@@ -493,6 +505,10 @@ impl ProgramResult {
 
     pub(crate) fn set_program(&mut self, program: String) {
         self.program = Some(program);
+    }
+
+    pub(crate) fn set_graphviz(&mut self, graphviz: String) {
+        self.graphviz = Some(graphviz);
     }
 
     pub(crate) fn set_features(&mut self, features: Vec<u64>) {
