@@ -39,7 +39,8 @@ def generate_embeddings(args):
 
 	print("extracting explorer response")
 	for i, v in enumerate(res.programs):
-		graph = v["graphviz"]
+		graph = v["program"]
+		# print(v["graphviz"])
 		doc = TaggedDocument(words=v["features"], tags=[graph])
 		document_collections.append(doc)
 
@@ -68,7 +69,7 @@ def save_embedding(output_path, model, programs, dimensions):
     """
     out = []
     for prog in programs:
-        out.append([prog["graphviz"]] + list(model.docvecs[prog["graphviz"]]))
+        out.append([prog["program"]] + list(model.docvecs[prog["program"]]))
     column_names = ["type"]+["x_"+str(dim) for dim in range(dimensions)]
     out = pd.DataFrame(out, columns=column_names)
     out = out.sort_values(["type"])

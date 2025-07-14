@@ -18,7 +18,8 @@ dependencies = [
     "scikit-learn (>=1.7.0,<2.0.0)",
     "matplotlib (>=3.10.3,<4.0.0)",
     "scipy (==1.13.1)",
-    "mplcursors (>=0.6,<0.7)"
+    "mplcursors (>=0.6,<0.7)",
+    "graphviz (>=0.21,<0.22)"
 ]
 
 
