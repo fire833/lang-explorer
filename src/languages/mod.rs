@@ -26,6 +26,7 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
+use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -42,6 +43,7 @@ use crate::{
 };
 
 pub mod css;
+pub mod karel;
 pub mod nft_ruleset;
 pub mod parsers;
 pub mod spice;
@@ -85,6 +87,7 @@ pub enum LanguageWrapper {
     TacoExpression,
     TacoSchedule,
     Spice,
+    Karel,
 }
 
 impl FromStr for LanguageWrapper {
@@ -98,6 +101,7 @@ impl FromStr for LanguageWrapper {
             "tacoexpr" => Ok(Self::TacoExpression),
             "tacosched" => Ok(Self::TacoSchedule),
             "spice" => Ok(Self::Spice),
+            "karel" => Ok(Self::Karel),
             _ => Err(LangExplorerError::General(
                 "invalid language value provided".into(),
             )),
@@ -114,6 +118,7 @@ impl Display for LanguageWrapper {
             Self::TacoExpression => write!(f, "tacoexpr"),
             Self::TacoSchedule => write!(f, "tacosched"),
             Self::Spice => write!(f, "spice"),
+            Self::Karel => write!(f, "karel"),
         }
     }
 }
@@ -170,6 +175,10 @@ pub struct GenerateParams {
     #[serde(alias = "taco_schedule", default)]
     taco_sched: TacoScheduleLanguageParams,
 
+    /// Parameters for Karel DSL.
+    #[serde(alias = "karel", default)]
+    karel: KarelLanguageParameters,
+
     /// Specify the number of programs to generate.
     #[serde(alias = "count", default = "default_count")]
     count: u64,
@@ -209,6 +218,7 @@ impl GenerateParams {
                 TacoScheduleLanguage::generate_grammar(self.taco_sched)
             }
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
+            LanguageWrapper::Karel => KarelLanguage::generate_grammar(self.karel),
         }?;
 
         let mut results = GenerateResultsV2 {
@@ -332,6 +342,7 @@ impl GenerateParams {
                 TacoScheduleLanguage::generate_grammar(self.taco_sched)
             }
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
+            LanguageWrapper::Karel => KarelLanguage::generate_grammar(self.karel),
         }?;
 
         let mut programs = vec![];
