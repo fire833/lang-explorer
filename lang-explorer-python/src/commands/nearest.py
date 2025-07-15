@@ -4,6 +4,7 @@ import pandas as pd
 from src.utils.strlen import strlen
 from graphviz import Source
 from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
 
 def nearest_neighbors(args):
 	plain = args.input.removeprefix("results/")
@@ -19,7 +20,7 @@ def nearest_neighbors(args):
 
 	indices = [int(i) for i in args.indices.split(",")]
 
-	neigh = NearestNeighbors(n_neighbors=args.count, metric="euclidean")
+	neigh = NearestNeighbors(n_neighbors=args.count + 1, metric="euclidean")
 	print("loading model...")
 	neigh.fit(data.iloc[:,2:-1])
 
@@ -31,29 +32,26 @@ def nearest_neighbors(args):
 	programs = data.iloc[indices, 0]
 	graphs = data.iloc[indices, 1]
 
-	fig, axes = plt.subplots(len(indices), len(indices) + 1, figsize=(7, 7))
+	plt.title("Nearest neighbors examples")
+	fig, axes = plt.subplots(len(indices), args.count + 1, figsize=(7, 7))
 
 	for i, prog in enumerate(programs):
-		print(f"nearest neighbors for {prog}: ")
+		path = Source(graphs[indices[i]]).render(f"/tmp/{i}_root", format="png", cleanup=True)
 
-		file = f"/tmp/{i}_root.png"
-		g = Source(graphs[indices[i]], file, format="png")
-
-		axes[i][0].imshow(file)
-		axes[i][0].axis('off')
-		axes[i][0].set_title(f"Graph {i}")
+		axes[i, 0].imshow(mpimg.imread(path))
+		axes[i, 0].axis('off')
+		axes[i, 0].set_title(f"Graph {i}")
 
 		for j, neigh in enumerate(dist[i]):
-			neighbor = data.iloc[neighind[i, j]]
-			ngraph = neighbor[1]
+			if j == 0:
+				continue
 
-			file = f"/tmp/{i}_{j}.png"
-			img = Source(ngraph, file, format="png")
+			neighbor = data.iloc[neighind[i, j], 1]
 
-			axes[i][j + 1].imshow(file)
-			axes[i][0].axis('off')
-			axes[i][0].set_title(f"Graph {i}'s {j}th nearest neighbor")
+			img = Source(neighbor).render(f"/tmp/{i}_{j}", format="png", cleanup=True)
 
-			print(f"  {j + 1}: {neighbor[0]} {neigh}")
+			axes[i, j].imshow(mpimg.imread(img))
+			axes[i, j].axis('off')
+			axes[i, j].set_title(f"{j}th NN")
 
-	plt.savefig("results/nearest_neighbors.png")
+	plt.savefig("images/nearest_neighbors.png", dpi=2000)
