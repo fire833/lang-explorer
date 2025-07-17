@@ -54,4 +54,4 @@ def nearest_neighbors(args):
 			axes[i, j].axis('off')
 			axes[i, j].set_title(f"{j}th NN")
 
-	plt.savefig("images/nearest_neighbors.png", dpi=2000)
+	plt.savefig(f"images/nn_{plain}.jpeg", dpi=1500)
