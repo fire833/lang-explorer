@@ -16,7 +16,13 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-use burn::{config::Config, module::Module, prelude::Backend};
+use burn::{
+    config::Config,
+    module::Module,
+    prelude::Backend,
+    tensor::backend::AutodiffBackend,
+    train::{TrainStep, ValidStep},
+};
 
 use crate::tooling::modules::{
     embed::{
@@ -34,6 +40,9 @@ pub enum Doc2VecType {
 
 #[derive(Debug, Config)]
 pub struct Doc2VecConfig {
+    /// The seed for things.
+    #[config(default = 1000)]
+    pub seed: u64,
     /// The type of model to instantiate.
     pub model_type: Doc2VecType,
     /// The number of word vectors.
@@ -64,6 +73,18 @@ impl Doc2VecConfig {
                 sample: ns,
             },
         }
+    }
+}
+
+impl<B: AutodiffBackend, TI, TO> TrainStep<TI, TO> for Doc2Vec<B> {
+    fn step(&self, item: TI) -> burn::train::TrainOutput<TO> {
+        todo!()
+    }
+}
+
+impl<B: Backend, VI, VO> ValidStep<VI, VO> for Doc2Vec<B> {
+    fn step(&self, item: VI) -> VO {
+        todo!()
     }
 }
 
