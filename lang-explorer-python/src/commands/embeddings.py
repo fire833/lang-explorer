@@ -1,6 +1,6 @@
 
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from src.utils.client import generate, TacoExpressionParameters, TacoScheduleParameters, CSSLanguageParameters, GenerateParams, GenerateResults
+from src.utils.client import generate, TacoExpressionParameters, TacoScheduleParameters, CSSLanguageParameters, GenerateParams, GenerateResults, KarelLanguageParameters
 import os
 import pandas as pd
 
@@ -33,7 +33,8 @@ def generate_embeddings(args):
             "rgb(95, 95, 95)",
 		]),
 		taco_expression=TacoExpressionParameters(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"], ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
-		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"])))
+		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
+        karel=KarelLanguageParameters()))
 
 	document_collections = []
 

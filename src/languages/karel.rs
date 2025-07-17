@@ -89,17 +89,18 @@ impl GrammarBuilder for KarelLanguage {
                 context_free_production!(
                     STMT,
                     // While loop
-                    production_rule!(WHILE, LPAREN, CONDITIONAL, RPAREN, COLON, SPACE, STMT),
+                    production_rule!(5, WHILE, LPAREN, CONDITIONAL, RPAREN, COLON, SPACE, STMT),
                     // Repeat loop
-                    production_rule!(REPEAT, LPAREN, COUNT, RPAREN, COLON, SPACE, STMT),
+                    production_rule!(5, REPEAT, LPAREN, COUNT, RPAREN, COLON, SPACE, STMT),
                     // Action
-                    production_rule!(ACTION),
+                    production_rule!(9, ACTION),
                     // Multiple statements
-                    production_rule!(STMT, SEMICOLON, STMT),
+                    production_rule!(3, STMT, SEMICOLON, STMT),
                     // If
-                    production_rule!(IF, LPAREN, CONDITIONAL, RPAREN, COLON, SPACE, STMT),
+                    production_rule!(5, IF, LPAREN, CONDITIONAL, RPAREN, COLON, SPACE, STMT),
                     // IfElse
                     production_rule!(
+                        5,
                         IFELSE,
                         LPAREN,
                         CONDITIONAL,
@@ -115,12 +116,12 @@ impl GrammarBuilder for KarelLanguage {
                 ),
                 context_free_production!(
                     CONDITIONAL,
-                    production_rule!(FRONT_CLEAR, LPAREN, RPAREN),
-                    production_rule!(LEFT_CLEAR, LPAREN, RPAREN),
-                    production_rule!(RIGHT_CLEAR, LPAREN, RPAREN),
-                    production_rule!(MARKERS_PRESENT, LPAREN, RPAREN),
-                    production_rule!(NO_MARKERS_PRESENT, LPAREN, RPAREN),
-                    production_rule!(NOT, SPACE, CONDITIONAL)
+                    production_rule!(5, FRONT_CLEAR, LPAREN, RPAREN),
+                    production_rule!(5, LEFT_CLEAR, LPAREN, RPAREN),
+                    production_rule!(5, RIGHT_CLEAR, LPAREN, RPAREN),
+                    production_rule!(5, MARKERS_PRESENT, LPAREN, RPAREN),
+                    production_rule!(5, NO_MARKERS_PRESENT, LPAREN, RPAREN),
+                    production_rule!(2, NOT, SPACE, CONDITIONAL)
                 ),
                 context_free_production!(
                     ACTION,

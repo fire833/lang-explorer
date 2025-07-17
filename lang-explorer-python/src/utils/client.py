@@ -23,6 +23,10 @@ class TacoExpressionParameters:
 	indices: list[str]
 
 @dataclass
+class KarelLanguageParameters:
+	pass
+
+@dataclass
 class GenerateParams:
 	count: int
 	return_edge_lists: bool
@@ -35,6 +39,7 @@ class GenerateParams:
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters
 	taco_expression: TacoExpressionParameters
+	karel: KarelLanguageParameters
 
 @dataclass
 class ProgramResult:
