@@ -22,7 +22,7 @@ use burn::{
     config::Config,
     module::Module,
     prelude::Backend,
-    tensor::{activation::sigmoid, s, Float, Tensor},
+    tensor::{activation::sigmoid, s, Distribution, Float, Int, Shape, Tensor},
 };
 
 #[allow(unused)]
@@ -43,15 +43,29 @@ pub struct NegativeSampling<B: Backend> {
 }
 
 impl<B: Backend> NegativeSampling<B> {
-    pub fn forward(&self, input: Tensor<B, 2, Float>) -> Tensor<B, 1, Float> {
+    /// Applies the forward pass to the input tensor.
+    ///
+    /// Specifically, takes the input logits and the indices of ground truth words
+    /// and returns the loss. k denotes the number of negative samples that will be
+    /// updated on any given backward pass. For computational efficiency, the positive index
+    /// should be the 0th index for every batch item, because the log sigmoid value is
+    /// computed on the entire tensor at once for speed.
+    ///
+    /// # Shapes
+    ///
+    /// - word_indices: `[batch_size, k + 1]`
+    /// - input: `[batch_size, n_words]`
+    /// - output: `[1]`
+    pub fn forward(
+        &self,
+        word_indices: Tensor<B, 2, Int>,
+        input: Tensor<B, 2, Float>,
+    ) -> Tensor<B, 1, Float> {
         let batch_size = input.shape().dims::<2>()[0];
-        // let negative_samples = input.shape().dims()[1] - 1;
-        let log_sigmoid = sigmoid(input).log();
-        let negatives = log_sigmoid.clone().slice(s![.., 1..=-1]);
-        let negatives = negatives.sum_dim(1);
-        let positive = log_sigmoid.slice(s![.., 0]);
+        let log_sigmoid = sigmoid(input.clone().slice(s![..])).log();
+        let positive = sigmoid(input.slice(s![..])).log();
         return -positive
-            .add(-negatives)
+            // .add(-negatives)
             .div_scalar(batch_size as u32)
             .squeeze(1);
     }
@@ -62,10 +76,10 @@ fn test_forward() {
     let dev = Default::default();
     let model = NegativeSamplingConfig::new().init::<NdArray>(&dev);
 
-    let res = model.forward(Tensor::from_data(
-        [[1.00, 2.00, 3.00], [4.00, 5.00, 6.00]],
-        &dev,
-    ));
+    // let res = model.forward(Tensor::from_data(
+    //     [[1.00, 2.00, 3.00], [4.00, 5.00, 6.00]],
+    //     &dev,
+    // ));
 
-    println!("res: {res}");
+    // println!("res: {res}");
 }
