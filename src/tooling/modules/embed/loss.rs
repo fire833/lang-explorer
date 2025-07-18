@@ -16,18 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::config::Config;
-
-pub mod code2vec;
-pub mod graph2vec;
-pub mod loss;
-pub mod pvdbow;
-pub mod pvdm;
-pub mod wvcbow;
-pub mod wvsg;
-
-#[derive(Debug, Config)]
-pub enum AggregationMethod {
-    Average,
-    Sum,
+/// Enumeration of loss functions for learning embeddings.
+/// All embedding models should support all of these loss functions.
+pub enum EmbeddingLossFunction {
+    NegativeSampling,
 }
