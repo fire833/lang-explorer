@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use burn::{
     prelude::Backend,
@@ -37,6 +37,11 @@ pub struct Doc2VecLanguageEmbedder<B: Backend> {
 
     /// Recorder to read/write models to disk.
     recorder: BinGzFileRecorder<HalfPrecisionSettings>,
+
+    window_left: usize,
+    window_right: usize,
+    batch_size: usize,
+    n_epochs: usize,
 }
 
 pub struct Doc2VecLanguageEmbedderParams {
@@ -46,9 +51,14 @@ pub struct Doc2VecLanguageEmbedderParams {
     pub n_docs: usize,
     /// The dimension of embeddings within the model.
     pub d_model: usize,
-    /// The window size when choosing context words
-    /// to predict the center word.
-    pub window: usize,
+    /// The number of words to the left of the center word
+    /// to predict on.
+    pub window_left: usize,
+    /// The number of words to the right of the center word
+    /// to predict on.
+    pub window_right: usize,
+    /// The size of the batches fed through the model.
+    pub batch_size: usize,
     /// number of epochs to train on.
     pub n_epochs: usize,
 }
@@ -75,6 +85,10 @@ where
         Self {
             model: model,
             recorder: BinGzFileRecorder::new(),
+            n_epochs: params.n_epochs,
+            batch_size: params.batch_size,
+            window_left: params.window_left,
+            window_right: params.window_right,
         }
     }
 
@@ -82,13 +96,15 @@ where
         &mut self,
         documents: &Vec<(Self::Document, Vec<Self::Word>)>,
     ) -> Result<(), LangExplorerError> {
-        let mut wordset: HashSet<u64> = HashSet::new();
+        let mut wordset: BTreeSet<Self::Word> = BTreeSet::new();
 
         documents.iter().for_each(|doc| {
             doc.1.iter().for_each(|word| {
                 wordset.insert(*word);
             })
         });
+
+        for epoch in 0..self.n_epochs {}
 
         // this will be useful later
         // let negative_indices = Tensor::<B, 2, Int>::random(

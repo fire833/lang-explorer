@@ -33,7 +33,7 @@ where
     B: Backend,
 {
     type Document;
-    type Word;
+    type Word: PartialEq + PartialOrd;
     type Params;
 
     /// Initializes an Embedder system. This typically involves either
