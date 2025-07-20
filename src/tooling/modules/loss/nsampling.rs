@@ -22,8 +22,11 @@ use burn::{
     config::Config,
     module::Module,
     prelude::Backend,
-    tensor::{activation::sigmoid, s, Distribution, Float, Int, Shape, Tensor},
+    tensor::{activation::sigmoid, Float, Int, Tensor},
 };
+
+#[allow(unused)]
+use burn::tensor::Distribution;
 
 #[allow(unused)]
 use burn::backend::NdArray;
@@ -53,21 +56,25 @@ impl<B: Backend> NegativeSampling<B> {
     ///
     /// # Shapes
     ///
-    /// - word_indices: `[batch_size, k + 1]`
+    /// - true_word_indices: `[batch_size]`
+    /// - word_indices: `[batch_size, k]`
     /// - input: `[batch_size, n_words]`
     /// - output: `[1]`
     pub fn forward(
         &self,
+        true_word_indices: Tensor<B, 1, Int>,
         word_indices: Tensor<B, 2, Int>,
         input: Tensor<B, 2, Float>,
     ) -> Tensor<B, 1, Float> {
-        let batch_size = input.shape().dims::<2>()[0];
-        let log_sigmoid = sigmoid(input.clone().slice(s![..])).log();
-        let positive = sigmoid(input.slice(s![..])).log();
-        return -positive
-            // .add(-negatives)
-            .div_scalar(batch_size as u32)
+        // TODO: this clone will be VERY expensive, need to figure out a way to get rid of this.
+        let negatives = sigmoid(input.clone().gather(1, word_indices))
+            .log()
+            .sum_dim(1)
             .squeeze(1);
+        let positive = sigmoid(input.gather(1, true_word_indices.unsqueeze_dim(1)))
+            .log()
+            .squeeze(1);
+        return -positive.add(-negatives);
     }
 }
 
@@ -76,10 +83,23 @@ fn test_forward() {
     let dev = Default::default();
     let model = NegativeSamplingConfig::new().init::<NdArray>(&dev);
 
-    // let res = model.forward(Tensor::from_data(
-    //     [[1.00, 2.00, 3.00], [4.00, 5.00, 6.00]],
-    //     &dev,
-    // ));
+    let input = Tensor::<NdArray, 2>::random([5, 24], Distribution::Default, &dev);
+    let words = Tensor::<NdArray, 2, Int>::from_data(
+        [
+            [1, 2, 3, 4, 5],
+            [6, 7, 8, 9, 10],
+            [10, 11, 12, 13, 14],
+            [12, 13, 14, 15, 16],
+            [15, 16, 17, 18, 19],
+        ],
+        &dev,
+    );
+    let true_words = Tensor::<NdArray, 1, Int>::from_data([23, 23, 23, 23, 23], &dev);
 
-    // println!("res: {res}");
+    println!("inputs: {input}");
+    println!("words: {words}");
+
+    let res = model.forward(true_words, words, input);
+
+    println!("res: {res}");
 }
