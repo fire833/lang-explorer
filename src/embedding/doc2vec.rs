@@ -63,7 +63,7 @@ pub struct Doc2VecLanguageEmbedderParams {
     pub n_epochs: usize,
 }
 
-impl<T, I, B, const D: usize> LanguageEmbedder<T, I, B, D> for Doc2VecLanguageEmbedder<B>
+impl<T, I, B> LanguageEmbedder<T, I, B> for Doc2VecLanguageEmbedder<B>
 where
     T: Terminal,
     I: NonTerminal,
@@ -119,7 +119,7 @@ where
     fn embed(
         &mut self,
         _document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, D>, LangExplorerError> {
+    ) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }
 }

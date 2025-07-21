@@ -26,7 +26,7 @@ use crate::{
 pub mod doc2vec;
 
 /// Main trait for creating embeddings of programs.
-pub trait LanguageEmbedder<T, I, B, const D: usize>
+pub trait LanguageEmbedder<T, I, B>
 where
     T: Terminal,
     I: NonTerminal,
@@ -52,5 +52,5 @@ where
     fn embed(
         &mut self,
         document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, D>, LangExplorerError>;
+    ) -> Result<Tensor<B, 1>, LangExplorerError>;
 }
