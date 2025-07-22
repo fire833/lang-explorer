@@ -120,34 +120,55 @@ where
             InSuffix(usize),
         }
 
+        let has_prefix = match self.prefix.len() {
+            i if i == 0 => false,
+            _ => true,
+        };
+
+        let has_suffix = match self.suffix.len() {
+            i if i == 0 => false,
+            _ => true,
+        };
+
         let mut state = State::Start;
 
         for (idx, tok) in frontier.iter().enumerate() {
-            match (state, tok) {
-                (State::Start, elem) if self.prefix.len() > 0 => {
+            let end = idx == frontier.len() - 1;
+
+            match (state, tok, has_prefix, has_suffix, end) {
+                (State::Start, _, true, _, true) => return None,
+                (State::Start, elem, true, _, false) => {
                     if *elem == self.prefix[0] {
                         state = State::InPrefix(1);
                     } else {
                         state = State::Start;
                     }
                 }
-                (State::Start, elem) if self.prefix.len() == 0 => {
+                (State::Start, _, false, true, true) => return None,
+                (State::Start, elem, false, true, false) => {
                     if *elem == self.non_terminal.clone().into() {
                         state = State::Middle;
                     } else {
                         state = State::Start;
                     }
                 }
-                (State::Start, elem) if self.prefix.len() == 0 && self.suffix.len() == 0 => {
+                (State::Start, elem, false, false, true) => {
+                    if *elem == self.non_terminal.clone().into() {
+                        return Some(idx);
+                    } else {
+                        return None;
+                    }
+                }
+                (State::Start, elem, false, false, false) => {
                     if *elem == self.non_terminal.clone().into() {
                         return Some(idx);
                     } else {
                         state = State::Start;
                     }
                 }
-                (State::Start, _) => state = State::Start,
 
-                (State::InPrefix(i), elem) => {
+                (State::InPrefix(_), _, _, true, true) => return None,
+                (State::InPrefix(i), elem, _, _, false) => {
                     if i == self.prefix.len() {
                         if *elem == self.non_terminal.clone().into() {
                             state = State::Middle;
@@ -162,29 +183,28 @@ where
                         }
                     }
                 }
-
-                (State::Middle, elem) if self.suffix.len() > 0 => {
-                    if *elem == self.suffix[0] {
-                        state = State::InSuffix(1);
+                (State::InPrefix(i), elem, _, false, true) => {
+                    if i == self.prefix.len() && *elem == self.non_terminal.clone().into() {
+                        return Some(idx - 1 - self.prefix.len());
                     } else {
-                        state = State::Start;
+                        return None;
                     }
                 }
-                (State::Middle, _) => return Some(idx - 1 - self.prefix.len()),
-
-                (State::InSuffix(i), elem) => {
-                    if i == self.suffix.len()
-                        || i == self.suffix.len() - 1 && *elem == self.suffix[i]
-                    {
-                        return Some(i - 1 - self.prefix.len() - self.suffix.len());
-                    } else {
-                        if *elem == self.suffix[i] {
-                            state = State::InSuffix(i + 1);
-                        } else {
-                            state = State::Start;
-                        }
-                    }
-                }
+                (State::Middle, _, _, true, true) => return None,
+                (State::Middle, elem, true, true, false) => todo!(),
+                (State::Middle, elem, true, false, true) => todo!(),
+                (State::Middle, elem, true, false, false) => todo!(),
+                (State::Middle, elem, false, true, false) => todo!(),
+                (State::Middle, elem, false, false, true) => todo!(),
+                (State::Middle, elem, false, false, false) => todo!(),
+                (State::InSuffix(i), elem, true, true, true) => todo!(),
+                (State::InSuffix(i), elem, true, true, false) => todo!(),
+                (State::InSuffix(i), elem, true, false, true) => todo!(),
+                (State::InSuffix(i), elem, true, false, false) => todo!(),
+                (State::InSuffix(i), elem, false, true, true) => todo!(),
+                (State::InSuffix(i), elem, false, true, false) => todo!(),
+                (State::InSuffix(i), elem, false, false, true) => todo!(),
+                (State::InSuffix(i), elem, false, false, false) => todo!(),
             }
         }
 
