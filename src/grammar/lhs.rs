@@ -122,7 +122,7 @@ where
 
         let mut state = State::Start;
 
-        for (i, tok) in frontier.iter().enumerate() {
+        for (idx, tok) in frontier.iter().enumerate() {
             match (state, tok) {
                 (State::Start, elem) if self.prefix.len() > 0 => {
                     if *elem == self.prefix[0] {
@@ -140,7 +140,7 @@ where
                 }
                 (State::Start, elem) if self.prefix.len() == 0 && self.suffix.len() == 0 => {
                     if *elem == self.non_terminal.clone().into() {
-                        return Some(i);
+                        return Some(idx);
                     } else {
                         state = State::Start;
                     }
@@ -170,10 +170,12 @@ where
                         state = State::Start;
                     }
                 }
-                (State::Middle, _) => return Some(i - 1 - self.prefix.len()),
+                (State::Middle, _) => return Some(idx - 1 - self.prefix.len()),
 
                 (State::InSuffix(i), elem) => {
-                    if i == self.suffix.len() {
+                    if i == self.suffix.len()
+                        || i == self.suffix.len() - 1 && *elem == self.suffix[i]
+                    {
                         return Some(i - 1 - self.prefix.len() - self.suffix.len());
                     } else {
                         if *elem == self.suffix[i] {
@@ -213,6 +215,18 @@ fn test_check_for_context() {
         ProductionLHS::new_context_free_elem(FOO)
             .check_for_context(&vec![BAR, BAR, BAR3, FOO, BAZ, BAZ, BAZ, BAZ, BAR3])
     );
+
+    assert_eq!(
+        Some(1),
+        ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
+            .check_for_context(&vec![FOO, BAR2, BAR3, FOO, BAZ])
+    );
+
+    // assert_eq!(
+    //     Some(1),
+    //     ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
+    //         .check_for_context(&vec![FOO, BAR2, BAR3, FOO])
+    // );
 }
 
 impl<T, I> Debug for ProductionLHS<T, I>
