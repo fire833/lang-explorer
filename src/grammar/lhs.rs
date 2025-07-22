@@ -19,9 +19,16 @@
 use std::{
     fmt::Debug,
     hash::{DefaultHasher, Hash, Hasher},
+    vec,
 };
 
-use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
+use crate::{
+    grammar::{elem::GrammarElement, prod::context_free_production, NonTerminal, Terminal},
+    languages::strings::{nterminal_str, terminal_str},
+};
+
+#[allow(unused)]
+use crate::languages::strings::StringValue;
 
 /// A wrapper type for left-hand sides of grammars, which can include grammars that are
 /// context-sensitive. This type allows you to provide optional prefix and suffix
@@ -181,6 +188,31 @@ where
 
         None
     }
+}
+
+#[test]
+fn test_check_for_context() {
+    nterminal_str!(FOO, "foo");
+    terminal_str!(BAR, "bar");
+    terminal_str!(BAR2, "bar2");
+    terminal_str!(BAR3, "bar3");
+    nterminal_str!(BAZ, "baz");
+
+    assert_eq!(
+        None,
+        ProductionLHS::new_context_free_elem(FOO).check_for_context(&vec![])
+    );
+
+    assert_eq!(
+        Some(0),
+        ProductionLHS::new_context_free_elem(FOO).check_for_context(&vec![FOO, BAR, BAR2])
+    );
+
+    assert_eq!(
+        Some(3),
+        ProductionLHS::new_context_free_elem(FOO)
+            .check_for_context(&vec![BAR, BAR, BAR3, FOO, BAZ, BAZ, BAZ, BAZ, BAR3])
+    );
 }
 
 impl<T, I> Debug for ProductionLHS<T, I>
