@@ -22,13 +22,10 @@ use std::{
     vec,
 };
 
-use crate::{
-    grammar::{elem::GrammarElement, prod::context_free_production, NonTerminal, Terminal},
-    languages::strings::{nterminal_str, terminal_str},
-};
+use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
 
 #[allow(unused)]
-use crate::languages::strings::StringValue;
+use crate::languages::strings::{nterminal_str, terminal_str, StringValue};
 
 /// A wrapper type for left-hand sides of grammars, which can include grammars that are
 /// context-sensitive. This type allows you to provide optional prefix and suffix
@@ -113,6 +110,7 @@ where
 
     /// Checks if a LHS is contained within the frontier.
     pub fn check_for_context(&self, frontier: &Vec<GrammarElement<T, I>>) -> Option<usize> {
+        #[derive(Debug)]
         enum State {
             Start,
             InPrefix(usize),
@@ -185,26 +183,51 @@ where
                 }
                 (State::InPrefix(i), elem, _, false, true) => {
                     if i == self.prefix.len() && *elem == self.non_terminal.clone().into() {
-                        return Some(idx - 1 - self.prefix.len());
+                        return Some(idx - self.prefix.len());
                     } else {
                         return None;
                     }
                 }
+
                 (State::Middle, _, _, true, true) => return None,
-                (State::Middle, elem, true, true, false) => todo!(),
-                (State::Middle, elem, true, false, true) => todo!(),
-                (State::Middle, elem, true, false, false) => todo!(),
-                (State::Middle, elem, false, true, false) => todo!(),
-                (State::Middle, elem, false, false, true) => todo!(),
-                (State::Middle, elem, false, false, false) => todo!(),
-                (State::InSuffix(i), elem, true, true, true) => todo!(),
-                (State::InSuffix(i), elem, true, true, false) => todo!(),
-                (State::InSuffix(i), elem, true, false, true) => todo!(),
-                (State::InSuffix(i), elem, true, false, false) => todo!(),
-                (State::InSuffix(i), elem, false, true, true) => todo!(),
-                (State::InSuffix(i), elem, false, true, false) => todo!(),
-                (State::InSuffix(i), elem, false, false, true) => todo!(),
-                (State::InSuffix(i), elem, false, false, false) => todo!(),
+                (State::Middle, elem, false, true, false) => {
+                    if *elem == self.suffix[0] {
+                        state = State::InSuffix(1);
+                    } else if *elem == self.non_terminal.clone().into() {
+                        state = State::Middle;
+                    } else {
+                        state = State::Start;
+                    }
+                }
+                (State::Middle, elem, true, true, false) => {
+                    if *elem == self.suffix[0] {
+                        state = State::InSuffix(1);
+                    } else {
+                        state = State::Start;
+                    }
+                }
+                (State::Middle, _, _, false, _) => return Some(idx - 1 - self.prefix.len()),
+
+                (State::InSuffix(i), elem, _, _, true) => {
+                    if i == self.suffix.len() {
+                        return Some(idx - 1 - self.suffix.len() - self.prefix.len());
+                    } else if i == self.suffix.len() - 1 && *elem == self.suffix[i] {
+                        return Some(idx - self.suffix.len() - self.prefix.len());
+                    } else {
+                        return None;
+                    }
+                }
+                (State::InSuffix(i), elem, _, _, false) => {
+                    if i == self.suffix.len() {
+                        return Some(idx - 1 - self.suffix.len() - self.prefix.len());
+                    } else {
+                        if *elem == self.suffix[i] {
+                            state = State::InSuffix(i + 1);
+                        } else {
+                            state = State::Start;
+                        }
+                    }
+                }
             }
         }
 
@@ -242,11 +265,49 @@ fn test_check_for_context() {
             .check_for_context(&vec![FOO, BAR2, BAR3, FOO, BAZ])
     );
 
-    // assert_eq!(
-    //     Some(1),
-    //     ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
-    //         .check_for_context(&vec![FOO, BAR2, BAR3, FOO])
-    // );
+    assert_eq!(
+        Some(1),
+        ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
+            .check_for_context(&vec![FOO, BAR2, BAR3, FOO])
+    );
+
+    assert_eq!(
+        Some(2),
+        ProductionLHS::new_with_prefix_and_suffix(vec![BAR2, BAR3], "foo".into(), vec![BAR3, BAR2])
+            .check_for_context(&vec![BAR2, BAR2, BAR2, BAR3, FOO, BAR3, BAR2, BAZ])
+    );
+
+    assert_eq!(
+        Some(1),
+        ProductionLHS::new_with_suffix_list(vec![BAR, BAR], "foo".into())
+            .check_for_context(&vec![FOO, FOO, BAR, BAR, BAR])
+    );
+
+    assert_eq!(
+        Some(0),
+        ProductionLHS::new_with_suffix_list(vec![BAR, BAR], "foo".into())
+            .check_for_context(&vec![FOO, BAR, BAR])
+    );
+
+    assert_eq!(
+        Some(0),
+        ProductionLHS::new_with_prefix_and_suffix(
+            vec![BAR, BAR, BAZ],
+            "foo".into(),
+            vec![BAZ, BAR, BAR]
+        )
+        .check_for_context(&vec![BAR, BAR, BAZ, FOO, BAZ, BAR, BAR])
+    );
+
+    assert_eq!(
+        Some(1),
+        ProductionLHS::new_with_prefix_and_suffix(
+            vec![BAR, BAR, BAZ],
+            "foo".into(),
+            vec![BAZ, BAR, BAR]
+        )
+        .check_for_context(&vec![FOO, BAR, BAR, BAZ, FOO, BAZ, BAR, BAR])
+    )
 }
 
 impl<T, I> Debug for ProductionLHS<T, I>
