@@ -34,6 +34,16 @@ where
     Epsilon,
 }
 
+impl<T, I> From<I> for GrammarElement<T, I>
+where
+    T: Terminal,
+    I: NonTerminal,
+{
+    fn from(value: I) -> Self {
+        Self::NonTerminal(value)
+    }
+}
+
 impl<T, I> Display for GrammarElement<T, I>
 where
     T: Terminal,

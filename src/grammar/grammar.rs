@@ -202,16 +202,12 @@ where
                 }
             }
 
-            if let Some(prefix) = &prod.non_terminal.prefix {
-                for item in prefix.iter() {
-                    set.insert(item);
-                }
+            for item in prod.non_terminal.prefix.iter() {
+                set.insert(item);
             }
 
-            if let Some(suffix) = &prod.non_terminal.suffix {
-                for item in suffix.iter() {
-                    set.insert(item);
-                }
+            for item in prod.non_terminal.suffix.iter() {
+                set.insert(item);
             }
         }
 

@@ -33,13 +33,13 @@ where
     I: NonTerminal,
 {
     /// optional prefix context for the rule.
-    pub prefix: Option<Vec<GrammarElement<T, I>>>,
+    pub prefix: Vec<GrammarElement<T, I>>,
 
     /// non-terminal for the rule.
     pub non_terminal: I,
 
     /// optional suffix context for the rule.
-    pub suffix: Option<Vec<GrammarElement<T, I>>>,
+    pub suffix: Vec<GrammarElement<T, I>>,
 }
 
 impl<T, I> ProductionLHS<T, I>
@@ -59,9 +59,9 @@ where
     /// for expansion.
     pub const fn new_context_free(non_terminal: I) -> Self {
         Self {
-            prefix: None,
+            prefix: vec![],
             non_terminal,
-            suffix: None,
+            suffix: vec![],
         }
     }
 
@@ -72,9 +72,9 @@ where
     /// Create a new ProductionLHS with prefix context.
     pub const fn new_with_prefix_list(prefix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
         Self {
-            prefix: Some(prefix),
+            prefix,
             non_terminal,
-            suffix: None,
+            suffix: vec![],
         }
     }
 
@@ -85,9 +85,9 @@ where
     /// Create a new ProductionLHS with suffix context.
     pub const fn new_with_suffix_list(suffix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
         Self {
-            prefix: None,
+            prefix: vec![],
             non_terminal,
-            suffix: Some(suffix),
+            suffix,
         }
     }
 
@@ -98,10 +98,88 @@ where
         suffix: Vec<GrammarElement<T, I>>,
     ) -> Self {
         Self {
-            prefix: Some(prefix),
+            prefix,
             non_terminal,
-            suffix: Some(suffix),
+            suffix,
         }
+    }
+
+    /// Checks if a LHS is contained within the frontier.
+    pub fn check_for_context(&self, frontier: &Vec<GrammarElement<T, I>>) -> Option<usize> {
+        enum State {
+            Start,
+            InPrefix(usize),
+            Middle,
+            InSuffix(usize),
+        }
+
+        let mut state = State::Start;
+
+        for (i, tok) in frontier.iter().enumerate() {
+            match (state, tok) {
+                (State::Start, elem) if self.prefix.len() > 0 => {
+                    if *elem == self.prefix[0] {
+                        state = State::InPrefix(1);
+                    } else {
+                        state = State::Start;
+                    }
+                }
+                (State::Start, elem) if self.prefix.len() == 0 => {
+                    if *elem == self.non_terminal.clone().into() {
+                        state = State::Middle;
+                    } else {
+                        state = State::Start;
+                    }
+                }
+                (State::Start, elem) if self.prefix.len() == 0 && self.suffix.len() == 0 => {
+                    if *elem == self.non_terminal.clone().into() {
+                        return Some(i);
+                    } else {
+                        state = State::Start;
+                    }
+                }
+                (State::Start, _) => state = State::Start,
+
+                (State::InPrefix(i), elem) => {
+                    if i == self.prefix.len() {
+                        if *elem == self.non_terminal.clone().into() {
+                            state = State::Middle;
+                        } else {
+                            state = State::Start;
+                        }
+                    } else {
+                        if *elem == self.prefix[i] {
+                            state = State::InPrefix(i + 1);
+                        } else {
+                            state = State::Start;
+                        }
+                    }
+                }
+
+                (State::Middle, elem) if self.suffix.len() > 0 => {
+                    if *elem == self.suffix[0] {
+                        state = State::InSuffix(1);
+                    } else {
+                        state = State::Start;
+                    }
+                }
+                (State::Middle, _) => return Some(i - 1 - self.prefix.len()),
+
+                (State::InSuffix(i), elem) => {
+                    if i == self.suffix.len() {
+                        return Some(i - 1 - self.prefix.len() - self.suffix.len());
+                    } else {
+                        if *elem == self.suffix[i] {
+                            state = State::InSuffix(i + 1);
+                        } else {
+                            state = State::Start;
+                        }
+                    }
+                }
+            }
+        }
+
+        None
     }
 }
 
@@ -112,15 +190,15 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // optionally write out prefix.
-        if let Some(prefix) = &self.prefix {
-            write!(f, "{:?}", prefix)?;
+        if self.prefix.len() > 0 {
+            write!(f, "{:?}", self.prefix)?;
         }
 
         write!(f, "{:?}", self.non_terminal)?;
 
         // optionally write out suffix.
-        if let Some(suffix) = &self.suffix {
-            write!(f, "{:?}", suffix)?;
+        if self.suffix.len() > 0 {
+            write!(f, "{:?}", self.suffix)?;
         }
 
         Ok(())
