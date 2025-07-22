@@ -26,8 +26,9 @@ use crate::tooling::modules::embed::pvdbow::Doc2VecDBOW;
 
 #[derive(Debug, Config)]
 pub struct Graph2VecConfig {
-    /// The number of
+    /// The number of graphs.
     pub n_graphs: usize,
+    /// The dimension of the embedding.
     pub d_model: usize,
 }
 

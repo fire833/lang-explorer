@@ -233,6 +233,10 @@ where
 
         None
     }
+
+    pub fn is_context_sensitive(&self) -> bool {
+        self.prefix.len() > 0 || self.suffix.len() > 0
+    }
 }
 
 #[test]

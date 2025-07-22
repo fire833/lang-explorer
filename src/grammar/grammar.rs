@@ -47,6 +47,10 @@ where
 
     /// The list of productions associated with this grammar.
     productions: BTreeMap<ProductionLHS<T, I>, Production<T, I>>,
+
+    /// Whether or not the grammar is context sensitive. If false,
+    /// it is assumed that the grammar is context-free.
+    is_context_sensitive: bool,
 }
 
 impl<T, I> Grammar<T, I>
@@ -56,14 +60,18 @@ where
 {
     pub fn new(root: I, mut productions: Vec<Production<T, I>>) -> Self {
         let mut map: BTreeMap<ProductionLHS<T, I>, Production<T, I>> = BTreeMap::new();
+        let mut is_context_sensitive: bool = false;
 
         while let Some(p) = productions.pop() {
-            map.insert(p.lhs(), p);
+            let lhs = p.lhs();
+            is_context_sensitive |= lhs.is_context_sensitive();
+            map.insert(lhs, p);
         }
 
         Self {
             root,
             productions: map,
+            is_context_sensitive,
         }
     }
 
@@ -71,27 +79,53 @@ where
         return Vec::from_iter(self.productions.values());
     }
 
+    /// Main entrypoint for generating programs from a particular grammar.
+    /// Will automatically decide on the expansion regime depending on whether
+    /// the grammar is context-free or context-sensitive.
     pub fn generate_program_instance(
         grammar: &Self,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        if !grammar.is_context_sensitive {
+            return grammar.generate_program_instance_ctx_free(expander);
+        } else {
+            return grammar.generate_program_instance_ctx_sensitive(expander);
+        }
+    }
+
+    fn generate_program_instance_ctx_sensitive(
+        &self,
+        _expander: &mut Box<dyn GrammarExpander<T, I>>,
+    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        Err("unimplemented".into())
+    }
+
+    fn generate_program_instance_ctx_free(
+        &self,
+        expander: &mut Box<dyn GrammarExpander<T, I>>,
+    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let mut counter: InstanceId = 1;
 
-        let prod = match grammar
+        let prod = match self
             .productions
-            .get(&ProductionLHS::new_context_free(grammar.root.clone()))
+            .get(&ProductionLHS::new_context_free(self.root.clone()))
         {
             Some(prod) => prod,
             None => return Err("no root non-terminal/production found".into()),
         };
 
-        match Grammar::generate_program_instance_recursive(grammar, prod, expander, &mut counter) {
+        match Grammar::generate_program_instance_ctx_free_recursive(
+            self,
+            prod,
+            expander,
+            &mut counter,
+        ) {
             Ok(program) => Ok(program),
             Err(e) => Err(e),
         }
     }
 
-    fn generate_program_instance_recursive(
+    fn generate_program_instance_ctx_free_recursive(
         grammar: &Self,
         production: &Production<T, I>,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
@@ -111,7 +145,7 @@ where
                     match grammar.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
             {
                 Some(prod) => {
-                    match Grammar::generate_program_instance_recursive(grammar, prod, expander, &mut counter)  {
+                    match Grammar::generate_program_instance_ctx_free_recursive(grammar, prod, expander, &mut counter)  {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
                     }
