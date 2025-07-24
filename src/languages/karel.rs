@@ -48,17 +48,29 @@ terminal_str!(REPEAT, "repeat");
 terminal_str!(IF, "if");
 terminal_str!(IFELSE, "ifelse");
 terminal_str!(ELSE, "else");
-terminal_str!(FRONT_CLEAR, "frontIsClear");
-terminal_str!(LEFT_CLEAR, "leftIsClear");
-terminal_str!(RIGHT_CLEAR, "rightIsClear");
-terminal_str!(MARKERS_PRESENT, "markersPresent");
-terminal_str!(NO_MARKERS_PRESENT, "noMarkersPresent");
+terminal_str!(FRONT_CLEAR, "frontIsClear()");
+terminal_str!(LEFT_CLEAR, "leftIsClear()");
+terminal_str!(RIGHT_CLEAR, "rightIsClear()");
+terminal_str!(MARKERS_PRESENT, "markersPresent()");
+terminal_str!(NO_MARKERS_PRESENT, "noMarkersPresent()");
 terminal_str!(NOT, "not");
-terminal_str!(MOVE, "move");
-terminal_str!(TURN_RIGHT, "turnRight");
-terminal_str!(TURN_LEFT, "turnLeft");
-terminal_str!(PICK_MARKER, "pickMarker");
-terminal_str!(PUT_MARKER, "putMarker");
+terminal_str!(MOVE, "move()");
+terminal_str!(TURN_RIGHT, "turnRight()");
+terminal_str!(TURN_LEFT, "turnLeft()");
+terminal_str!(PICK_MARKER, "pickMarker()");
+terminal_str!(PUT_MARKER, "putMarker()");
+
+// Numbers
+terminal_str!(T_10, "10");
+terminal_str!(T_11, "11");
+terminal_str!(T_12, "12");
+terminal_str!(T_13, "13");
+terminal_str!(T_14, "14");
+terminal_str!(T_15, "15");
+terminal_str!(T_16, "16");
+terminal_str!(T_17, "17");
+terminal_str!(T_18, "18");
+terminal_str!(T_19, "19");
 
 pub struct KarelLanguage;
 
@@ -116,20 +128,20 @@ impl GrammarBuilder for KarelLanguage {
                 ),
                 context_free_production!(
                     CONDITIONAL,
-                    production_rule!(5, FRONT_CLEAR, LPAREN, RPAREN),
-                    production_rule!(5, LEFT_CLEAR, LPAREN, RPAREN),
-                    production_rule!(5, RIGHT_CLEAR, LPAREN, RPAREN),
-                    production_rule!(5, MARKERS_PRESENT, LPAREN, RPAREN),
-                    production_rule!(5, NO_MARKERS_PRESENT, LPAREN, RPAREN),
+                    production_rule!(5, FRONT_CLEAR),
+                    production_rule!(5, LEFT_CLEAR),
+                    production_rule!(5, RIGHT_CLEAR),
+                    production_rule!(5, MARKERS_PRESENT),
+                    production_rule!(5, NO_MARKERS_PRESENT),
                     production_rule!(2, NOT, SPACE, CONDITIONAL)
                 ),
                 context_free_production!(
                     ACTION,
-                    production_rule!(MOVE, LPAREN, RPAREN),
-                    production_rule!(TURN_RIGHT, LPAREN, RPAREN),
-                    production_rule!(TURN_LEFT, LPAREN, RPAREN),
-                    production_rule!(PICK_MARKER, LPAREN, RPAREN),
-                    production_rule!(PUT_MARKER, LPAREN, RPAREN)
+                    production_rule!(MOVE),
+                    production_rule!(TURN_RIGHT),
+                    production_rule!(TURN_LEFT),
+                    production_rule!(PICK_MARKER),
+                    production_rule!(PUT_MARKER)
                 ),
                 context_free_production!(
                     COUNT,
@@ -142,16 +154,16 @@ impl GrammarBuilder for KarelLanguage {
                     production_rule!(T_7),
                     production_rule!(T_8),
                     production_rule!(T_9),
-                    production_rule!(T_1, T_0),
-                    production_rule!(T_1, T_1),
-                    production_rule!(T_1, T_2),
-                    production_rule!(T_1, T_3),
-                    production_rule!(T_1, T_4),
-                    production_rule!(T_1, T_5),
-                    production_rule!(T_1, T_6),
-                    production_rule!(T_1, T_7),
-                    production_rule!(T_1, T_8),
-                    production_rule!(T_1, T_9)
+                    production_rule!(T_10),
+                    production_rule!(T_11),
+                    production_rule!(T_12),
+                    production_rule!(T_13),
+                    production_rule!(T_14),
+                    production_rule!(T_15),
+                    production_rule!(T_16),
+                    production_rule!(T_17),
+                    production_rule!(T_18),
+                    production_rule!(T_19)
                 ),
             ],
         ))
