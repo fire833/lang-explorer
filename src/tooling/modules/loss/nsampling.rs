@@ -32,7 +32,7 @@ use burn::tensor::Distribution;
 use burn::backend::NdArray;
 
 #[derive(Debug, Config)]
-pub struct NegativeSamplingConfig {}
+pub struct NegativeSamplingConfig;
 
 impl NegativeSamplingConfig {
     pub fn init<B: Backend>(&self, _device: &B::Device) -> NegativeSampling<B> {

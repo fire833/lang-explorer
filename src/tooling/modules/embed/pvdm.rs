@@ -87,7 +87,7 @@ impl<B: Backend> Doc2VecDM<B> {
         &self,
         doc_inputs: Tensor<B, 1, Int>,
         word_inputs: Tensor<B, 2, Int>,
-        agg: AggregationMethod,
+        agg: &AggregationMethod,
     ) -> Tensor<B, 2, Float> {
         let docs = self
             .documents
@@ -136,7 +136,7 @@ fn test_forward() {
             ],
             &dev,
         ),
-        AggregationMethod::Sum,
+        &AggregationMethod::Sum,
     );
     println!("{out}");
 }

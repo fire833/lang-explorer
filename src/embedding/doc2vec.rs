@@ -22,26 +22,32 @@ use burn::{
     config::Config,
     optim::AdamConfig,
     prelude::Backend,
-    record::{BinGzFileRecorder, HalfPrecisionSettings},
-    tensor::{backend::AutodiffBackend, Tensor},
-    train::LearnerBuilder,
+    tensor::{backend::AutodiffBackend, Float, Int, Tensor},
+    train::{TrainOutput, TrainStep, ValidStep},
 };
 
 use crate::{
     embedding::LanguageEmbedder,
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
-    tooling::modules::embed::pvdm::{Doc2VecDM, Doc2VecDMConfig},
+    tooling::modules::{
+        embed::{
+            loss::EmbeddingLossFunction,
+            pvdm::{Doc2VecDM, Doc2VecDMConfig},
+            AggregationMethod,
+        },
+        loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
+    },
 };
 
 pub struct Doc2VecEmbedder<B: Backend> {
     /// The model itself.
     model: Doc2VecDM<B>,
 
-    /// Recorder to read/write models to disk.
-    recorder: BinGzFileRecorder<HalfPrecisionSettings>,
+    loss: NegativeSampling<B>,
 
     strategy: Doc2VecTrainingStrategy,
+    agg: AggregationMethod,
     window_left: usize,
     window_right: usize,
     batch_size: usize,
@@ -51,6 +57,31 @@ pub struct Doc2VecEmbedder<B: Backend> {
 #[derive(Debug, Config)]
 pub enum Doc2VecTrainingStrategy {
     AllDocsAllSubwords,
+}
+
+impl<B> TrainStep<(Tensor<B, 1, Int>, Tensor<B, 2, Int>, Tensor<B, 1, Int>), Tensor<B, 1, Float>>
+    for Doc2VecEmbedder<B>
+where
+    B: AutodiffBackend,
+{
+    fn step(
+        &self,
+        item: (Tensor<B, 1, Int>, Tensor<B, 2, Int>, Tensor<B, 1, Int>),
+    ) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
+        let logits = self.model.forward(item.0, item.1.clone(), &self.agg);
+        let loss = self.loss.forward(item.2, item.1, logits);
+
+        TrainOutput::new(&self.model, loss.backward(), loss)
+    }
+}
+
+impl<B, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<B>
+where
+    B: Backend,
+{
+    fn step(&self, item: VI) -> VO {
+        todo!()
+    }
 }
 
 #[derive(Config)]
@@ -71,6 +102,10 @@ pub struct Doc2VecEmbedderParams {
     pub window_right: usize,
     /// The training strategy to use.
     pub strategy: Doc2VecTrainingStrategy,
+    /// The aggregation methdo to use.
+    pub agg: AggregationMethod,
+    /// The loss function to use.
+    pub loss: EmbeddingLossFunction,
     /// The size of the batches fed through the model.
     pub batch_size: usize,
     /// number of epochs to train on.
@@ -96,14 +131,17 @@ where
         let model =
             Doc2VecDMConfig::new(params.n_words, params.n_docs, params.d_model).init(&device);
 
+        let loss = NegativeSamplingConfig::new().init(&device);
+
         Self {
             model: model,
-            recorder: BinGzFileRecorder::new(),
+            loss: loss,
             n_epochs: params.n_epochs,
             batch_size: params.batch_size,
             window_left: params.window_left,
             window_right: params.window_right,
             strategy: params.strategy,
+            agg: params.agg,
         }
     }
 

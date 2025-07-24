@@ -16,8 +16,11 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use burn::config::Config;
+
 /// Enumeration of loss functions for learning embeddings.
 /// All embedding models should support all of these loss functions.
+#[derive(Config)]
 pub enum EmbeddingLossFunction {
     NegativeSampling,
 }
