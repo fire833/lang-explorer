@@ -267,6 +267,13 @@ where
 
         digest
     }
+
+    /// Experimental feature to create parsers efficiently
+    /// for programs by serializing a grammar into an LALRpop
+    /// grammar.
+    pub fn generate_lalrpop_parser() -> String {
+        "".into()
+    }
 }
 
 impl<T, I> Debug for Grammar<T, I>

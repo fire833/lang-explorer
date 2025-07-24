@@ -16,12 +16,15 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
 use burn::{
+    config::Config,
+    optim::AdamConfig,
     prelude::Backend,
     record::{BinGzFileRecorder, HalfPrecisionSettings},
-    tensor::Tensor,
+    tensor::{backend::AutodiffBackend, Tensor},
+    train::LearnerBuilder,
 };
 
 use crate::{
@@ -31,20 +34,29 @@ use crate::{
     tooling::modules::embed::pvdm::{Doc2VecDM, Doc2VecDMConfig},
 };
 
-pub struct Doc2VecLanguageEmbedder<B: Backend> {
+pub struct Doc2VecEmbedder<B: Backend> {
     /// The model itself.
     model: Doc2VecDM<B>,
 
     /// Recorder to read/write models to disk.
     recorder: BinGzFileRecorder<HalfPrecisionSettings>,
 
+    strategy: Doc2VecTrainingStrategy,
     window_left: usize,
     window_right: usize,
     batch_size: usize,
     n_epochs: usize,
 }
 
-pub struct Doc2VecLanguageEmbedderParams {
+#[derive(Debug, Config)]
+pub enum Doc2VecTrainingStrategy {
+    AllDocsAllSubwords,
+}
+
+#[derive(Config)]
+pub struct Doc2VecEmbedderParams {
+    /// Configuration for Adam.
+    pub adam_config: AdamConfig,
     /// The number of words within the model.
     pub n_words: usize,
     /// The number of documents within the model.
@@ -57,21 +69,23 @@ pub struct Doc2VecLanguageEmbedderParams {
     /// The number of words to the right of the center word
     /// to predict on.
     pub window_right: usize,
+    /// The training strategy to use.
+    pub strategy: Doc2VecTrainingStrategy,
     /// The size of the batches fed through the model.
     pub batch_size: usize,
     /// number of epochs to train on.
     pub n_epochs: usize,
 }
 
-impl<T, I, B> LanguageEmbedder<T, I, B> for Doc2VecLanguageEmbedder<B>
+impl<T, I, B> LanguageEmbedder<T, I, B> for Doc2VecEmbedder<B>
 where
     T: Terminal,
     I: NonTerminal,
-    B: Backend,
+    B: AutodiffBackend,
 {
     type Document = ProgramInstance<T, I>;
     type Word = u64;
-    type Params = Doc2VecLanguageEmbedderParams;
+    type Params = Doc2VecEmbedderParams;
 
     fn init(grammar: &Grammar<T, I>, params: Self::Params) -> Self {
         let _uuid = grammar.generate_uuid();
@@ -89,6 +103,7 @@ where
             batch_size: params.batch_size,
             window_left: params.window_left,
             window_right: params.window_right,
+            strategy: params.strategy,
         }
     }
 
@@ -96,15 +111,23 @@ where
         &mut self,
         documents: &Vec<(Self::Document, Vec<Self::Word>)>,
     ) -> Result<(), LangExplorerError> {
-        let mut wordset: BTreeSet<Self::Word> = BTreeSet::new();
+        let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
 
+        let mut counter: u32 = 0;
         documents.iter().for_each(|doc| {
             doc.1.iter().for_each(|word| {
-                wordset.insert(*word);
+                if !wordset.contains_key(word) {
+                    wordset.insert(*word, counter);
+                    counter += 1;
+                }
             })
         });
 
-        for epoch in 0..self.n_epochs {}
+        for epoch in 0..self.n_epochs {
+            match self.strategy {
+                Doc2VecTrainingStrategy::AllDocsAllSubwords => for doc in documents.iter() {},
+            }
+        }
 
         // this will be useful later
         // let negative_indices = Tensor::<B, 2, Int>::random(
