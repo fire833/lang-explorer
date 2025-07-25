@@ -27,7 +27,7 @@ use fasthash::{city, FastHasher};
 use crate::{
     errors::LangExplorerError,
     grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal},
-    languages::ProgramResult,
+    languages::{Feature, ProgramResult},
 };
 
 #[allow(unused)]
@@ -100,12 +100,16 @@ where
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
     ///
     /// Reference: https://blog.quarkslab.com/weisfeiler-lehman-graph-kernel-for-binary-function-analysis.html#weisfeiler-lehman%20graph%20kernel_1
-    pub fn extract_words_wl_kernel(&self, degree: u32, ordering: WLKernelHashingOrder) -> Vec<u64> {
+    pub fn extract_words_wl_kernel(
+        &self,
+        degree: u32,
+        ordering: WLKernelHashingOrder,
+    ) -> Vec<Feature> {
         let nodes = self.get_all_nodes();
-        let mut node_features_new: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
-        let mut node_features_old: HashMap<&ProgramInstance<T, I>, u64> = HashMap::new();
+        let mut node_features_new: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
+        let mut node_features_old: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
 
-        let mut ids: HashMap<u64, &ProgramInstance<T, I>> = HashMap::new();
+        let mut ids: HashMap<Feature, &ProgramInstance<T, I>> = HashMap::new();
 
         nodes.iter().for_each(|node| {
             ids.insert(node.get_id(), node);
@@ -117,7 +121,7 @@ where
             node_features_old.insert(node, hash);
         });
 
-        let mut found_features: Vec<u64> = node_features_old.values().map(|u| *u).collect();
+        let mut found_features: Vec<Feature> = node_features_old.values().map(|u| *u).collect();
 
         for _ in 0..degree {
             for node in nodes.iter() {
@@ -127,16 +131,16 @@ where
                         let parent_feature = match ids.get(&id) {
                             Some(parent) => match node_features_old.get(*parent) {
                                 Some(parent_feature) => parent_feature,
-                                None => &(0 as u64),
+                                None => &(0 as Feature),
                             },
-                            None => &(0 as u64),
+                            None => &(0 as Feature),
                         };
 
                         parent_feature.to_ne_bytes()
                     }
                     None => [0 as u8; 8],
                 };
-                let mut child_bytes: Vec<u64> = node
+                let mut child_bytes: Vec<Feature> = node
                     .children
                     .iter()
                     .map(|child| node_features_old.get(child).unwrap())

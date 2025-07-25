@@ -30,6 +30,7 @@ use crate::{
     embedding::{LanguageEmbedder, ProgramBatch},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
+    languages::Feature,
     tooling::modules::{
         embed::{
             loss::EmbeddingLossFunction,
@@ -119,7 +120,7 @@ where
     B: AutodiffBackend,
 {
     type Document = ProgramInstance<T, I>;
-    type Word = u64;
+    type Word = Feature;
     type Params = Doc2VecEmbedderParams;
 
     fn init(grammar: &Grammar<T, I>, params: Self::Params) -> Self {
