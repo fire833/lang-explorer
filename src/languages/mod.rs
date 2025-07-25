@@ -19,6 +19,8 @@
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
+use burn::data::dataset::Dataset;
+use burn::prelude::Backend;
 use clap::ValueEnum;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
@@ -52,6 +54,10 @@ pub mod strings;
 pub mod taco_expression;
 pub mod taco_schedule;
 pub mod toy_language;
+
+/// A feature is a feature of a program. This is by default a u64, since
+/// that is the CRC hash output I decided on as output from the WL-kernel operation.
+pub type Feature = u64;
 
 /// A language is a wrapper trait for languages. These are objects
 /// that should contain both a grammar builder for constructing
@@ -479,7 +485,23 @@ pub struct GenerateResultsV2 {
     grammar: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+impl Dataset<ProgramResult> for GenerateResultsV2 {
+    fn get(&self, index: usize) -> Option<ProgramResult> {
+        if let Some(item) = self.programs.get(index) {
+            // This crap is going to be expensive and I shouldn't be doing it,
+            // but that's a problem for later.
+            Some(item.clone())
+        } else {
+            None
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.programs.len()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub(crate) struct ProgramResult {
     /// If enabled, the string representation of the generated program.
     #[serde(alias = "program")]

@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::{prelude::Backend, tensor::Tensor};
+use burn::{data::dataloader::batcher::Batcher, prelude::Backend, tensor::Tensor};
 
 use crate::{
     errors::LangExplorerError,
@@ -53,4 +53,12 @@ where
         &mut self,
         document: (Self::Document, Vec<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError>;
+}
+
+pub struct ProgramBatcher;
+
+impl<B: Backend, I, O> Batcher<B, I, O> for ProgramBatcher {
+    fn batch(&self, items: Vec<I>, device: &B::Device) -> O {
+        todo!()
+    }
 }
