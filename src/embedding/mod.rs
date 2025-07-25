@@ -16,11 +16,16 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::{data::dataloader::batcher::Batcher, prelude::Backend, tensor::Tensor};
+use burn::{
+    data::dataloader::batcher::Batcher,
+    prelude::Backend,
+    tensor::{Int, Tensor},
+};
 
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
+    languages::ProgramResult,
 };
 
 pub mod doc2vec;
@@ -55,10 +60,17 @@ where
     ) -> Result<Tensor<B, 1>, LangExplorerError>;
 }
 
+pub struct ProgramBatch<B: Backend> {
+    documents: Tensor<B, 1, Int>,
+    context_words: Tensor<B, 2, Int>,
+    negative_words: Tensor<B, 2, Int>,
+    true_words: Tensor<B, 1, Int>,
+}
+
 pub struct ProgramBatcher;
 
-impl<B: Backend, I, O> Batcher<B, I, O> for ProgramBatcher {
-    fn batch(&self, items: Vec<I>, device: &B::Device) -> O {
+impl<B: Backend> Batcher<B, ProgramResult, ProgramBatch<B>> for ProgramBatcher {
+    fn batch(&self, items: Vec<ProgramResult>, device: &B::Device) -> ProgramBatch<B> {
         todo!()
     }
 }

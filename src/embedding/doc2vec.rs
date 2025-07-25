@@ -22,12 +22,12 @@ use burn::{
     config::Config,
     optim::AdamConfig,
     prelude::Backend,
-    tensor::{backend::AutodiffBackend, Float, Int, Tensor},
+    tensor::{backend::AutodiffBackend, Float, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
 
 use crate::{
-    embedding::LanguageEmbedder,
+    embedding::{LanguageEmbedder, ProgramBatch},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
     tooling::modules::{
@@ -59,17 +59,17 @@ pub enum Doc2VecTrainingStrategy {
     AllDocsAllSubwords,
 }
 
-impl<B> TrainStep<(Tensor<B, 1, Int>, Tensor<B, 2, Int>, Tensor<B, 1, Int>), Tensor<B, 1, Float>>
-    for Doc2VecEmbedder<B>
+impl<B> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<B>
 where
     B: AutodiffBackend,
 {
-    fn step(
-        &self,
-        item: (Tensor<B, 1, Int>, Tensor<B, 2, Int>, Tensor<B, 1, Int>),
-    ) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
-        let logits = self.model.forward(item.0, item.1.clone(), &self.agg);
-        let loss = self.loss.forward(item.2, item.1, logits);
+    fn step(&self, item: ProgramBatch<B>) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
+        let logits = self
+            .model
+            .forward(item.documents, item.context_words, &self.agg);
+        let loss = self
+            .loss
+            .forward(item.true_words, item.negative_words, logits);
 
         TrainOutput::new(&self.model, loss.backward(), loss)
     }
@@ -79,7 +79,7 @@ impl<B, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<B>
 where
     B: Backend,
 {
-    fn step(&self, item: VI) -> VO {
+    fn step(&self, _item: VI) -> VO {
         todo!()
     }
 }

@@ -57,17 +57,17 @@ impl<B: Backend> NegativeSampling<B> {
     /// # Shapes
     ///
     /// - true_word_indices: `[batch_size]`
-    /// - word_indices: `[batch_size, k]`
+    /// - negative_word_indices: `[batch_size, k]`
     /// - input: `[batch_size, n_words]`
     /// - output: `[1]`
     pub fn forward(
         &self,
         true_word_indices: Tensor<B, 1, Int>,
-        word_indices: Tensor<B, 2, Int>,
+        negative_word_indices: Tensor<B, 2, Int>,
         input: Tensor<B, 2, Float>,
     ) -> Tensor<B, 1, Float> {
         // TODO: this clone will be VERY expensive, need to figure out a way to get rid of this.
-        let negatives = sigmoid(input.clone().gather(1, word_indices))
+        let negatives = sigmoid(input.clone().gather(1, negative_word_indices))
             .log()
             .sum_dim(1)
             .squeeze(1);
