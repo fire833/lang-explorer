@@ -46,6 +46,14 @@ where
     pub suffix: Vec<GrammarElement<T, I>>,
 }
 
+#[derive(Debug)]
+enum ContextCheckState {
+    Start,
+    InPrefix(usize),
+    Middle,
+    InSuffix(usize),
+}
+
 impl<T, I> ProductionLHS<T, I>
 where
     T: Terminal,
@@ -108,15 +116,8 @@ where
         }
     }
 
-    /// Checks if a LHS is contained within the frontier.
-    pub fn check_for_context(&self, frontier: &Vec<GrammarElement<T, I>>) -> Option<usize> {
-        #[derive(Debug)]
-        enum State {
-            Start,
-            InPrefix(usize),
-            Middle,
-            InSuffix(usize),
-        }
+    pub fn get_all_context_instances(&self, frontier: &Vec<GrammarElement<T, I>>) -> Vec<usize> {
+        let mut instances = vec![];
 
         let has_prefix = match self.prefix.len() {
             i if i == 0 => false,
@@ -128,60 +129,180 @@ where
             _ => true,
         };
 
-        let mut state = State::Start;
+        let mut state = ContextCheckState::Start;
 
         for (idx, tok) in frontier.iter().enumerate() {
             let end = idx == frontier.len() - 1;
 
             match (state, tok, has_prefix, has_suffix, end) {
-                (State::Start, _, true, _, true) => return None,
-                (State::Start, elem, true, _, false) => {
+                (ContextCheckState::Start, _, true, _, true) => return instances,
+                (ContextCheckState::Start, elem, true, _, false) => {
                     if *elem == self.prefix[0] {
-                        state = State::InPrefix(1);
+                        state = ContextCheckState::InPrefix(1);
                     } else {
-                        state = State::Start;
+                        state = ContextCheckState::Start;
                     }
                 }
-                (State::Start, _, false, true, true) => return None,
-                (State::Start, elem, false, true, false) => {
+                (ContextCheckState::Start, _, false, true, true) => return instances,
+                (ContextCheckState::Start, elem, false, true, false) => {
                     if *elem == self.non_terminal.clone().into() {
-                        state = State::Middle;
+                        state = ContextCheckState::Middle;
                     } else {
-                        state = State::Start;
+                        state = ContextCheckState::Start;
                     }
                 }
-                (State::Start, elem, false, false, true) => {
+                (ContextCheckState::Start, elem, false, false, true) => {
+                    if *elem == self.non_terminal.clone().into() {
+                        instances.push(idx);
+                    }
+                    return instances;
+                }
+                (ContextCheckState::Start, elem, false, false, false) => {
+                    if *elem == self.non_terminal.clone().into() {
+                        instances.push(idx);
+                    }
+                    state = ContextCheckState::Start;
+                }
+
+                (ContextCheckState::InPrefix(_), _, _, true, true) => return instances,
+                (ContextCheckState::InPrefix(i), elem, _, _, false) => {
+                    if i == self.prefix.len() {
+                        if *elem == self.non_terminal.clone().into() {
+                            state = ContextCheckState::Middle;
+                        } else {
+                            state = ContextCheckState::Start;
+                        }
+                    } else {
+                        if *elem == self.prefix[i] {
+                            state = ContextCheckState::InPrefix(i + 1);
+                        } else {
+                            state = ContextCheckState::Start;
+                        }
+                    }
+                }
+                (ContextCheckState::InPrefix(i), elem, _, false, true) => {
+                    if i == self.prefix.len() && *elem == self.non_terminal.clone().into() {
+                        instances.push(idx - self.prefix.len());
+                    }
+
+                    return instances;
+                }
+
+                (ContextCheckState::Middle, _, _, true, true) => return instances,
+                (ContextCheckState::Middle, elem, false, true, false) => {
+                    if *elem == self.suffix[0] {
+                        state = ContextCheckState::InSuffix(1);
+                    } else if *elem == self.non_terminal.clone().into() {
+                        state = ContextCheckState::Middle;
+                    } else {
+                        state = ContextCheckState::Start;
+                    }
+                }
+                (ContextCheckState::Middle, elem, true, true, false) => {
+                    if *elem == self.suffix[0] {
+                        state = ContextCheckState::InSuffix(1);
+                    } else {
+                        state = ContextCheckState::Start;
+                    }
+                }
+                (ContextCheckState::Middle, _, _, false, _) => {
+                    instances.push(idx - 1 - self.prefix.len());
+                    state = ContextCheckState::Start;
+                }
+
+                (ContextCheckState::InSuffix(i), elem, _, _, true) => {
+                    if i == self.suffix.len() {
+                        instances.push(idx - 1 - self.suffix.len() - self.prefix.len());
+                    } else if i == self.suffix.len() - 1 && *elem == self.suffix[i] {
+                        instances.push(idx - self.suffix.len() - self.prefix.len());
+                    }
+
+                    return instances;
+                }
+                (ContextCheckState::InSuffix(i), elem, _, _, false) => {
+                    if i == self.suffix.len() {
+                        instances.push(idx - 1 - self.suffix.len() - self.prefix.len());
+                        state = ContextCheckState::Start;
+                    } else {
+                        if *elem == self.suffix[i] {
+                            state = ContextCheckState::InSuffix(i + 1);
+                        } else {
+                            state = ContextCheckState::Start;
+                        }
+                    }
+                }
+            }
+        }
+
+        instances
+    }
+
+    /// Checks if a LHS is contained within the frontier.
+    pub fn check_for_context(&self, frontier: &Vec<GrammarElement<T, I>>) -> Option<usize> {
+        let has_prefix = match self.prefix.len() {
+            i if i == 0 => false,
+            _ => true,
+        };
+
+        let has_suffix = match self.suffix.len() {
+            i if i == 0 => false,
+            _ => true,
+        };
+
+        let mut state = ContextCheckState::Start;
+
+        for (idx, tok) in frontier.iter().enumerate() {
+            let end = idx == frontier.len() - 1;
+
+            match (state, tok, has_prefix, has_suffix, end) {
+                (ContextCheckState::Start, _, true, _, true) => return None,
+                (ContextCheckState::Start, elem, true, _, false) => {
+                    if *elem == self.prefix[0] {
+                        state = ContextCheckState::InPrefix(1);
+                    } else {
+                        state = ContextCheckState::Start;
+                    }
+                }
+                (ContextCheckState::Start, _, false, true, true) => return None,
+                (ContextCheckState::Start, elem, false, true, false) => {
+                    if *elem == self.non_terminal.clone().into() {
+                        state = ContextCheckState::Middle;
+                    } else {
+                        state = ContextCheckState::Start;
+                    }
+                }
+                (ContextCheckState::Start, elem, false, false, true) => {
                     if *elem == self.non_terminal.clone().into() {
                         return Some(idx);
                     } else {
                         return None;
                     }
                 }
-                (State::Start, elem, false, false, false) => {
+                (ContextCheckState::Start, elem, false, false, false) => {
                     if *elem == self.non_terminal.clone().into() {
                         return Some(idx);
                     } else {
-                        state = State::Start;
+                        state = ContextCheckState::Start;
                     }
                 }
 
-                (State::InPrefix(_), _, _, true, true) => return None,
-                (State::InPrefix(i), elem, _, _, false) => {
+                (ContextCheckState::InPrefix(_), _, _, true, true) => return None,
+                (ContextCheckState::InPrefix(i), elem, _, _, false) => {
                     if i == self.prefix.len() {
                         if *elem == self.non_terminal.clone().into() {
-                            state = State::Middle;
+                            state = ContextCheckState::Middle;
                         } else {
-                            state = State::Start;
+                            state = ContextCheckState::Start;
                         }
                     } else {
                         if *elem == self.prefix[i] {
-                            state = State::InPrefix(i + 1);
+                            state = ContextCheckState::InPrefix(i + 1);
                         } else {
-                            state = State::Start;
+                            state = ContextCheckState::Start;
                         }
                     }
                 }
-                (State::InPrefix(i), elem, _, false, true) => {
+                (ContextCheckState::InPrefix(i), elem, _, false, true) => {
                     if i == self.prefix.len() && *elem == self.non_terminal.clone().into() {
                         return Some(idx - self.prefix.len());
                     } else {
@@ -189,26 +310,28 @@ where
                     }
                 }
 
-                (State::Middle, _, _, true, true) => return None,
-                (State::Middle, elem, false, true, false) => {
+                (ContextCheckState::Middle, _, _, true, true) => return None,
+                (ContextCheckState::Middle, elem, false, true, false) => {
                     if *elem == self.suffix[0] {
-                        state = State::InSuffix(1);
+                        state = ContextCheckState::InSuffix(1);
                     } else if *elem == self.non_terminal.clone().into() {
-                        state = State::Middle;
+                        state = ContextCheckState::Middle;
                     } else {
-                        state = State::Start;
+                        state = ContextCheckState::Start;
                     }
                 }
-                (State::Middle, elem, true, true, false) => {
+                (ContextCheckState::Middle, elem, true, true, false) => {
                     if *elem == self.suffix[0] {
-                        state = State::InSuffix(1);
+                        state = ContextCheckState::InSuffix(1);
                     } else {
-                        state = State::Start;
+                        state = ContextCheckState::Start;
                     }
                 }
-                (State::Middle, _, _, false, _) => return Some(idx - 1 - self.prefix.len()),
+                (ContextCheckState::Middle, _, _, false, _) => {
+                    return Some(idx - 1 - self.prefix.len())
+                }
 
-                (State::InSuffix(i), elem, _, _, true) => {
+                (ContextCheckState::InSuffix(i), elem, _, _, true) => {
                     if i == self.suffix.len() {
                         return Some(idx - 1 - self.suffix.len() - self.prefix.len());
                     } else if i == self.suffix.len() - 1 && *elem == self.suffix[i] {
@@ -217,14 +340,14 @@ where
                         return None;
                     }
                 }
-                (State::InSuffix(i), elem, _, _, false) => {
+                (ContextCheckState::InSuffix(i), elem, _, _, false) => {
                     if i == self.suffix.len() {
                         return Some(idx - 1 - self.suffix.len() - self.prefix.len());
                     } else {
                         if *elem == self.suffix[i] {
-                            state = State::InSuffix(i + 1);
+                            state = ContextCheckState::InSuffix(i + 1);
                         } else {
-                            state = State::Start;
+                            state = ContextCheckState::Start;
                         }
                     }
                 }
@@ -237,6 +360,89 @@ where
     pub fn is_context_sensitive(&self) -> bool {
         self.prefix.len() > 0 || self.suffix.len() > 0
     }
+}
+
+#[test]
+fn test_get_all_context_instances() {
+    nterminal_str!(FOO, "foo");
+    terminal_str!(BAR, "bar");
+    terminal_str!(BAR2, "bar2");
+    terminal_str!(BAR3, "bar3");
+    nterminal_str!(BAZ, "baz");
+
+    let empty: Vec<usize> = vec![];
+
+    assert_eq!(
+        empty,
+        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(&vec![])
+    );
+
+    assert_eq!(
+        vec![0],
+        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(&vec![FOO, BAR, BAR2])
+    );
+
+    assert_eq!(
+        vec![3],
+        ProductionLHS::new_context_free_elem(FOO)
+            .get_all_context_instances(&vec![BAR, BAR, BAR3, FOO, BAZ, BAZ, BAZ, BAZ, BAR3])
+    );
+
+    assert_eq!(
+        vec![1],
+        ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
+            .get_all_context_instances(&vec![FOO, BAR2, BAR3, FOO, BAZ])
+    );
+
+    assert_eq!(
+        vec![1],
+        ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
+            .get_all_context_instances(&vec![FOO, BAR2, BAR3, FOO])
+    );
+
+    assert_eq!(
+        vec![2],
+        ProductionLHS::new_with_prefix_and_suffix(vec![BAR2, BAR3], "foo".into(), vec![BAR3, BAR2])
+            .get_all_context_instances(&vec![BAR2, BAR2, BAR2, BAR3, FOO, BAR3, BAR2, BAZ])
+    );
+
+    assert_eq!(
+        vec![1],
+        ProductionLHS::new_with_suffix_list(vec![BAR, BAR], "foo".into())
+            .get_all_context_instances(&vec![FOO, FOO, BAR, BAR, BAR])
+    );
+
+    assert_eq!(
+        vec![0],
+        ProductionLHS::new_with_suffix_list(vec![BAR, BAR], "foo".into())
+            .get_all_context_instances(&vec![FOO, BAR, BAR])
+    );
+
+    assert_eq!(
+        vec![0],
+        ProductionLHS::new_with_prefix_and_suffix(
+            vec![BAR, BAR, BAZ],
+            "foo".into(),
+            vec![BAZ, BAR, BAR]
+        )
+        .get_all_context_instances(&vec![BAR, BAR, BAZ, FOO, BAZ, BAR, BAR])
+    );
+
+    assert_eq!(
+        vec![1],
+        ProductionLHS::new_with_prefix_and_suffix(
+            vec![BAR, BAR, BAZ],
+            "foo".into(),
+            vec![BAZ, BAR, BAR]
+        )
+        .get_all_context_instances(&vec![FOO, BAR, BAR, BAZ, FOO, BAZ, BAR, BAR])
+    );
+
+    // assert_eq!(
+    //     vec![1, 4],
+    //     ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAZ])
+    //         .get_all_context_instances(&vec![BAR, BAR, FOO, BAZ, BAR, FOO, BAZ])
+    // );
 }
 
 #[test]
