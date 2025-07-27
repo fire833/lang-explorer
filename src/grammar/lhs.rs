@@ -54,14 +54,6 @@ where
     full_token_list: Vec<GrammarElement<T, I>>,
 }
 
-#[derive(Debug)]
-enum ContextCheckState {
-    Start,
-    InPrefix(usize),
-    Middle,
-    InSuffix(usize),
-}
-
 impl<T, I> ProductionLHS<T, I>
 where
     T: Terminal,
@@ -140,122 +132,20 @@ where
 
     pub fn get_all_context_instances(&self, frontier: &Vec<GrammarElement<T, I>>) -> Vec<usize> {
         let mut instances = vec![];
+        let tokens = &self.full_token_list;
 
-        let has_prefix = match self.prefix.len() {
-            i if i == 0 => false,
-            _ => true,
-        };
-
-        let has_suffix = match self.suffix.len() {
-            i if i == 0 => false,
-            _ => true,
-        };
-
-        let mut state = ContextCheckState::Start;
-
-        let mut idx = 0;
-        while let Some(tok) = frontier.get(idx) {
-            let end = idx == frontier.len() - 1;
-
-            match (state, tok, has_prefix, has_suffix, end) {
-                (ContextCheckState::Start, _, true, _, true) => return instances,
-                (ContextCheckState::Start, elem, true, _, false) => {
-                    if *elem == self.prefix[0] {
-                        state = ContextCheckState::InPrefix(1);
-                    } else {
-                        state = ContextCheckState::Start;
-                    }
-                }
-                (ContextCheckState::Start, _, false, true, true) => return instances,
-                (ContextCheckState::Start, elem, false, true, false) => {
-                    if *elem == self.non_terminal.clone().into() {
-                        state = ContextCheckState::Middle;
-                    } else {
-                        state = ContextCheckState::Start;
-                    }
-                }
-                (ContextCheckState::Start, elem, false, false, true) => {
-                    if *elem == self.non_terminal.clone().into() {
-                        instances.push(idx);
-                    }
-                    return instances;
-                }
-                (ContextCheckState::Start, elem, false, false, false) => {
-                    if *elem == self.non_terminal.clone().into() {
-                        instances.push(idx);
-                    }
-                    state = ContextCheckState::Start;
-                }
-
-                (ContextCheckState::InPrefix(_), _, _, true, true) => return instances,
-                (ContextCheckState::InPrefix(i), elem, _, _, false) => {
-                    if i == self.prefix.len() {
-                        if *elem == self.non_terminal.clone().into() {
-                            state = ContextCheckState::Middle;
-                        } else {
-                            state = ContextCheckState::Start;
-                        }
-                    } else if *elem == self.prefix[i] {
-                        state = ContextCheckState::InPrefix(i + 1);
-                    } else {
-                        idx -= 1;
-                        state = ContextCheckState::Start;
-                    }
-                }
-                (ContextCheckState::InPrefix(i), elem, _, false, true) => {
-                    if i == self.prefix.len() && *elem == self.non_terminal.clone().into() {
-                        instances.push(idx - self.prefix.len());
-                    }
-
-                    return instances;
-                }
-
-                (ContextCheckState::Middle, _, _, true, true) => return instances,
-                (ContextCheckState::Middle, elem, false, true, false) => {
-                    if *elem == self.suffix[0] {
-                        state = ContextCheckState::InSuffix(1);
-                    } else if *elem == self.non_terminal.clone().into() {
-                        state = ContextCheckState::Middle;
-                    } else {
-                        state = ContextCheckState::Start;
-                    }
-                }
-                (ContextCheckState::Middle, elem, true, true, false) => {
-                    if *elem == self.suffix[0] {
-                        state = ContextCheckState::InSuffix(1);
-                    } else {
-                        state = ContextCheckState::Start;
-                    }
-                }
-                (ContextCheckState::Middle, _, _, false, _) => {
-                    instances.push(idx - 1 - self.prefix.len());
-                    state = ContextCheckState::Start;
-                }
-
-                (ContextCheckState::InSuffix(i), elem, _, _, true) => {
-                    if i == self.suffix.len() {
-                        instances.push(idx - 1 - self.suffix.len() - self.prefix.len());
-                    } else if i == self.suffix.len() - 1 && *elem == self.suffix[i] {
-                        instances.push(idx - self.suffix.len() - self.prefix.len());
-                    }
-
-                    return instances;
-                }
-                (ContextCheckState::InSuffix(i), elem, _, _, false) => {
-                    if i == self.suffix.len() {
-                        instances.push(idx - 1 - self.suffix.len() - self.prefix.len());
-                        state = ContextCheckState::Start;
-                    } else {
-                        if *elem == self.suffix[i] {
-                            state = ContextCheckState::InSuffix(i + 1);
-                        } else {
-                            state = ContextCheckState::Start;
-                        }
-                    }
+        for idx in 0..frontier.len() - (tokens.len() - 1) {
+            let mut found = true;
+            for (offset, item) in tokens.iter().enumerate() {
+                if *item != frontier[idx + offset] {
+                    found = false;
+                    break;
                 }
             }
 
-            idx += 1;
+            if found {
+                instances.push(idx);
+            }
         }
 
         instances
@@ -346,6 +236,12 @@ fn test_get_all_context_instances() {
         vec![1, 4],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAZ])
             .get_all_context_instances(&vec![BAR, BAR, FOO, BAZ, BAR, FOO, BAZ])
+    );
+
+    assert_eq!(
+        vec![0, 2],
+        ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAR])
+            .get_all_context_instances(&vec![BAR, FOO, BAR, FOO, BAR])
     );
 }
 
