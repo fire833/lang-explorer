@@ -102,11 +102,27 @@ where
         }
     }
 
+    fn is_frontier_explored(frontier: &Vec<&ProgramInstance<T, I>>) -> bool {
+        let mut non_terminals_exist = false;
+
+        frontier
+            .iter()
+            .for_each(|item| non_terminals_exist |= item.is_non_terminal());
+
+        !non_terminals_exist
+    }
+
     fn generate_program_instance_ctx_sensitive(
         &self,
         _expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
-        Err("unimplemented".into())
+        let mut counter: InstanceId = 2;
+        let root_node = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()), 1);
+        let mut frontier: Vec<&ProgramInstance<T, I>> = vec![&root_node];
+
+        while !Grammar::is_frontier_explored(&frontier) {}
+
+        Ok(root_node)
     }
 
     fn generate_program_instance_ctx_free(

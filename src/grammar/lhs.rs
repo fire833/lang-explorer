@@ -130,7 +130,7 @@ where
         }
     }
 
-    pub fn get_all_context_instances(&self, frontier: &Vec<ProgramInstance<T, I>>) -> Vec<usize> {
+    pub fn get_all_context_instances(&self, frontier: &Vec<&ProgramInstance<T, I>>) -> Vec<usize> {
         let mut instances = vec![];
         let tokens = &self.full_token_list;
 
@@ -166,7 +166,7 @@ fn test_get_all_context_instances() {
 
     macro_rules! pi {
         ($s:expr) => {
-            ProgramInstance::new($s, 1)
+            &ProgramInstance::new($s, 1)
         };
     }
 

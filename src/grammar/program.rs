@@ -95,6 +95,14 @@ where
         self.node.clone()
     }
 
+    pub fn is_non_terminal(&self) -> bool {
+        if let GrammarElement::NonTerminal(_) = self.node {
+            true
+        } else {
+            false
+        }
+    }
+
     /// Add a child node to this current program tree.
     pub fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
         self.children = children;
