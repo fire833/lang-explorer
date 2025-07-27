@@ -69,21 +69,34 @@ pub struct ProgramBatch<B: Backend> {
     true_words: Tensor<B, 1, Int>,
 }
 
-pub struct ProgramBatcher;
+pub struct ProgramBatcher {
+    /// The number of negative samples to sample.
+    n_neg_samples: usize,
+}
 
-impl<B: Backend, D, W> Batcher<B, (D, Vec<W>, W), ProgramBatch<B>> for ProgramBatcher {
-    fn batch(&self, items: Vec<(D, Vec<W>, W)>, device: &B::Device) -> ProgramBatch<B> {
+impl ProgramBatcher {
+    fn new(n_neg_samples: usize) -> Self {
+        Self { n_neg_samples }
+    }
+}
+
+impl<B: Backend> Batcher<B, (usize, Vec<usize>, usize), ProgramBatch<B>> for ProgramBatcher {
+    fn batch(&self, items: Vec<(usize, Vec<usize>, usize)>, device: &B::Device) -> ProgramBatch<B> {
         todo!()
     }
 }
 
 pub struct ProgramLoader {
+    batcher: Arc<ProgramBatcher>,
     items: Vec<(usize, Vec<usize>, usize)>,
 }
 
 impl ProgramLoader {
-    fn new(items: Vec<(usize, Vec<usize>, usize)>) -> Self {
-        Self { items }
+    fn new(items: Vec<(usize, Vec<usize>, usize)>, n_neg_samples: usize) -> Self {
+        Self {
+            items,
+            batcher: Arc::new(ProgramBatcher::new(n_neg_samples)),
+        }
     }
 }
 
@@ -106,6 +119,6 @@ impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
             new_items.push(self.items[i].clone());
         }
 
-        Arc::new(ProgramLoader::new(new_items))
+        Arc::new(ProgramLoader::new(new_items, self.batcher.n_neg_samples))
     }
 }

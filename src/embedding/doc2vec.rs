@@ -23,7 +23,7 @@ use burn::{
     optim::AdamConfig,
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Float, Tensor},
-    train::{LearnerBuilder, TrainOutput, TrainStep, ValidStep},
+    train::{TrainOutput, TrainStep, ValidStep},
 };
 
 use crate::{
