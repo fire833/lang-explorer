@@ -17,7 +17,7 @@
  */
 
 use burn::{
-    data::dataloader::batcher::Batcher,
+    data::dataloader::{batcher::Batcher, DataLoader},
     prelude::Backend,
     tensor::{Int, Tensor},
 };
@@ -69,8 +69,36 @@ pub struct ProgramBatch<B: Backend> {
 
 pub struct ProgramBatcher;
 
-impl<B: Backend> Batcher<B, ProgramResult, ProgramBatch<B>> for ProgramBatcher {
-    fn batch(&self, items: Vec<ProgramResult>, device: &B::Device) -> ProgramBatch<B> {
+impl<B: Backend, D, W> Batcher<B, (D, Vec<W>, W), ProgramBatch<B>> for ProgramBatcher {
+    fn batch(&self, items: Vec<(D, Vec<W>, W)>, device: &B::Device) -> ProgramBatch<B> {
+        todo!()
+    }
+}
+
+pub struct ProgramLoader<D, W> {
+    items: Vec<(D, Vec<W>, W)>,
+}
+
+impl<B: Backend, D: Send, W: Send> DataLoader<B, ProgramBatch<B>> for ProgramLoader<D, W> {
+    fn iter<'a>(
+        &'a self,
+    ) -> Box<dyn burn::data::dataloader::DataLoaderIterator<ProgramBatch<B>> + 'a> {
+        todo!()
+    }
+
+    fn num_items(&self) -> usize {
+        todo!()
+    }
+
+    fn to_device(&self, device: &B::Device) -> std::sync::Arc<dyn DataLoader<B, ProgramBatch<B>>> {
+        todo!()
+    }
+
+    fn slice(
+        &self,
+        start: usize,
+        end: usize,
+    ) -> std::sync::Arc<dyn DataLoader<B, ProgramBatch<B>>> {
         todo!()
     }
 }

@@ -23,7 +23,7 @@ use burn::{
     optim::AdamConfig,
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Float, Tensor},
-    train::{TrainOutput, TrainStep, ValidStep},
+    train::{LearnerBuilder, TrainOutput, TrainStep, ValidStep},
 };
 
 use crate::{
@@ -164,7 +164,11 @@ where
 
         for epoch in 0..self.n_epochs {
             match self.strategy {
-                Doc2VecTrainingStrategy::AllDocsAllSubwords => for doc in documents.iter() {},
+                Doc2VecTrainingStrategy::AllDocsAllSubwords => {
+                    for doc in documents.iter() {
+                        for word in doc.1.iter().enumerate() {}
+                    }
+                }
             }
         }
 
