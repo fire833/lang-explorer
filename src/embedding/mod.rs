@@ -75,11 +75,11 @@ impl<B: Backend, D, W> Batcher<B, (D, Vec<W>, W), ProgramBatch<B>> for ProgramBa
     }
 }
 
-pub struct ProgramLoader<D, W> {
-    items: Vec<(D, Vec<W>, W)>,
+pub struct ProgramLoader {
+    items: Vec<(usize, Vec<usize>, usize)>,
 }
 
-impl<B: Backend, D: Send, W: Send> DataLoader<B, ProgramBatch<B>> for ProgramLoader<D, W> {
+impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
     fn iter<'a>(
         &'a self,
     ) -> Box<dyn burn::data::dataloader::DataLoaderIterator<ProgramBatch<B>> + 'a> {
