@@ -144,7 +144,7 @@ where
             }
 
             if found {
-                instances.push(idx);
+                instances.push(idx + self.prefix.len());
             }
         }
 
@@ -183,19 +183,19 @@ fn test_get_all_context_instances() {
     );
 
     assert_eq!(
-        vec![1],
+        vec![3],
         ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
             .get_all_context_instances(&vec![FOO, BAR2, BAR3, FOO, BAZ])
     );
 
     assert_eq!(
-        vec![1],
+        vec![3],
         ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
             .get_all_context_instances(&vec![FOO, BAR2, BAR3, FOO])
     );
 
     assert_eq!(
-        vec![2],
+        vec![4],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR2, BAR3], "foo".into(), vec![BAR3, BAR2])
             .get_all_context_instances(&vec![BAR2, BAR2, BAR2, BAR3, FOO, BAR3, BAR2, BAZ])
     );
@@ -213,7 +213,7 @@ fn test_get_all_context_instances() {
     );
 
     assert_eq!(
-        vec![0],
+        vec![3],
         ProductionLHS::new_with_prefix_and_suffix(
             vec![BAR, BAR, BAZ],
             "foo".into(),
@@ -223,7 +223,7 @@ fn test_get_all_context_instances() {
     );
 
     assert_eq!(
-        vec![1],
+        vec![4],
         ProductionLHS::new_with_prefix_and_suffix(
             vec![BAR, BAR, BAZ],
             "foo".into(),
@@ -233,13 +233,13 @@ fn test_get_all_context_instances() {
     );
 
     assert_eq!(
-        vec![1, 4],
+        vec![2, 5],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAZ])
             .get_all_context_instances(&vec![BAR, BAR, FOO, BAZ, BAR, FOO, BAZ])
     );
 
     assert_eq!(
-        vec![0, 2],
+        vec![1, 3],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAR])
             .get_all_context_instances(&vec![BAR, FOO, BAR, FOO, BAR])
     );
