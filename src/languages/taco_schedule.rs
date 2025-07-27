@@ -315,6 +315,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
                     divide_factor_productions,
                 ),
             ],
+            "tacosched".into(),
         );
 
         Ok(grammar)

@@ -1204,6 +1204,7 @@ impl GrammarBuilder for CSSLanguage {
                     ],
                 ),
             ],
+            "css".into(),
         );
 
         Ok(grammar)

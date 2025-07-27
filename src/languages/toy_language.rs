@@ -59,6 +59,7 @@ impl GrammarBuilder for ToyLanguage {
                     production_rule!(EPSILON),
                 ],
             )],
+            "toy".into(),
         ))
     }
 }

@@ -19,6 +19,7 @@
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
+use burn::data::dataloader::DataLoader;
 use burn::data::dataset::Dataset;
 use clap::ValueEnum;
 use dashmap::DashMap;

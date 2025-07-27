@@ -30,7 +30,7 @@ use crate::{
     },
     languages::{
         strings::{
-            alphanumeric::{T_0, T_1, T_2, T_3, T_4, T_5, T_6, T_7, T_8, T_9},
+            alphanumeric::{T_1, T_2, T_3, T_4, T_5, T_6, T_7, T_8, T_9},
             nterminal_str, terminal_str, StringValue, COLON, LPAREN, RPAREN, SEMICOLON, SPACE,
         },
         GrammarBuilder,
@@ -166,6 +166,7 @@ impl GrammarBuilder for KarelLanguage {
                     production_rule!(T_19)
                 ),
             ],
+            "karel".into(),
         ))
     }
 }

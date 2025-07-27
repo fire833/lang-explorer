@@ -51,6 +51,10 @@ where
     /// Whether or not the grammar is context sensitive. If false,
     /// it is assumed that the grammar is context-free.
     is_context_sensitive: bool,
+
+    /// Canonical name is the unique, human readable name that is
+    /// given to this grammar.
+    canonical_name: String,
 }
 
 impl<T, I> Grammar<T, I>
@@ -58,7 +62,7 @@ where
     T: Terminal,
     I: NonTerminal,
 {
-    pub fn new(root: I, mut productions: Vec<Production<T, I>>) -> Self {
+    pub fn new(root: I, mut productions: Vec<Production<T, I>>, name: String) -> Self {
         let mut map: BTreeMap<ProductionLHS<T, I>, Production<T, I>> = BTreeMap::new();
         let mut is_context_sensitive: bool = false;
 
@@ -72,6 +76,7 @@ where
             root,
             productions: map,
             is_context_sensitive,
+            canonical_name: name,
         }
     }
 

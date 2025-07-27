@@ -99,6 +99,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
                 Production::new(ProductionLHS::new_context_free_elem(INDEX), indices),
                 Production::new(ProductionLHS::new_context_free_elem(SYMBOL), symbols),
             ],
+            "tacoexpr".into(),
         );
 
         Ok(grammar)
