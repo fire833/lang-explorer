@@ -51,7 +51,7 @@ where
     /// And make it optional as a cheap way of checking whether
     /// this LHS is context free. If empty, then this LHS can be
     /// considered to be context-free.
-    full_token_list: Option<Vec<GrammarElement<T, I>>>,
+    full_token_list: Vec<GrammarElement<T, I>>,
 }
 
 #[derive(Debug)]
@@ -77,12 +77,12 @@ where
 
     /// Create a new ProductionLHS with no context, only provide a non-terminal
     /// for expansion.
-    pub const fn new_context_free(non_terminal: I) -> Self {
+    pub fn new_context_free(non_terminal: I) -> Self {
         Self {
             prefix: vec![],
-            non_terminal: non_terminal,
+            non_terminal: non_terminal.clone(),
             suffix: vec![],
-            full_token_list: None,
+            full_token_list: vec![GrammarElement::NonTerminal(non_terminal)],
         }
     }
 
@@ -99,7 +99,7 @@ where
             prefix,
             non_terminal,
             suffix: vec![],
-            full_token_list: Some(tokens),
+            full_token_list: tokens,
         }
     }
 
@@ -116,7 +116,7 @@ where
             prefix: vec![],
             non_terminal,
             suffix,
-            full_token_list: Some(tokens),
+            full_token_list: tokens,
         }
     }
 
@@ -134,7 +134,7 @@ where
             prefix,
             non_terminal,
             suffix,
-            full_token_list: Some(tokens),
+            full_token_list: tokens,
         }
     }
 
@@ -262,7 +262,7 @@ where
     }
 
     pub fn is_context_sensitive(&self) -> bool {
-        self.full_token_list != None
+        self.prefix.len() > 0 || self.suffix.len() > 0
     }
 }
 
