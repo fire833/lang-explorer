@@ -91,6 +91,10 @@ where
         self.id
     }
 
+    pub fn get_node(&self) -> GrammarElement<T, I> {
+        self.node.clone()
+    }
+
     /// Add a child node to this current program tree.
     pub fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
         self.children = children;
