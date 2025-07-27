@@ -16,8 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::sync::Arc;
+
 use burn::{
-    data::dataloader::{batcher::Batcher, DataLoader},
+    data::dataloader::{batcher::Batcher, DataLoader, DataLoaderIterator},
     prelude::Backend,
     tensor::{Int, Tensor},
 };
@@ -79,10 +81,14 @@ pub struct ProgramLoader {
     items: Vec<(usize, Vec<usize>, usize)>,
 }
 
+impl ProgramLoader {
+    fn new(items: Vec<(usize, Vec<usize>, usize)>) -> Self {
+        Self { items }
+    }
+}
+
 impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
-    fn iter<'a>(
-        &'a self,
-    ) -> Box<dyn burn::data::dataloader::DataLoaderIterator<ProgramBatch<B>> + 'a> {
+    fn iter<'a>(&'a self) -> Box<dyn DataLoaderIterator<ProgramBatch<B>> + 'a> {
         todo!()
     }
 
@@ -90,15 +96,16 @@ impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
         todo!()
     }
 
-    fn to_device(&self, device: &B::Device) -> std::sync::Arc<dyn DataLoader<B, ProgramBatch<B>>> {
+    fn to_device(&self, device: &B::Device) -> Arc<dyn DataLoader<B, ProgramBatch<B>>> {
         todo!()
     }
 
-    fn slice(
-        &self,
-        start: usize,
-        end: usize,
-    ) -> std::sync::Arc<dyn DataLoader<B, ProgramBatch<B>>> {
-        todo!()
+    fn slice(&self, start: usize, end: usize) -> Arc<dyn DataLoader<B, ProgramBatch<B>>> {
+        let mut new_items = vec![];
+        for i in start..end {
+            new_items.push(self.items[i].clone());
+        }
+
+        Arc::new(ProgramLoader::new(new_items))
     }
 }

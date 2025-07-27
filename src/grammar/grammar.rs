@@ -80,6 +80,10 @@ where
         }
     }
 
+    pub fn get_name(&self) -> String {
+        return format!("{}_{}", self.canonical_name, &self.generate_uuid()[0..16]);
+    }
+
     pub fn get_productions(&self) -> Vec<&Production<T, I>> {
         return Vec::from_iter(self.productions.values());
     }
