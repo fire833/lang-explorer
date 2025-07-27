@@ -44,6 +44,14 @@ where
 
     /// optional suffix context for the rule.
     pub suffix: Vec<GrammarElement<T, I>>,
+
+    /// the entire token list for this LHS, compute it once
+    /// on init since this will have to be used quite often.
+    /// and its cheaper than computing it on the fly.
+    /// And make it optional as a cheap way of checking whether
+    /// this LHS is context free. If empty, then this LHS can be
+    /// considered to be context-free.
+    full_token_list: Option<Vec<GrammarElement<T, I>>>,
 }
 
 #[derive(Debug)]
@@ -72,8 +80,9 @@ where
     pub const fn new_context_free(non_terminal: I) -> Self {
         Self {
             prefix: vec![],
-            non_terminal,
+            non_terminal: non_terminal,
             suffix: vec![],
+            full_token_list: None,
         }
     }
 
@@ -82,11 +91,15 @@ where
     }
 
     /// Create a new ProductionLHS with prefix context.
-    pub const fn new_with_prefix_list(prefix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
+    pub fn new_with_prefix_list(prefix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
+        let mut tokens = prefix.clone();
+        tokens.push(GrammarElement::NonTerminal(non_terminal.clone()));
+
         Self {
             prefix,
             non_terminal,
             suffix: vec![],
+            full_token_list: Some(tokens),
         }
     }
 
@@ -95,36 +108,34 @@ where
     }
 
     /// Create a new ProductionLHS with suffix context.
-    pub const fn new_with_suffix_list(suffix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
+    pub fn new_with_suffix_list(suffix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
+        let mut tokens = vec![GrammarElement::NonTerminal(non_terminal.clone())];
+        tokens.append(&mut suffix.clone());
+
         Self {
             prefix: vec![],
             non_terminal,
             suffix,
+            full_token_list: Some(tokens),
         }
     }
 
     /// Create a new ProductionLHS with both prefix and suffix context.
-    pub const fn new_with_prefix_and_suffix(
+    pub fn new_with_prefix_and_suffix(
         prefix: Vec<GrammarElement<T, I>>,
         non_terminal: I,
         suffix: Vec<GrammarElement<T, I>>,
     ) -> Self {
+        let mut tokens = prefix.clone();
+        tokens.push(GrammarElement::NonTerminal(non_terminal.clone()));
+        tokens.append(&mut suffix.clone());
+
         Self {
             prefix,
             non_terminal,
             suffix,
+            full_token_list: Some(tokens),
         }
-    }
-
-    /// Returns a list of all GrammarElements of this left hand side.
-    pub fn get_all_tokens(&self) -> Vec<GrammarElement<T, I>> {
-        let mut tokens = vec![];
-
-        self.prefix.iter().for_each(|p| tokens.push(p.clone()));
-        tokens.push(GrammarElement::NonTerminal(self.non_terminal.clone()));
-        self.suffix.iter().for_each(|s| tokens.push(s.clone()));
-
-        tokens
     }
 
     pub fn get_all_context_instances(&self, frontier: &Vec<GrammarElement<T, I>>) -> Vec<usize> {
@@ -251,7 +262,7 @@ where
     }
 
     pub fn is_context_sensitive(&self) -> bool {
-        self.prefix.len() > 0 || self.suffix.len() > 0
+        self.full_token_list != None
     }
 }
 
