@@ -116,6 +116,17 @@ where
         }
     }
 
+    /// Returns a list of all GrammarElements of this left hand side.
+    pub fn get_all_tokens(&self) -> Vec<GrammarElement<T, I>> {
+        let mut tokens = vec![];
+
+        self.prefix.iter().for_each(|p| tokens.push(p.clone()));
+        tokens.push(GrammarElement::NonTerminal(self.non_terminal.clone()));
+        self.suffix.iter().for_each(|s| tokens.push(s.clone()));
+
+        tokens
+    }
+
     pub fn get_all_context_instances(&self, frontier: &Vec<GrammarElement<T, I>>) -> Vec<usize> {
         let mut instances = vec![];
 
@@ -131,7 +142,8 @@ where
 
         let mut state = ContextCheckState::Start;
 
-        for (idx, tok) in frontier.iter().enumerate() {
+        let mut idx = 0;
+        while let Some(tok) = frontier.get(idx) {
             let end = idx == frontier.len() - 1;
 
             match (state, tok, has_prefix, has_suffix, end) {
@@ -172,12 +184,11 @@ where
                         } else {
                             state = ContextCheckState::Start;
                         }
+                    } else if *elem == self.prefix[i] {
+                        state = ContextCheckState::InPrefix(i + 1);
                     } else {
-                        if *elem == self.prefix[i] {
-                            state = ContextCheckState::InPrefix(i + 1);
-                        } else {
-                            state = ContextCheckState::Start;
-                        }
+                        idx -= 1;
+                        state = ContextCheckState::Start;
                     }
                 }
                 (ContextCheckState::InPrefix(i), elem, _, false, true) => {
@@ -232,6 +243,8 @@ where
                     }
                 }
             }
+
+            idx += 1;
         }
 
         instances
@@ -318,11 +331,11 @@ fn test_get_all_context_instances() {
         .get_all_context_instances(&vec![FOO, BAR, BAR, BAZ, FOO, BAZ, BAR, BAR])
     );
 
-    // assert_eq!(
-    //     vec![1, 4],
-    //     ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAZ])
-    //         .get_all_context_instances(&vec![BAR, BAR, FOO, BAZ, BAR, FOO, BAZ])
-    // );
+    assert_eq!(
+        vec![1, 4],
+        ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAZ])
+            .get_all_context_instances(&vec![BAR, BAR, FOO, BAZ, BAR, FOO, BAZ])
+    );
 }
 
 impl<T, I> Debug for ProductionLHS<T, I>
