@@ -108,6 +108,17 @@ where
         self.children = children;
     }
 
+    /// Insert your children into the frontier with mutable references.
+    pub(super) fn add_children_to_frontier<'a>(
+        &'a mut self,
+        frontier: &mut Vec<&'a mut ProgramInstance<T, I>>,
+        idx: usize,
+    ) {
+        for child in self.children.iter_mut().rev() {
+            frontier.insert(idx, child);
+        }
+    }
+
     /// Extracts all the "words" for a particular graph using the Weisfeiler-Lehman
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
     ///

@@ -102,16 +102,17 @@ where
         }
     }
 
-    fn get_next_frontier<'a>(
-        frontier: &Vec<&'a ProgramInstance<T, I>>,
-    ) -> Option<&'a ProgramInstance<T, I>> {
+    /// Check if the frontier is able to be grown.
+    /// This mutable reference of ProgramInstances is a bit of a hack to get
+    /// this stuff working, sorry me and anyone else reading this in the future.
+    fn can_frontier_grow(frontier: &Vec<&mut ProgramInstance<T, I>>) -> bool {
         for item in frontier.iter() {
             if item.is_non_terminal() {
-                return Some(item);
+                return true;
             }
         }
 
-        return None;
+        return false;
     }
 
     fn generate_program_instance_ctx_sensitive(
@@ -120,18 +121,13 @@ where
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let mut counter: InstanceId = 1;
         let mut root = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()), 1);
-        let mut frontier: Vec<&ProgramInstance<T, I>> = vec![&mut root];
+        let mut frontier: Vec<&mut ProgramInstance<T, I>> = vec![&mut root];
 
         let mut lhs_slots = HashMap::new();
-        while let Some(elem) = Grammar::get_next_frontier(&frontier) {
-            let nt = elem.get_node();
+        while Grammar::can_frontier_grow(&frontier) {
             lhs_slots.clear();
 
             for lhs in self.productions.keys() {
-                if !lhs.contains(&nt) {
-                    continue;
-                }
-
                 let instances = lhs.get_all_context_instances(&frontier);
                 if instances.len() > 0 {
                     lhs_slots.insert(lhs, instances);
@@ -148,7 +144,7 @@ where
             // Get the element to be removed and replaced in the frontier.
             let ntp = frontier.remove(idx);
 
-            let mut _children: Vec<ProgramInstance<T, I>> = rule
+            let children: Vec<ProgramInstance<T, I>> = rule
                 .items
                 .iter()
                 .map(|g| {
@@ -157,12 +153,8 @@ where
                 })
                 .collect();
 
-            // TODO: place children in frontier, and add children to their parent.
-            // for child in children.iter_mut().rev() {
-            //     frontier.insert(idx, child);
-            // }
-
-            // ntp.set_children(children);
+            ntp.set_children(children);
+            ntp.add_children_to_frontier(&mut frontier, idx);
         }
 
         Ok(root)
