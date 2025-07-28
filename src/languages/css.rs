@@ -488,8 +488,6 @@ terminal_str!(JUSTIFY, "justify");
 // terminal_str!(INITIAL, "initial");
 // terminal_str!(INHERIT, "inherit");
 
-// Enumeration of
-
 pub struct CSSLanguage;
 
 /// Parameters for CSS Language.

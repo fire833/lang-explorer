@@ -34,8 +34,6 @@ where
 
 use std::fmt::{Debug, Display};
 
-use burn::{module::Module, nn, prelude::Backend};
-
 use crate::grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal};
 
 impl<T, I> Production<T, I>
@@ -68,16 +66,6 @@ where
     /// Wrapper to return a specific rule.
     pub fn get(&self, i: usize) -> Option<&ProductionRule<T, I>> {
         self.items.get(i)
-    }
-
-    pub fn create_linear_classifier<B: Backend>(
-        &self,
-        embedding_dim: u32,
-        device: &B::Device,
-    ) -> impl Module<B> {
-        nn::LinearConfig::new(embedding_dim as usize, self.items.len())
-            .with_bias(true)
-            .init(device)
     }
 }
 

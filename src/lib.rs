@@ -22,4 +22,4 @@ pub mod evaluators;
 pub mod expanders;
 pub mod grammar;
 pub mod languages;
-pub mod tooling;
+pub(crate) mod tooling;

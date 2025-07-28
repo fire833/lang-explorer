@@ -130,7 +130,10 @@ where
         }
     }
 
-    pub fn get_all_context_instances(&self, frontier: &Vec<&ProgramInstance<T, I>>) -> Vec<usize> {
+    pub(super) fn get_all_context_instances(
+        &self,
+        frontier: &Vec<&ProgramInstance<T, I>>,
+    ) -> Vec<usize> {
         let mut instances = vec![];
         let tokens = &self.full_token_list;
 

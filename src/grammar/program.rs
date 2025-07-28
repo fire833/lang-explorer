@@ -87,15 +87,15 @@ where
         }
     }
 
-    pub fn get_id(&self) -> InstanceId {
+    pub(super) fn get_id(&self) -> InstanceId {
         self.id
     }
 
-    pub fn get_node(&self) -> GrammarElement<T, I> {
+    pub(super) fn get_node(&self) -> GrammarElement<T, I> {
         self.node.clone()
     }
 
-    pub fn is_non_terminal(&self) -> bool {
+    pub(super) fn is_non_terminal(&self) -> bool {
         if let GrammarElement::NonTerminal(_) = self.node {
             true
         } else {
@@ -104,7 +104,7 @@ where
     }
 
     /// Add a child node to this current program tree.
-    pub fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
+    pub(super) fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
         self.children = children;
     }
 
@@ -112,7 +112,7 @@ where
     /// graph kernel technique for use within a doc2vec/graph2vec embedding model.
     ///
     /// Reference: https://blog.quarkslab.com/weisfeiler-lehman-graph-kernel-for-binary-function-analysis.html#weisfeiler-lehman%20graph%20kernel_1
-    pub fn extract_words_wl_kernel(
+    pub(crate) fn extract_words_wl_kernel(
         &self,
         degree: u32,
         ordering: WLKernelHashingOrder,
@@ -206,7 +206,7 @@ where
 
     /// Returns the current program in edge-list form. This will be useful for importing
     /// into other graph processing software like networkx.
-    pub fn get_edge_list(&self) -> Vec<(InstanceId, InstanceId)> {
+    pub(crate) fn get_edge_list(&self) -> Vec<(InstanceId, InstanceId)> {
         let mut edges = vec![];
 
         if self.children.len() == 0 {
@@ -224,7 +224,7 @@ where
         edges
     }
 
-    pub fn serialize_bytes(&self) -> Vec<u8> {
+    pub(crate) fn serialize_bytes(&self) -> Vec<u8> {
         match &self.node {
             GrammarElement::Terminal(t) => t.serialize(),
             // Hacky as all molasses, but works for now.
@@ -234,7 +234,7 @@ where
     }
 
     /// Essentially run BFS on the graph to get all nodes.
-    pub fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
+    pub(crate) fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
         let mut nodes = vec![];
 
         // Since these will all be acyclic trees, we don't need to worry about
@@ -255,7 +255,7 @@ where
     }
 
     /// Serialize the current program instance into a graphviz graph string.
-    pub fn serialize_to_graphviz(&self) -> String {
+    pub(crate) fn serialize_to_graphviz(&self) -> String {
         let mut s: String = "digraph { ".into();
 
         let mut queue = VecDeque::new();

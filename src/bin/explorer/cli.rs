@@ -23,13 +23,13 @@ use lang_explorer::{
 use crate::api;
 
 #[derive(clap::Parser)]
-pub struct LangExplorerArgs {
+pub(super) struct LangExplorerArgs {
     #[command(subcommand)]
     cmd: Option<Subcommand>,
 }
 
 impl LangExplorerArgs {
-    pub async fn entry(&self) -> Result<(), LangExplorerError> {
+    pub(super) async fn entry(&self) -> Result<(), LangExplorerError> {
         match &self.cmd {
             Some(cmd) => match cmd {
                 Subcommand::Explore => todo!(),

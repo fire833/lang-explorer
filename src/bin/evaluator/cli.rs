@@ -19,7 +19,7 @@
 use lang_explorer::errors::LangExplorerError;
 
 #[derive(clap::Parser)]
-pub struct EvaluatorArgs {
+pub(crate) struct EvaluatorArgs {
     #[command(subcommand)]
     cmd: Option<Subcommand>,
 }

@@ -53,7 +53,7 @@ struct ExplorerAPIDocs;
 
 impl OpenApiExtensions for ExplorerAPIDocs {}
 
-pub async fn start_server(addr: &str, port: u16) {
+pub(super) async fn start_server(addr: &str, port: u16) {
     #[allow(deprecated)]
     let generate1 = warp::post()
         .and(warp::path!(
