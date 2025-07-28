@@ -16,10 +16,15 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::collections::HashMap;
+
 use crate::{
     errors::LangExplorerError,
     expanders::GrammarExpander,
-    grammar::{grammar::Grammar, prod::Production, rule::ProductionRule, NonTerminal, Terminal},
+    grammar::{
+        grammar::Grammar, lhs::ProductionLHS, prod::Production, rule::ProductionRule, NonTerminal,
+        Terminal,
+    },
 };
 
 /// A Weighted Monte Carlo explorer is a slightly less naive expander
@@ -38,6 +43,17 @@ where
     T: Terminal,
     I: NonTerminal,
 {
+    /// We may need to initialize the expander depending on the type of grammar
+    /// we are using. For example, with my ML based example, the internal models of
+    /// the expander may change completely depending on the rules of the grammar
+    /// I want to expand.
+    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    where
+        Self: Sized,
+    {
+        Ok(Self::new())
+    }
+
     fn expand_rule<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
@@ -107,14 +123,16 @@ where
         }
     }
 
-    /// We may need to initialize the expander depending on the type of grammar
-    /// we are using. For example, with my ML based example, the internal models of
-    /// the expander may change completely depending on the rules of the grammar
-    /// I want to expand.
-    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
-    where
-        Self: Sized,
-    {
-        Ok(Self::new())
+    /// For context sensitive grammars, we could be in a situation where we have
+    /// multiple left-hand sides that match some point on the frontier, along with
+    /// multiple positions within the frontier where we could expand such left-hand side
+    /// with a production. Thus, we want the expander to have the ability to make this
+    /// decision on our behalf as well.
+    fn choose_lhs_and_slot<'a>(
+        &mut self,
+        _grammar: &'a Grammar<T, I>,
+        _lhs_location_matrix: &HashMap<&'a ProductionLHS<T, I>, Vec<usize>>,
+    ) -> (&'a ProductionLHS<T, I>, usize) {
+        todo!()
     }
 }

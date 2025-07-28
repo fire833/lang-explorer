@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{fmt::Display, str::FromStr};
+use std::{collections::HashMap, fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
 use clap::ValueEnum;
@@ -26,7 +26,10 @@ use utoipa::ToSchema;
 use crate::{
     errors::LangExplorerError,
     expanders::{mc::MonteCarloExpander, wmc::WeightedMonteCarloExpander},
-    grammar::{grammar::Grammar, prod::Production, rule::ProductionRule, NonTerminal, Terminal},
+    grammar::{
+        grammar::Grammar, lhs::ProductionLHS, prod::Production, rule::ProductionRule, NonTerminal,
+        Terminal,
+    },
 };
 
 pub mod exhaustive;
@@ -60,6 +63,17 @@ where
         grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I>;
+
+    /// For context sensitive grammars, we could be in a situation where we have
+    /// multiple left-hand sides that match some point on the frontier, along with
+    /// multiple positions within the frontier where we could expand such left-hand side
+    /// with a production. Thus, we want the expander to have the ability to make this
+    /// decision on our behalf as well.
+    fn choose_lhs_and_slot<'a>(
+        &mut self,
+        grammar: &'a Grammar<T, I>,
+        lhs_location_matrix: &HashMap<&'a ProductionLHS<T, I>, Vec<usize>>,
+    ) -> (&'a ProductionLHS<T, I>, usize);
 }
 
 /// Enumeration of all supported expanders currently within lang-explorer.
