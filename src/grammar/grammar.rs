@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     fmt::{Debug, Display},
     io::Write,
 };
@@ -102,27 +102,70 @@ where
         }
     }
 
-    fn is_frontier_explored(frontier: &Vec<&ProgramInstance<T, I>>) -> bool {
-        let mut non_terminals_exist = false;
+    fn get_next_frontier<'a>(
+        frontier: &Vec<&'a ProgramInstance<T, I>>,
+    ) -> Option<&'a ProgramInstance<T, I>> {
+        for item in frontier.iter() {
+            if item.is_non_terminal() {
+                return Some(item);
+            }
+        }
 
-        frontier
-            .iter()
-            .for_each(|item| non_terminals_exist |= item.is_non_terminal());
-
-        !non_terminals_exist
+        return None;
     }
 
     fn generate_program_instance_ctx_sensitive(
         &self,
-        _expander: &mut Box<dyn GrammarExpander<T, I>>,
+        expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
-        let mut counter: InstanceId = 2;
-        let root_node = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()), 1);
-        let mut frontier: Vec<&ProgramInstance<T, I>> = vec![&root_node];
+        let mut counter: InstanceId = 1;
+        let mut root = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()), 1);
+        let mut frontier: Vec<&ProgramInstance<T, I>> = vec![&mut root];
 
-        while !Grammar::is_frontier_explored(&frontier) {}
+        let mut lhs_slots = HashMap::new();
+        while let Some(elem) = Grammar::get_next_frontier(&frontier) {
+            let nt = elem.get_node();
+            lhs_slots.clear();
 
-        Ok(root_node)
+            for lhs in self.productions.keys() {
+                if !lhs.contains(&nt) {
+                    continue;
+                }
+
+                let instances = lhs.get_all_context_instances(&frontier);
+                if instances.len() > 0 {
+                    lhs_slots.insert(lhs, instances);
+                }
+            }
+
+            let (lhs, idx) = expander.choose_lhs_and_slot(&self, &lhs_slots);
+            // We literally picked the subset of LHSs that were valid and narrowed
+            // down further for this, so it shouldn't fail unless I screw up an
+            // expander implementation.
+            let prod = self.productions.get(lhs).unwrap();
+            let rule = expander.expand_rule(&self, prod);
+
+            // Get the element to be removed and replaced in the frontier.
+            let ntp = frontier.remove(idx);
+
+            let mut _children: Vec<ProgramInstance<T, I>> = rule
+                .items
+                .iter()
+                .map(|g| {
+                    counter += 1;
+                    ProgramInstance::new_with_parent(g.clone(), counter, ntp.get_id())
+                })
+                .collect();
+
+            // TODO: place children in frontier, and add children to their parent.
+            // for child in children.iter_mut().rev() {
+            //     frontier.insert(idx, child);
+            // }
+
+            // ntp.set_children(children);
+        }
+
+        Ok(root)
     }
 
     fn generate_program_instance_ctx_free(

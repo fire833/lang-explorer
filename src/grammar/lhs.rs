@@ -151,6 +151,16 @@ where
         instances
     }
 
+    /// Check if an LHS contains a particular element.
+    pub fn contains(&self, elem: &GrammarElement<T, I>) -> bool {
+        let mut contains = false;
+        self.full_token_list
+            .iter()
+            .for_each(|item| contains |= *elem == *item);
+
+        contains
+    }
+
     pub fn is_context_sensitive(&self) -> bool {
         self.prefix.len() > 0 || self.suffix.len() > 0
     }
@@ -166,7 +176,7 @@ fn test_get_all_context_instances() {
 
     macro_rules! pi {
         ($s:expr) => {
-            &ProgramInstance::new($s, 1)
+            &mut ProgramInstance::new($s, 1)
         };
     }
 

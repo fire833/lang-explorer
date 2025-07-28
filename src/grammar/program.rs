@@ -67,9 +67,9 @@ where
 {
     /// Create a new program instance. This can be a root of a program tree,
     /// or a subtree.
-    pub fn new(root: GrammarElement<T, I>, id: InstanceId) -> Self {
+    pub fn new(node: GrammarElement<T, I>, id: InstanceId) -> Self {
         Self {
-            node: root,
+            node,
             children: vec![],
             id,
             parent_id: None,
@@ -78,9 +78,9 @@ where
 
     /// Create a new program instance, but with a parent ID instantiated.
     /// This can be a root of a program tree, or a subtree.
-    pub fn new_with_parent(root: GrammarElement<T, I>, id: InstanceId, parent: InstanceId) -> Self {
+    pub fn new_with_parent(node: GrammarElement<T, I>, id: InstanceId, parent: InstanceId) -> Self {
         Self {
-            node: root,
+            node,
             children: vec![],
             id,
             parent_id: Some(parent),
