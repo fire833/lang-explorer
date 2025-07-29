@@ -136,10 +136,12 @@ macro_rules! context_free_production {
 
 pub(crate) use context_free_production;
 
+#[allow(unused)]
 macro_rules! context_sensitive_production {
     (($($prefix:expr),*), $nt:expr, ($($suffix:expr),*), $($rules:expr),+) => {
         Production::new(ProductionLHS::new_with_prefix_and_suffix(vec![$($prefix),+], $nt, vec![$($suffix),+]), vec![$($rules),+])
     };
 }
 
+#[allow(unused)]
 pub(crate) use context_sensitive_production;

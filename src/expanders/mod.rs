@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::HashMap, fmt::Display, str::FromStr};
+use std::{fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
 use clap::ValueEnum;
@@ -72,7 +72,7 @@ where
     fn choose_lhs_and_slot<'a>(
         &mut self,
         grammar: &'a Grammar<T, I>,
-        lhs_location_matrix: &HashMap<&'a ProductionLHS<T, I>, Vec<usize>>,
+        lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize);
 }
 

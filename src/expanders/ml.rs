@@ -206,7 +206,7 @@ where
     fn choose_lhs_and_slot<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
-        _lhs_location_matrix: &HashMap<&'a ProductionLHS<T, I>, Vec<usize>>,
+        _lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize) {
         todo!()
     }

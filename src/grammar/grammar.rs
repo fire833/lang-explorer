@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashSet},
     fmt::{Debug, Display},
     io::Write,
 };
@@ -123,14 +123,14 @@ where
         let mut root = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()), 1);
         let mut frontier: Vec<&mut ProgramInstance<T, I>> = vec![&mut root];
 
-        let mut lhs_slots = HashMap::new();
+        let mut lhs_slots: Vec<(&ProductionLHS<T, I>, Vec<usize>)> = vec![];
         while Grammar::can_frontier_grow(&frontier) {
             lhs_slots.clear();
 
             for lhs in self.productions.keys() {
                 let instances = lhs.get_all_context_instances(&frontier);
                 if instances.len() > 0 {
-                    lhs_slots.insert(lhs, instances);
+                    lhs_slots.push((lhs, instances));
                 }
             }
 

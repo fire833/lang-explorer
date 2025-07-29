@@ -16,8 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::HashMap;
-
 use crate::{
     errors::LangExplorerError,
     grammar::{
@@ -57,16 +55,8 @@ where
         _grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        let len = production.len();
-        let val = rand::random::<u64>() % len as u64;
-        if let Some(rule) = production.get(val as usize) {
-            return rule;
-        } else {
-            panic!(
-                "got an index not valid within production rules: {} out of length: {}",
-                val, len
-            );
-        }
+        let idx = rand::random::<usize>() % production.len();
+        production.get(idx).expect("got out of bounds index")
     }
 
     /// For context sensitive grammars, we could be in a situation where we have
@@ -77,8 +67,16 @@ where
     fn choose_lhs_and_slot<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
-        _lhs_location_matrix: &HashMap<&'a ProductionLHS<T, I>, Vec<usize>>,
+        lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize) {
-        todo!()
+        let idx = rand::random::<usize>() % lhs_location_matrix.len();
+        let (lhs, indices) = lhs_location_matrix
+            .get(idx)
+            .expect("got out of bounds index for lhs");
+        let idx = rand::random::<usize>() % indices.len();
+        let index = indices
+            .get(idx)
+            .expect("got invalid index for frontier indices");
+        (*lhs, *index)
     }
 }
