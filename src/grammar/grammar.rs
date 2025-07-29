@@ -225,65 +225,6 @@ where
         Ok(program)
     }
 
-    /// Deprecated: use to generate raw program outputs directly rather
-    /// than constructing ASTs.
-    #[deprecated(
-        note = "Please use generate_program_instance to generate ASTs which can then be serialized to output programs. "
-    )]
-    pub fn generate_program(
-        &self,
-        expander: &mut dyn GrammarExpander<T, I>,
-    ) -> Result<Vec<u8>, LangExplorerError> {
-        let mut output: Vec<u8> = vec![];
-
-        let prod = match self
-            .productions
-            .get(&ProductionLHS::new_context_free(self.root.clone()))
-        {
-            Some(prod) => prod,
-            None => return Err("no root non-terminal/production found".into()),
-        };
-
-        #[allow(deprecated)]
-        match self.generate_recursive(&mut output, prod, expander) {
-            Ok(_) => Ok(output),
-            Err(e) => Err(e),
-        }
-    }
-
-    /// Deprecated: use to generate raw program outputs directly rather
-    /// than constructing ASTs.
-    #[deprecated()]
-    fn generate_recursive(
-        &self,
-        output: &mut Vec<u8>,
-        production: &Production<T, I>,
-        expander: &mut dyn GrammarExpander<T, I>,
-    ) -> Result<(), LangExplorerError> {
-        let rule = expander.expand_rule(&self, production);
-        for elem in rule.items.iter() {
-            match elem {
-                GrammarElement::Terminal(t) => t.serialize_into(output),
-                GrammarElement::NonTerminal(nt) => {
-                    match self.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now, lol this is never gonna go away isn't it
-                {
-                    Some(prod) => {
-                        if let Err(e) = self.generate_recursive(output, prod, expander) {
-                            return Err(e);
-                        }
-                    }
-                    None => {
-                        return Err(format!("non-terminal {:?} not found in productions", nt).into())
-                    }
-                }
-                }
-                GrammarElement::Epsilon => continue,
-            }
-        }
-
-        Ok(())
-    }
-
     /// Retrieve all grammar elements found within this grammar as a set.
     /// Can be useful for creating a static labeling for each element.
     pub fn get_all_nodes(&self) -> HashSet<&GrammarElement<T, I>> {
