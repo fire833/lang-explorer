@@ -32,7 +32,10 @@ where
     pub items: Vec<ProductionRule<T, I>>,
 }
 
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    hash::Hash,
+};
 
 use crate::grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal};
 

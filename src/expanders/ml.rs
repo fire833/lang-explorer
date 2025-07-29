@@ -41,9 +41,6 @@ where
     I: NonTerminal,
     B: Backend,
 {
-    /// Embedding model that creates embeddings of grammars.
-    // embedding: Embedding<B>,
-
     /// Recorder to store/load models from disk.
     _recorder: BinGzFileRecorder<FullPrecisionSettings>,
 
@@ -197,7 +194,6 @@ where
             );
         }
     }
-
     /// For context sensitive grammars, we could be in a situation where we have
     /// multiple left-hand sides that match some point on the frontier, along with
     /// multiple positions within the frontier where we could expand such left-hand side

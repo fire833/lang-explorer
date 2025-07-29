@@ -109,7 +109,7 @@ impl FromStr for ExpanderWrapper {
         match s {
             "mc" | "montecarlo" => Ok(Self::MonteCarlo),
             "ml" => Ok(Self::ML),
-            "wmc" | "wieghtedmontecarlo" => Ok(Self::WeightedMonteCarlo),
+            "wmc" | "weightedmontecarlo" => Ok(Self::WeightedMonteCarlo),
             _ => Err(LangExplorerError::General("invalid expander string".into())),
         }
     }
