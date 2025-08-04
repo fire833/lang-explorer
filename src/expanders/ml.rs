@@ -194,6 +194,7 @@ where
             );
         }
     }
+
     /// For context sensitive grammars, we could be in a situation where we have
     /// multiple left-hand sides that match some point on the frontier, along with
     /// multiple positions within the frontier where we could expand such left-hand side

@@ -40,6 +40,7 @@ pub type InstanceId = u64;
 /// in tree form. This is equivalent to being an AST-representation of a program.
 /// So it serves as a wrapper around a general purpose graph. This type is recursively
 /// defined.
+#[derive(Clone)]
 pub struct ProgramInstance<T, I>
 where
     T: Terminal,
