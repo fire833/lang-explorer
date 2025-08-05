@@ -36,6 +36,7 @@ use super::{
 
 // Non terminals for this grammar.
 nterminal_str!(NT_ENTRYPOINT, "entrypoint");
+nterminal_str!(NT_EXPANSION, "expansion");
 nterminal_str!(NT_RULE, "rule");
 nterminal_str!(NT_ASSEMBLE_STRATEGY, "assemble_strategy");
 nterminal_str!(NT_PARALLELIZE_HW, "parallelize_hw");
@@ -193,9 +194,14 @@ impl GrammarBuilder for TacoScheduleLanguage {
                         NT_ENTRYPOINT, // Optionally create no rules
                         production_rule!(2, EPSILON),
                         // Or generate rule
-                        production_rule!(40, NT_ENTRYPOINT),
+                        production_rule!(40, NT_EXPANSION),
                         // Or generate many rules
-                        production_rule!(58, NT_RULE, COMMA, NT_ENTRYPOINT)
+                        production_rule!(58, NT_RULE, COMMA, NT_EXPANSION)
+                    ),
+                    context_free_production!(
+                        NT_EXPANSION,
+                        production_rule!(NT_RULE, COMMA, NT_EXPANSION),
+                        production_rule!(NT_RULE)
                     ),
                     // Rule definition rule
                     context_free_production!(
