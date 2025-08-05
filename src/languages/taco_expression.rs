@@ -49,8 +49,22 @@ pub struct TacoExpressionLanguage;
 /// Parameters for Taco Expression Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct TacoExpressionLanguageParams {
+    #[serde(alias = "version")]
+    version: TacoExpressionLanguageVersion,
+
     symbols: Vec<char>,
     indices: Vec<char>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub enum TacoExpressionLanguageVersion {
+    ContextFreeV1,
+}
+
+impl Default for TacoExpressionLanguageVersion {
+    fn default() -> Self {
+        Self::ContextFreeV1
+    }
 }
 
 impl GrammarBuilder for TacoExpressionLanguage {
@@ -74,33 +88,38 @@ impl GrammarBuilder for TacoExpressionLanguage {
             indices.push(production_rule!(term));
         }
 
-        let grammar = Grammar::new(
-            "entrypoint".into(),
-            vec![
-                context_free_production!(NT_ENTRY, production_rule!(NT_ELEMENT, EQUALS, NT_EXPR)),
-                context_free_production!(
-                    NT_ELEMENT,
-                    production_rule!(SYMBOL, LPAREN, NT_INDEX, RPAREN)
-                ),
-                context_free_production!(
-                    NT_INDEX,
-                    production_rule!(30, NT_INDEX, COMMA, NT_INDEX),
-                    production_rule!(70, INDEX)
-                ),
-                context_free_production!(
-                    NT_EXPR,
-                    production_rule!(10, NT_EXPR, STAR, NT_EXPR),
-                    production_rule!(10, NT_EXPR, PLUS, NT_EXPR),
-                    production_rule!(10, NT_EXPR, MINUS, NT_EXPR),
-                    production_rule!(10, NT_EXPR, FORWARDSLASH, NT_EXPR),
-                    production_rule!(50, NT_ELEMENT)
-                ),
-                // Fused index variable
-                Production::new(ProductionLHS::new_context_free_elem(INDEX), indices),
-                Production::new(ProductionLHS::new_context_free_elem(SYMBOL), symbols),
-            ],
-            "tacoexpr".into(),
-        );
+        let grammar = match params.version {
+            TacoExpressionLanguageVersion::ContextFreeV1 => Grammar::new(
+                "entrypoint".into(),
+                vec![
+                    context_free_production!(
+                        NT_ENTRY,
+                        production_rule!(NT_ELEMENT, EQUALS, NT_EXPR)
+                    ),
+                    context_free_production!(
+                        NT_ELEMENT,
+                        production_rule!(SYMBOL, LPAREN, NT_INDEX, RPAREN)
+                    ),
+                    context_free_production!(
+                        NT_INDEX,
+                        production_rule!(30, NT_INDEX, COMMA, NT_INDEX),
+                        production_rule!(70, INDEX)
+                    ),
+                    context_free_production!(
+                        NT_EXPR,
+                        production_rule!(10, NT_EXPR, STAR, NT_EXPR),
+                        production_rule!(10, NT_EXPR, PLUS, NT_EXPR),
+                        production_rule!(10, NT_EXPR, MINUS, NT_EXPR),
+                        production_rule!(10, NT_EXPR, FORWARDSLASH, NT_EXPR),
+                        production_rule!(50, NT_ELEMENT)
+                    ),
+                    // Fused index variable
+                    Production::new(ProductionLHS::new_context_free_elem(INDEX), indices),
+                    Production::new(ProductionLHS::new_context_free_elem(SYMBOL), symbols),
+                ],
+                "tacoexpr".into(),
+            ),
+        };
 
         Ok(grammar)
     }
