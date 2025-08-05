@@ -59,6 +59,7 @@ pub struct TacoExpressionLanguageParams {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum TacoExpressionLanguageVersion {
     ContextFreeV1,
+    ContextSensitiveV1,
 }
 
 impl Default for TacoExpressionLanguageVersion {
@@ -119,6 +120,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
                 ],
                 "tacoexpr".into(),
             ),
+            TacoExpressionLanguageVersion::ContextSensitiveV1 => todo!(),
         };
 
         Ok(grammar)
