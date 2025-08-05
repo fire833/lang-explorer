@@ -4,12 +4,16 @@ import requests
 
 @dataclass
 class CSSLanguageParameters:
+	version: str
+
 	classes: list[str]
 	ids: list[str]
 	colors: list[str]
 
 @dataclass
 class TacoScheduleParameters:
+	version: str
+
 	index_variables: list[str]
 	workspace_index_variables: list[str]
 	fused_index_variables: list[str]
@@ -19,6 +23,8 @@ class TacoScheduleParameters:
 
 @dataclass
 class TacoExpressionParameters:
+	version: str
+
 	symbols: list[str]
 	indices: list[str]
 

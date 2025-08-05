@@ -23,6 +23,7 @@ def main():
 	embed.add_argument("--down-sampling", type=float, default=0.0001, help="Down sampling rate of features. Default is 0.0001.")
 	embed.add_argument("--workers", type=int, default=8, help="Number of workers. Default is 8.")
 	embed.add_argument("--language", type=str, default="", help="Specify the language to generate embeddings with.")
+	embed.add_argument("--version", type=str, default="contextfreev1", help="Specify the version of the language to generate embeddings with")
 	embed.add_argument("--count", type=int, default=10000, help="Specify the number of samples to retrieve.")
 	embed.add_argument("--wl-count", type=int, default=3, help="Speficy the number of WL kernel iterations to run.")
 	embed.set_defaults(func=generate_embeddings)

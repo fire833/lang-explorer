@@ -8,7 +8,7 @@ def generate_embeddings(args):
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc", 
 		GenerateParams(args.count, False, True, True, False, True, args.wl_count, 
-		css=CSSLanguageParameters(["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
+		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
             "#20b01c",
             "#7d1dc1",
@@ -32,8 +32,10 @@ def generate_embeddings(args):
             "rgb(141, 141, 141)",
             "rgb(95, 95, 95)",
 		]),
-		taco_expression=TacoExpressionParameters(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"], ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
-		taco_schedule=TacoScheduleParameters(index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
+		taco_expression=TacoExpressionParameters(args.version, 
+            ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"], 
+            ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
+		taco_schedule=TacoScheduleParameters(args.version, index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
         karel=KarelLanguageParameters()))
 
 	document_collections = []

@@ -502,7 +502,10 @@ pub struct CSSLanguageParameters {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum CSSLanguageVersion {
+    /// Includes as much of the CSS language as I am able to reasonbaly represent in
+    /// my limited existence.
     ExhaustiveV1,
 }
 

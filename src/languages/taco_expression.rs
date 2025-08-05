@@ -57,7 +57,10 @@ pub struct TacoExpressionLanguageParams {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum TacoExpressionLanguageVersion {
+    /// Generate expressions with the context free version of this grammar.
+    /// Please note, this version can lead to syntactically incorrect programs.
     ContextFreeV1,
     ContextSensitiveV1,
 }
