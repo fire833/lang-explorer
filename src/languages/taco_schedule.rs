@@ -184,154 +184,157 @@ impl GrammarBuilder for TacoScheduleLanguage {
             unroll_factor_productions.push(production_rule!(term));
         }
 
-        let grammar = Grammar::new(
-            "entrypoint".into(),
-            vec![
-                // Entrypoint rule
-                context_free_production!(
-                    NT_ENTRYPOINT, // Optionally create no rules
-                    production_rule!(2, EPSILON),
-                    // Or generate rule
-                    production_rule!(40, NT_ENTRYPOINT),
-                    // Or generate many rules
-                    production_rule!(58, NT_RULE, COMMA, NT_ENTRYPOINT)
-                ),
-                // Rule definition rule
-                context_free_production!(
-                    NT_RULE,
-                    // pos(index_variable, derived_index_var, tensor)
-                    production_rule!(POS_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
-                    // fuse(index_variable, index_variable, fused_index_variable)
-                    production_rule!(
-                        FUSE_OP,
-                        LPAREN,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_FUSED_INDEX_VARIABLE,
-                        RPAREN
+        let grammar = match params.version {
+            TacoScheduleLanguageVersion::ContextFreeV1 => Grammar::new(
+                "entrypoint".into(),
+                vec![
+                    // Entrypoint rule
+                    context_free_production!(
+                        NT_ENTRYPOINT, // Optionally create no rules
+                        production_rule!(2, EPSILON),
+                        // Or generate rule
+                        production_rule!(40, NT_ENTRYPOINT),
+                        // Or generate many rules
+                        production_rule!(58, NT_RULE, COMMA, NT_ENTRYPOINT)
                     ),
-                    // split(index_variable, outer_index_variable, inner_index_variable, split_factor)
-                    production_rule!(
-                        SPLIT_OP,
-                        LPAREN,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_SPLIT_FACTOR,
-                        RPAREN
+                    // Rule definition rule
+                    context_free_production!(
+                        NT_RULE,
+                        // pos(index_variable, derived_index_var, tensor)
+                        production_rule!(POS_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
+                        // fuse(index_variable, index_variable, fused_index_variable)
+                        production_rule!(
+                            FUSE_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_FUSED_INDEX_VARIABLE,
+                            RPAREN
+                        ),
+                        // split(index_variable, outer_index_variable, inner_index_variable, split_factor)
+                        production_rule!(
+                            SPLIT_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_SPLIT_FACTOR,
+                            RPAREN
+                        ),
+                        // reorder(index_variable)
+                        production_rule!(REORDER_OP, LPAREN, NT_INDEX_VARIABLE, RPAREN),
+                        // divide(index_variable, outer_index_variable, inner_index_variable, divide_factor)
+                        production_rule!(
+                            DIVIDE_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_DIVIDE_FACTOR,
+                            RPAREN
+                        ),
+                        // precompute(expr, index_variable, workspace_index_variable)
+                        production_rule!(
+                            PRECOMPUTE_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_WORKSPACE_INDEX_VARIABLE,
+                            RPAREN
+                        ),
+                        // unroll(index_variable, unroll_factor)
+                        production_rule!(
+                            UNROLL_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_UNROLL_FACTOR,
+                            RPAREN
+                        ),
+                        // bound() // appears to be not yet supported in taco.
+                        production_rule!(BOUND_OP, LPAREN, RPAREN),
+                        // parallelize(index_variable, hardware, race_strategy)
+                        production_rule!(
+                            PARALLELIZE_OP,
+                            LPAREN,
+                            NT_INDEX_VARIABLE,
+                            COMMA,
+                            NT_PARALLELIZE_HW,
+                            COMMA,
+                            NT_PARALLELIZE_RACES,
+                            RPAREN
+                        ),
+                        // assemble()
+                        production_rule!(ASSEMBLE_OP, LPAREN, COMMA, NT_ASSEMBLE_STRATEGY, RPAREN)
                     ),
-                    // reorder(index_variable)
-                    production_rule!(REORDER_OP, LPAREN, NT_INDEX_VARIABLE, RPAREN),
-                    // divide(index_variable, outer_index_variable, inner_index_variable, divide_factor)
-                    production_rule!(
-                        DIVIDE_OP,
-                        LPAREN,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_DIVIDE_FACTOR,
-                        RPAREN
+                    // Assemble Operation Rule.
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_ASSEMBLE_STRATEGY),
+                        vec![
+                            production_rule!(ASSEMBLE_APPEND),
+                            production_rule!(ASSEMBLE_INSERT),
+                        ],
                     ),
-                    // precompute(expr, index_variable, workspace_index_variable)
-                    production_rule!(
-                        PRECOMPUTE_OP,
-                        LPAREN,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_WORKSPACE_INDEX_VARIABLE,
-                        RPAREN
+                    // Parallelize Hardware Rule.
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_PARALLELIZE_HW),
+                        vec![
+                            production_rule!(PARALLELIZE_HW_CPUTHREAD),
+                            production_rule!(PARALLELIZE_HW_CPUVECTOR),
+                            production_rule!(PARALLELIZE_HW_GPUWARP),
+                            production_rule!(PARALLELIZE_HW_NOTPARALLEL),
+                        ],
                     ),
-                    // unroll(index_variable, unroll_factor)
-                    production_rule!(
-                        UNROLL_OP,
-                        LPAREN,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_UNROLL_FACTOR,
-                        RPAREN
+                    // Parallelize Race Conditions Rule.
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_PARALLELIZE_RACES),
+                        vec![
+                            production_rule!(PARALLELIZE_RACE_IGNORE),
+                            production_rule!(PARALLELIZE_RACE_TEMP),
+                            production_rule!(PARALLELIZE_RACE_NORACES),
+                            production_rule!(PARALLELIZE_RACE_PREDUCE),
+                            production_rule!(PARALLELIZE_RACE_ATOMICS),
+                        ],
                     ),
-                    // bound() // appears to be not yet supported in taco.
-                    production_rule!(BOUND_OP, LPAREN, RPAREN),
-                    // parallelize(index_variable, hardware, race_strategy)
-                    production_rule!(
-                        PARALLELIZE_OP,
-                        LPAREN,
-                        NT_INDEX_VARIABLE,
-                        COMMA,
-                        NT_PARALLELIZE_HW,
-                        COMMA,
-                        NT_PARALLELIZE_RACES,
-                        RPAREN
+                    // Index variable rule
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_INDEX_VARIABLE),
+                        index_productions,
                     ),
-                    // assemble()
-                    production_rule!(ASSEMBLE_OP, LPAREN, COMMA, NT_ASSEMBLE_STRATEGY, RPAREN)
-                ),
-                // Assemble Operation Rule.
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_ASSEMBLE_STRATEGY),
-                    vec![
-                        production_rule!(ASSEMBLE_APPEND),
-                        production_rule!(ASSEMBLE_INSERT),
-                    ],
-                ),
-                // Parallelize Hardware Rule.
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_PARALLELIZE_HW),
-                    vec![
-                        production_rule!(PARALLELIZE_HW_CPUTHREAD),
-                        production_rule!(PARALLELIZE_HW_CPUVECTOR),
-                        production_rule!(PARALLELIZE_HW_GPUWARP),
-                        production_rule!(PARALLELIZE_HW_NOTPARALLEL),
-                    ],
-                ),
-                // Parallelize Race Conditions Rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_PARALLELIZE_RACES),
-                    vec![
-                        production_rule!(PARALLELIZE_RACE_IGNORE),
-                        production_rule!(PARALLELIZE_RACE_TEMP),
-                        production_rule!(PARALLELIZE_RACE_NORACES),
-                        production_rule!(PARALLELIZE_RACE_PREDUCE),
-                        production_rule!(PARALLELIZE_RACE_ATOMICS),
-                    ],
-                ),
-                // Index variable rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_INDEX_VARIABLE),
-                    index_productions,
-                ),
-                // Workspace index variable rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_WORKSPACE_INDEX_VARIABLE),
-                    workspace_index_productions,
-                ),
-                // Fused index variable
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_FUSED_INDEX_VARIABLE),
-                    fused_index_productions,
-                ),
-                // Unroll factor rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_UNROLL_FACTOR),
-                    unroll_factor_productions,
-                ),
-                // Split factor rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_SPLIT_FACTOR),
-                    split_factor_productions,
-                ),
-                // Divide factor rule
-                Production::new(
-                    ProductionLHS::new_context_free_elem(NT_DIVIDE_FACTOR),
-                    divide_factor_productions,
-                ),
-            ],
-            "tacosched".into(),
-        );
+                    // Workspace index variable rule
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_WORKSPACE_INDEX_VARIABLE),
+                        workspace_index_productions,
+                    ),
+                    // Fused index variable
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_FUSED_INDEX_VARIABLE),
+                        fused_index_productions,
+                    ),
+                    // Unroll factor rule
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_UNROLL_FACTOR),
+                        unroll_factor_productions,
+                    ),
+                    // Split factor rule
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_SPLIT_FACTOR),
+                        split_factor_productions,
+                    ),
+                    // Divide factor rule
+                    Production::new(
+                        ProductionLHS::new_context_free_elem(NT_DIVIDE_FACTOR),
+                        divide_factor_productions,
+                    ),
+                ],
+                "tacosched".into(),
+            ),
+            TacoScheduleLanguageVersion::ContextSensitiveV1 => todo!(),
+        };
 
         Ok(grammar)
     }
