@@ -16,12 +16,12 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use burn::{
     data::dataloader::{batcher::Batcher, DataLoader, DataLoaderIterator},
     prelude::Backend,
-    tensor::{Int, Tensor},
+    tensor::{backend::AutodiffBackend, Device, Int, Tensor},
 };
 
 use crate::{
@@ -32,7 +32,7 @@ use crate::{
 pub mod doc2vec;
 
 /// Main trait for creating embeddings of programs.
-pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: Backend> {
+pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     type Document;
     type Word: PartialEq + PartialOrd;
     type Params;
@@ -40,7 +40,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: Backend> {
     /// Initializes an Embedder system. This typically involves either
     /// initializing a new model, or retrieving an already trained model
     /// instance from disk.
-    fn init(grammar: &Grammar<T, I>, params: Self::Params) -> Self;
+    fn init(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self;
 
     /// Trains the embedder on the provided corpus.
     fn fit(
@@ -56,40 +56,90 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: Backend> {
     ) -> Result<Tensor<B, 1>, LangExplorerError>;
 }
 
-pub struct ProgramBatch<B: Backend> {
+/// A training item represents a single item in a batch that should be trained on.
+#[derive(Debug, Clone)]
+pub(super) struct TrainingItem {
+    document_idx: usize,
+    context_word_indices: Vec<usize>,
+    center_word_idx: usize,
+}
+
+/// A batch of document/word context items that are already in their correct tensor form.
+pub(super) struct ProgramBatch<B: Backend> {
     documents: Tensor<B, 1, Int>,
     context_words: Tensor<B, 2, Int>,
     negative_words: Tensor<B, 2, Int>,
     true_words: Tensor<B, 1, Int>,
 }
 
-pub struct ProgramBatcher {
+pub(super) struct ProgramBatcher {
     /// The number of negative samples to sample.
     n_neg_samples: usize,
+    /// the total number of words to sample from.
+    n_total_words: usize,
 }
 
 impl ProgramBatcher {
-    fn new(n_neg_samples: usize) -> Self {
-        Self { n_neg_samples }
+    fn new(n_neg_samples: usize, n_total_words: usize) -> Self {
+        Self {
+            n_neg_samples,
+            n_total_words,
+        }
     }
 }
 
-impl<B: Backend> Batcher<B, (usize, Vec<usize>, usize), ProgramBatch<B>> for ProgramBatcher {
-    fn batch(&self, items: Vec<(usize, Vec<usize>, usize)>, device: &B::Device) -> ProgramBatch<B> {
-        todo!()
+impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
+    fn batch(&self, items: Vec<TrainingItem>, device: &B::Device) -> ProgramBatch<B> {
+        let mut doc_idx = vec![];
+        let mut center_word_idx = vec![];
+        let mut context_word_idx = vec![];
+        let mut negative_indices = vec![];
+
+        for item in items.iter() {
+            doc_idx.push(Tensor::from_data([item.document_idx as i32], device));
+            center_word_idx.push(Tensor::from_data([item.center_word_idx as i32], device));
+            let ctx_word_indices: Vec<i32> = item
+                .context_word_indices
+                .iter()
+                .map(|v| *v as i32)
+                .collect();
+
+            context_word_idx.push(Tensor::from_data(ctx_word_indices.as_slice(), device));
+
+            let mut negative_samples = HashSet::new();
+            let cwidx = item.center_word_idx as i32;
+            while negative_samples.len() < self.n_neg_samples {
+                let idx = (rand::random::<usize>() % self.n_total_words) as i32;
+                if !negative_samples.contains(&idx) && idx != cwidx {
+                    negative_samples.insert(idx);
+                }
+            }
+
+            negative_indices.push(Tensor::from_data(
+                negative_samples.into_iter().collect::<Vec<_>>().as_slice(),
+                device,
+            ));
+        }
+
+        ProgramBatch {
+            documents: Tensor::cat(doc_idx, 1),
+            context_words: Tensor::cat(context_word_idx, 1),
+            negative_words: Tensor::cat(negative_indices, 1),
+            true_words: Tensor::cat(center_word_idx, 1),
+        }
     }
 }
 
-pub struct ProgramLoader {
+pub(super) struct ProgramLoader {
     batcher: Arc<ProgramBatcher>,
-    items: Vec<(usize, Vec<usize>, usize)>,
+    items: Vec<TrainingItem>,
 }
 
 impl ProgramLoader {
-    fn new(items: Vec<(usize, Vec<usize>, usize)>, n_neg_samples: usize) -> Self {
+    fn new(items: Vec<TrainingItem>, n_neg_samples: usize, n_total_words: usize) -> Self {
         Self {
             items,
-            batcher: Arc::new(ProgramBatcher::new(n_neg_samples)),
+            batcher: Arc::new(ProgramBatcher::new(n_neg_samples, n_total_words)),
         }
     }
 }
@@ -103,7 +153,7 @@ impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
         todo!()
     }
 
-    fn to_device(&self, device: &B::Device) -> Arc<dyn DataLoader<B, ProgramBatch<B>>> {
+    fn to_device(&self, _device: &B::Device) -> Arc<dyn DataLoader<B, ProgramBatch<B>>> {
         todo!()
     }
 
@@ -113,6 +163,10 @@ impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
             new_items.push(self.items[i].clone());
         }
 
-        Arc::new(ProgramLoader::new(new_items, self.batcher.n_neg_samples))
+        Arc::new(ProgramLoader::new(
+            new_items,
+            self.batcher.n_neg_samples,
+            self.batcher.n_total_words,
+        ))
     }
 }

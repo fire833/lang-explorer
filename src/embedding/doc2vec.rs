@@ -22,7 +22,7 @@ use burn::{
     config::Config,
     optim::AdamConfig,
     prelude::Backend,
-    tensor::{backend::AutodiffBackend, Float, Tensor},
+    tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
 
@@ -44,8 +44,9 @@ use crate::{
 pub struct Doc2VecEmbedder<B: Backend> {
     /// The model itself.
     model: Doc2VecDM<B>,
-
     loss: NegativeSampling<B>,
+
+    device: Device<B>,
 
     strategy: Doc2VecTrainingStrategy,
     agg: AggregationMethod,
@@ -60,10 +61,7 @@ pub enum Doc2VecTrainingStrategy {
     AllDocsAllSubwords,
 }
 
-impl<B> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<B>
-where
-    B: AutodiffBackend,
-{
+impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<B> {
     fn step(&self, item: ProgramBatch<B>) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
@@ -76,10 +74,7 @@ where
     }
 }
 
-impl<B, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<B>
-where
-    B: Backend,
-{
+impl<B: Backend, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<B> {
     fn step(&self, _item: VI) -> VO {
         todo!()
     }
@@ -95,6 +90,8 @@ pub struct Doc2VecEmbedderParams {
     pub n_docs: usize,
     /// The dimension of embeddings within the model.
     pub d_model: usize,
+    /// The number of negative samples to update on each training run.
+    pub n_neg_samples: usize,
     /// The number of words to the left of the center word
     /// to predict on.
     pub window_left: usize,
@@ -113,14 +110,15 @@ pub struct Doc2VecEmbedderParams {
     pub n_epochs: usize,
 }
 
-impl<T: Terminal, I: NonTerminal, B: Backend> LanguageEmbedder<T, I, B> for Doc2VecEmbedder<B> {
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
+    for Doc2VecEmbedder<B>
+{
     type Document = ProgramInstance<T, I>;
     type Word = Feature;
     type Params = Doc2VecEmbedderParams;
 
-    fn init(grammar: &Grammar<T, I>, params: Self::Params) -> Self {
-        let _uuid = grammar.generate_uuid();
-        let device = Default::default();
+    fn init(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
+        // let _uuid = grammar.generate_uuid();
 
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
@@ -131,6 +129,7 @@ impl<T: Terminal, I: NonTerminal, B: Backend> LanguageEmbedder<T, I, B> for Doc2
 
         Self {
             model: model,
+            device,
             loss: loss,
             n_epochs: params.n_epochs,
             batch_size: params.batch_size,
@@ -160,8 +159,19 @@ impl<T: Terminal, I: NonTerminal, B: Backend> LanguageEmbedder<T, I, B> for Doc2
         for epoch in 0..self.n_epochs {
             match self.strategy {
                 Doc2VecTrainingStrategy::AllDocsAllSubwords => {
-                    for doc in documents.iter() {
-                        for word in doc.1.iter().enumerate() {}
+                    for (docidx, doc) in documents.iter().enumerate() {
+                        for (idx, word) in doc.1.iter().enumerate() {
+                            let docs = Tensor::from_ints([[docidx as i32]], &self.device);
+                            let words = self.build_word_indices(&wordset, vec![(&doc.1, idx)]);
+                            let logits = self.model.forward(docs, words, &self.agg);
+                            let loss = self.loss.forward(
+                                Tensor::from_ints([[idx as i32]], &self.device),
+                                Tensor::from_ints([[idx as i32]], &self.device), // TODO fix this broken crap
+                                logits,
+                            );
+
+                            // let grads = self.loss.backward();
+                        }
                     }
                 }
             }
@@ -182,5 +192,18 @@ impl<T: Terminal, I: NonTerminal, B: Backend> LanguageEmbedder<T, I, B> for Doc2
         _document: (Self::Document, Vec<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
+    }
+}
+
+impl<B: Backend> Doc2VecEmbedder<B> {
+    fn build_word_indices<W>(
+        &self,
+        word_map: &BTreeMap<W, u32>,
+        // The vector of document words, and the center word for each batch element.
+        batch_elements: Vec<(&Vec<W>, usize)>,
+    ) -> Tensor<B, 2, Int> {
+        // let indices = vec![];
+
+        Tensor::from_ints([[1], [2]], &self.device)
     }
 }
