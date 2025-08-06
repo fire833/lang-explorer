@@ -20,8 +20,8 @@ use std::collections::BTreeMap;
 
 use burn::{
     config::Config,
-    optim::AdamConfig,
-    prelude::Backend,
+    module::AutodiffModule,
+    optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
@@ -41,12 +41,14 @@ use crate::{
     },
 };
 
-pub struct Doc2VecEmbedder<B: Backend> {
+pub struct Doc2VecEmbedder<M: AutodiffModule<B>, B: AutodiffBackend> {
     /// The model itself.
     model: Doc2VecDM<B>,
     loss: NegativeSampling<B>,
 
     device: Device<B>,
+
+    optim: OptimizerAdaptor<Adam, M, B>,
 
     strategy: Doc2VecTrainingStrategy,
     agg: AggregationMethod,
@@ -61,7 +63,9 @@ pub enum Doc2VecTrainingStrategy {
     AllDocsAllSubwords,
 }
 
-impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<B> {
+impl<M: AutodiffModule<B>, B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>>
+    for Doc2VecEmbedder<M, B>
+{
     fn step(&self, item: ProgramBatch<B>) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
@@ -74,7 +78,7 @@ impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc
     }
 }
 
-impl<B: Backend, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<B> {
+impl<M: AutodiffModule<B>, B: AutodiffBackend, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<M, B> {
     fn step(&self, _item: VI) -> VO {
         todo!()
     }
@@ -110,8 +114,8 @@ pub struct Doc2VecEmbedderParams {
     pub n_epochs: usize,
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
-    for Doc2VecEmbedder<B>
+impl<T: Terminal, I: NonTerminal, M: AutodiffModule<B>, B: AutodiffBackend>
+    LanguageEmbedder<T, I, B> for Doc2VecEmbedder<M, B>
 {
     type Document = ProgramInstance<T, I>;
     type Word = Feature;
@@ -131,6 +135,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             model: model,
             device,
             loss: loss,
+            optim: params.adam_config.init(),
             n_epochs: params.n_epochs,
             batch_size: params.batch_size,
             window_left: params.window_left,
@@ -160,7 +165,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             match self.strategy {
                 Doc2VecTrainingStrategy::AllDocsAllSubwords => {
                     for (docidx, doc) in documents.iter().enumerate() {
-                        for (idx, word) in doc.1.iter().enumerate() {
+                        for word in doc.1.iter() {
                             let true_idx = *wordset.get(word).unwrap();
                             let docs = Tensor::from_ints([[docidx as i32]], &self.device);
                             let words = self.build_word_indices(&wordset, vec![(&doc.1, true_idx)]);
@@ -171,7 +176,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                                 logits,
                             );
 
-                            // let grads = self.loss.backward();
+                            let grads = loss.backward();
+                            let mut grads = GradientsParams::from_grads(grads, &self.model);
+
+                            // self.model = self.optim.step(0.01, &self.model, grads);
                         }
                     }
                 }
@@ -189,7 +197,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 }
 
-impl<B: Backend> Doc2VecEmbedder<B> {
+impl<M: AutodiffModule<B>, B: AutodiffBackend> Doc2VecEmbedder<M, B> {
     fn build_word_indices<W>(
         &self,
         word_map: &BTreeMap<W, u32>,
