@@ -161,12 +161,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 Doc2VecTrainingStrategy::AllDocsAllSubwords => {
                     for (docidx, doc) in documents.iter().enumerate() {
                         for (idx, word) in doc.1.iter().enumerate() {
+                            let true_idx = *wordset.get(word).unwrap();
                             let docs = Tensor::from_ints([[docidx as i32]], &self.device);
-                            let words = self.build_word_indices(&wordset, vec![(&doc.1, idx)]);
+                            let words = self.build_word_indices(&wordset, vec![(&doc.1, true_idx)]);
                             let logits = self.model.forward(docs, words, &self.agg);
                             let loss = self.loss.forward(
-                                Tensor::from_ints([[idx as i32]], &self.device),
-                                Tensor::from_ints([[idx as i32]], &self.device), // TODO fix this broken crap
+                                Tensor::from_ints([[true_idx as i32]], &self.device),
+                                Tensor::from_ints([[true_idx as i32]], &self.device), // TODO fix this broken crap
                                 logits,
                             );
 
@@ -176,13 +177,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 }
             }
         }
-
-        // this will be useful later
-        // let negative_indices = Tensor::<B, 2, Int>::random(
-        //     [batch_size, k],
-        //     Distribution::Uniform(0.0, n_words as f64),
-        //     device,
-        // );
 
         todo!()
     }
@@ -200,7 +194,7 @@ impl<B: Backend> Doc2VecEmbedder<B> {
         &self,
         word_map: &BTreeMap<W, u32>,
         // The vector of document words, and the center word for each batch element.
-        batch_elements: Vec<(&Vec<W>, usize)>,
+        batch_elements: Vec<(&Vec<W>, u32)>,
     ) -> Tensor<B, 2, Int> {
         // let indices = vec![];
 
