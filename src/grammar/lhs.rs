@@ -31,11 +31,7 @@ use crate::languages::strings::{nterminal_str, terminal_str, StringValue};
 /// context-sensitive. This type allows you to provide optional prefix and suffix
 /// grammar elements around the non-terminal as context for the expander.
 #[derive(Clone, PartialEq, Eq)]
-pub struct ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub struct ProductionLHS<T: Terminal, I: NonTerminal> {
     /// optional prefix context for the rule.
     pub prefix: Vec<GrammarElement<T, I>>,
 
@@ -54,11 +50,7 @@ where
     full_token_list: Vec<GrammarElement<T, I>>,
 }
 
-impl<T, I> ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
     pub fn new_context_free_elem(non_terminal: GrammarElement<T, I>) -> Self {
         if let GrammarElement::NonTerminal(nt) = non_terminal {
             Self::new_context_free(nt)
@@ -311,11 +303,7 @@ fn test_get_all_context_instances() {
     );
 }
 
-impl<T, I> Debug for ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Debug for ProductionLHS<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // optionally write out prefix.
         if self.prefix.len() > 0 {
@@ -333,11 +321,7 @@ where
     }
 }
 
-impl<T, I> Hash for ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Hash for ProductionLHS<T, I> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.prefix.hash(state);
         self.non_terminal.hash(state);
@@ -345,31 +329,19 @@ where
     }
 }
 
-impl<T, I> From<I> for ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> From<I> for ProductionLHS<T, I> {
     fn from(value: I) -> Self {
         Self::new_context_free(value)
     }
 }
 
-impl<T, I> PartialOrd for ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> PartialOrd for ProductionLHS<T, I> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<T, I> Ord for ProductionLHS<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Ord for ProductionLHS<T, I> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);

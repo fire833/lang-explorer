@@ -113,12 +113,7 @@ pub struct Doc2VecEmbedderParams {
     pub n_epochs: usize,
 }
 
-impl<T, I, B> LanguageEmbedder<T, I, B> for Doc2VecEmbedder<B>
-where
-    T: Terminal,
-    I: NonTerminal,
-    B: AutodiffBackend,
-{
+impl<T: Terminal, I: NonTerminal, B: Backend> LanguageEmbedder<T, I, B> for Doc2VecEmbedder<B> {
     type Document = ProgramInstance<T, I>;
     type Word = Feature;
     type Params = Doc2VecEmbedderParams;

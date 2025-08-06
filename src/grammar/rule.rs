@@ -24,20 +24,12 @@ use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
 /// GrammarElements that are expanded usually using DFS until only a list of
 /// non-terminals remains.
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct ProductionRule<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub struct ProductionRule<T: Terminal, I: NonTerminal> {
     pub items: Vec<GrammarElement<T, I>>,
     pub logit: Option<u64>,
 }
 
-impl<T, I> ProductionRule<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> ProductionRule<T, I> {
     pub const fn new(elements: Vec<GrammarElement<T, I>>) -> Self {
         Self {
             items: elements,
@@ -53,11 +45,7 @@ where
     }
 }
 
-impl<T, I> Display for ProductionRule<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Display for ProductionRule<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
@@ -71,11 +59,7 @@ where
     }
 }
 
-impl<T, I> Debug for ProductionRule<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Debug for ProductionRule<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for item in self.items.iter() {
             write!(f, "{:?}", item)?;

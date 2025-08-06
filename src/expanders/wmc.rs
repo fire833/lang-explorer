@@ -36,11 +36,7 @@ impl WeightedMonteCarloExpander {
     }
 }
 
-impl<T, I> GrammarExpander<T, I> for WeightedMonteCarloExpander
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloExpander {
     /// We may need to initialize the expander depending on the type of grammar
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar

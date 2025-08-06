@@ -41,11 +41,7 @@ pub type InstanceId = u64;
 /// So it serves as a wrapper around a general purpose graph. This type is recursively
 /// defined.
 #[derive(Clone)]
-pub struct ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub struct ProgramInstance<T: Terminal, I: NonTerminal> {
     /// The current node in the tree.
     node: GrammarElement<T, I>,
     /// The list of children nodes.
@@ -61,11 +57,7 @@ pub enum WLKernelHashingOrder {
     ParentSelfChildrenOrdered,
 }
 
-impl<T, I> ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     /// Create a new program instance. This can be a root of a program tree,
     /// or a subtree.
     pub fn new(node: GrammarElement<T, I>, id: InstanceId) -> Self {
@@ -385,11 +377,7 @@ fn test_extract_words_wl_kernel() {
     println!("{:?}", words);
 }
 
-impl<T, I> BinarySerialize for ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> BinarySerialize for ProgramInstance<T, I> {
     fn serialize(&self) -> Vec<u8> {
         let mut vec: Vec<u8> = vec![];
 
@@ -421,28 +409,15 @@ where
 /// the grammar elements within, don't worry about
 /// children for now. This will probably bite me later
 /// but lets just deal with it.
-impl<T, I> PartialEq for ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> PartialEq for ProgramInstance<T, I> {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
     }
 }
 
-impl<T, I> Eq for ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
-}
+impl<T: Terminal, I: NonTerminal> Eq for ProgramInstance<T, I> {}
 
-impl<T, I> Hash for ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Hash for ProgramInstance<T, I> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.node.hash(state);
         // This will probably also come back to bite me, will most
@@ -455,21 +430,13 @@ where
     }
 }
 
-impl<T, I> Debug for ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Debug for ProgramInstance<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.node)
     }
 }
 
-impl<T, I> ToString for ProgramInstance<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> ToString for ProgramInstance<T, I> {
     fn to_string(&self) -> String {
         let mut res = format!("{:?}", self.node);
         for child in self.children.iter() {

@@ -24,31 +24,19 @@ use crate::grammar::{NonTerminal, Terminal};
 /// which should serialize to a set of bytes (i.e. become valid program code)
 /// non-terminals, which are used within an AST representation.
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub enum GrammarElement<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub enum GrammarElement<T: Terminal, I: NonTerminal> {
     Terminal(T),
     NonTerminal(I),
     Epsilon,
 }
 
-impl<T, I> From<I> for GrammarElement<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> From<I> for GrammarElement<T, I> {
     fn from(value: I) -> Self {
         Self::NonTerminal(value)
     }
 }
 
-impl<T, I> Display for GrammarElement<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Display for GrammarElement<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Terminal(t) => write!(f, "'{:?}'", t),
@@ -58,11 +46,7 @@ where
     }
 }
 
-impl<T, I> Debug for GrammarElement<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Debug for GrammarElement<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Epsilon => write!(f, "ε"),

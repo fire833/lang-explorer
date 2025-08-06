@@ -27,18 +27,12 @@ use burn::{
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
-    languages::ProgramResult,
 };
 
 pub mod doc2vec;
 
 /// Main trait for creating embeddings of programs.
-pub trait LanguageEmbedder<T, I, B>
-where
-    T: Terminal,
-    I: NonTerminal,
-    B: Backend,
-{
+pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: Backend> {
     type Document;
     type Word: PartialEq + PartialOrd;
     type Params;

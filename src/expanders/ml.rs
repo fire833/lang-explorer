@@ -35,12 +35,7 @@ use crate::{
     },
 };
 
-pub struct LearnedExpander<T, I, B>
-where
-    T: Terminal,
-    I: NonTerminal,
-    B: Backend,
-{
+pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: Backend> {
     /// Recorder to store/load models from disk.
     _recorder: BinGzFileRecorder<FullPrecisionSettings>,
 
@@ -53,12 +48,7 @@ where
     strategy: SamplingStrategy,
 }
 
-impl<T, I, B> LearnedExpander<T, I, B>
-where
-    T: Terminal,
-    I: NonTerminal,
-    B: Backend,
-{
+impl<T: Terminal, I: NonTerminal, B: Backend> LearnedExpander<T, I, B> {
     pub fn new() -> Self {
         Self {
             _recorder: BinGzFileRecorder::new(),
@@ -95,12 +85,7 @@ where
     // Conv2d(Conv2d<B>),
 }
 
-impl<T, I, B> GrammarExpander<T, I> for LearnedExpander<T, I, B>
-where
-    T: Terminal,
-    I: NonTerminal,
-    B: Backend,
-{
+impl<T: Terminal, I: NonTerminal, B: Backend> GrammarExpander<T, I> for LearnedExpander<T, I, B> {
     fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError> {
         let device = Default::default();
         let recorder = BinGzFileRecorder::<FullPrecisionSettings>::new();

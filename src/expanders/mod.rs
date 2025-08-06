@@ -43,11 +43,7 @@ pub mod wmc;
 /// that should be utilized from the list of possible production
 /// rules that are implemented by this production.
 #[async_trait]
-pub trait GrammarExpander<T, I>: Send
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
     /// We may need to initialize the expander depending on the type of grammar
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar

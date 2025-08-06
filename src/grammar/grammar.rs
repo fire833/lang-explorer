@@ -37,11 +37,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct Grammar<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub struct Grammar<T: Terminal, I: NonTerminal> {
     /// The root symbol of this grammar definition.
     root: I,
 
@@ -57,11 +53,7 @@ where
     canonical_name: String,
 }
 
-impl<T, I> Grammar<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     pub fn new(root: I, mut productions: Vec<Production<T, I>>, name: String) -> Self {
         let mut map: BTreeMap<ProductionLHS<T, I>, Production<T, I>> = BTreeMap::new();
         let mut is_context_sensitive: bool = false;
@@ -277,11 +269,7 @@ where
     }
 }
 
-impl<T, I> Debug for Grammar<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Debug for Grammar<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Entry Symbol: {:?}", self.root)?;
 
@@ -294,11 +282,7 @@ where
 }
 
 /// Displays the grammar in BNF form for easier insertion into the appendices.
-impl<T, I> Display for Grammar<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Display for Grammar<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Do this twice for ease, make sure we show the root symbol first
         for (nt, rules) in self.productions.iter() {

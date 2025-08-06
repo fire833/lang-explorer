@@ -19,11 +19,7 @@
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct Production<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+pub struct Production<T: Terminal, I: NonTerminal> {
     /// Reference to the non-terminal that we are using here.
     pub non_terminal: ProductionLHS<T, I>,
 
@@ -39,11 +35,7 @@ use std::{
 
 use crate::grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal};
 
-impl<T, I> Production<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Production<T, I> {
     pub const fn new(non_terminal: ProductionLHS<T, I>, items: Vec<ProductionRule<T, I>>) -> Self {
         Self {
             items,
@@ -72,11 +64,7 @@ where
     }
 }
 
-impl<T, I> Display for Production<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Display for Production<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
@@ -92,11 +80,7 @@ where
     }
 }
 
-impl<T, I> Debug for Production<T, I>
-where
-    T: Terminal,
-    I: NonTerminal,
-{
+impl<T: Terminal, I: NonTerminal> Debug for Production<T, I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
