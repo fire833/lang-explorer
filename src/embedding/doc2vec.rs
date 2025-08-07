@@ -21,7 +21,7 @@ use std::collections::BTreeMap;
 use burn::{
     config::Config,
     module::AutodiffModule,
-    optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
+    optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams},
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
