@@ -44,9 +44,11 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 
     /// Trains the embedder on the provided corpus.
     fn fit(
-        &mut self,
+        self,
         documents: &Vec<(Self::Document, Vec<Self::Word>)>,
-    ) -> Result<(), LangExplorerError>;
+    ) -> Result<Self, LangExplorerError>
+    where
+        Self: Sized;
 
     /// Creates an embedding given the current model on a new
     /// document and it's corresponding words.
