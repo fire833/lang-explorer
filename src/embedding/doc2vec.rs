@@ -55,6 +55,7 @@ pub struct Doc2VecEmbedder<B: AutodiffBackend> {
     window_right: usize,
     batch_size: usize,
     n_epochs: usize,
+    learning_rate: f64,
 }
 
 #[derive(Debug, Config)]
@@ -109,6 +110,8 @@ pub struct Doc2VecEmbedderParams {
     pub batch_size: usize,
     /// number of epochs to train on.
     pub n_epochs: usize,
+    /// the learning rate
+    pub learning_rate: f64,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
@@ -124,7 +127,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
         let model =
-            Doc2VecDMConfig::new(params.n_words, params.n_docs, params.d_model).init(&device);
+            Doc2VecDMConfig::new(params.n_words + 1, params.n_docs, params.d_model).init(&device);
 
         let loss = NegativeSamplingConfig::new().init(&device);
 
@@ -139,6 +142,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             window_right: params.window_right,
             strategy: params.strategy,
             agg: params.agg,
+            learning_rate: params.learning_rate,
         }
     }
 
@@ -174,9 +178,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                             );
 
                             let grads = loss.backward();
-                            let mut grads = GradientsParams::from_grads(grads, &self.model);
+                            let grads = GradientsParams::from_grads(grads, &self.model);
 
-                            self.model = self.optim.step(0.01, self.model, grads);
+                            self.model = self.optim.step(self.learning_rate, self.model, grads);
                         }
                     }
                 }
