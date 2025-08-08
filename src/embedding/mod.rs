@@ -74,6 +74,7 @@ pub(super) struct ProgramBatch<B: Backend> {
     true_words: Tensor<B, 1, Int>,
 }
 
+#[derive(Debug, Clone)]
 pub(super) struct ProgramBatcher {
     /// The number of negative samples to sample.
     n_neg_samples: usize,

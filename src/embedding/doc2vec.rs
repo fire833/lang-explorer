@@ -20,13 +20,15 @@ use std::collections::BTreeMap;
 
 use burn::{
     config::Config,
+    data::dataloader::batcher::Batcher,
     optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 use crate::{
-    embedding::{LanguageEmbedder, ProgramBatch},
+    embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
     languages::Feature,
@@ -55,6 +57,7 @@ pub struct Doc2VecEmbedder<B: AutodiffBackend> {
     window_right: usize,
     batch_size: usize,
     n_epochs: usize,
+    n_neg_samples: usize,
     learning_rate: f64,
 }
 
@@ -127,7 +130,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
         let model =
-            Doc2VecDMConfig::new(params.n_words + 1, params.n_docs, params.d_model).init(&device);
+            Doc2VecDMConfig::new(params.n_words + 2, params.n_docs, params.d_model).init(&device);
 
         let loss = NegativeSamplingConfig::new().init(&device);
 
@@ -137,6 +140,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             loss: loss,
             optim: params.adam_config.init(),
             n_epochs: params.n_epochs,
+            n_neg_samples: params.n_neg_samples,
             batch_size: params.batch_size,
             window_left: params.window_left,
             window_right: params.window_right,
@@ -162,6 +166,18 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             })
         });
 
+        let batcher = ProgramBatcher::new(self.n_neg_samples, wordset.len() + 2);
+
+        let num_cpus = num_cpus::get() as u64;
+        let (tx, mut rx): (Sender<ProgramBatch<B>>, Receiver<ProgramBatch<B>>) =
+            channel(counter as usize / num_cpus as usize);
+
+        for _ in 0..num_cpus {
+            let batcher = batcher.clone();
+
+            tokio::spawn(async move {});
+        }
+
         for epoch in 0..self.n_epochs {
             match self.strategy {
                 Doc2VecTrainingStrategy::AllDocsAllSubwords => {
@@ -177,8 +193,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                                 logits,
                             );
 
-                            let grads = loss.backward();
-                            let grads = GradientsParams::from_grads(grads, &self.model);
+                            let grads = GradientsParams::from_grads(loss.backward(), &self.model);
 
                             self.model = self.optim.step(self.learning_rate, self.model, grads);
                         }
@@ -199,6 +214,20 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
+    fn train_batch(mut self, batch: ProgramBatch<B>, agg: AggregationMethod) -> Self {
+        let logits = self
+            .model
+            .forward(batch.documents, batch.context_words, &agg);
+        let loss = self
+            .loss
+            .forward(batch.true_words, batch.negative_words, logits);
+
+        let grads = GradientsParams::from_grads(loss.backward(), &self.model);
+        self.model = self.optim.step(self.learning_rate, self.model, grads);
+
+        self
+    }
+
     fn build_word_indices<W>(
         &self,
         word_map: &BTreeMap<W, u32>,
