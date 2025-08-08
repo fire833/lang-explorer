@@ -16,10 +16,11 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::HashSet, sync::Arc};
+use std::collections::HashSet;
 
+use async_trait::async_trait;
 use burn::{
-    data::dataloader::{batcher::Batcher, DataLoader, DataLoaderIterator},
+    data::dataloader::batcher::Batcher,
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Device, Int, Tensor},
 };
@@ -33,6 +34,7 @@ use crate::{
 pub mod doc2vec;
 
 /// Main trait for creating embeddings of programs.
+#[async_trait]
 pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     type Document;
     type Word: PartialEq + PartialOrd;

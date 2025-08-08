@@ -18,6 +18,7 @@
 
 use std::collections::BTreeMap;
 
+use async_trait::async_trait;
 use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
@@ -51,7 +52,6 @@ pub struct Doc2VecEmbedder<B: AutodiffBackend> {
 
     optim: OptimizerAdaptor<Adam, Doc2VecDM<B>, B>,
 
-    strategy: Doc2VecTrainingStrategy,
     agg: AggregationMethod,
     window_left: usize,
     window_right: usize,
@@ -59,11 +59,6 @@ pub struct Doc2VecEmbedder<B: AutodiffBackend> {
     n_epochs: usize,
     n_neg_samples: usize,
     learning_rate: f64,
-}
-
-#[derive(Debug, Config)]
-pub enum Doc2VecTrainingStrategy {
-    AllDocsAllSubwords,
 }
 
 impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<B> {
@@ -103,8 +98,6 @@ pub struct Doc2VecEmbedderParams {
     /// The number of words to the right of the center word
     /// to predict on.
     pub window_right: usize,
-    /// The training strategy to use.
-    pub strategy: Doc2VecTrainingStrategy,
     /// The aggregation methdo to use.
     pub agg: AggregationMethod,
     /// The loss function to use.
@@ -117,6 +110,7 @@ pub struct Doc2VecEmbedderParams {
     pub learning_rate: f64,
 }
 
+#[async_trait]
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     for Doc2VecEmbedder<B>
 {
@@ -144,7 +138,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             batch_size: params.batch_size,
             window_left: params.window_left,
             window_right: params.window_right,
-            strategy: params.strategy,
             agg: params.agg,
             learning_rate: params.learning_rate,
         }
@@ -169,35 +162,37 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         let batcher = ProgramBatcher::new(self.n_neg_samples, wordset.len() + 2);
 
         let num_cpus = num_cpus::get() as u64;
-        let (tx, mut rx): (Sender<ProgramBatch<B>>, Receiver<ProgramBatch<B>>) =
-            channel(counter as usize / num_cpus as usize);
-
-        for _ in 0..num_cpus {
-            let batcher = batcher.clone();
-
-            tokio::spawn(async move {});
-        }
 
         for epoch in 0..self.n_epochs {
-            match self.strategy {
-                Doc2VecTrainingStrategy::AllDocsAllSubwords => {
-                    for (docidx, doc) in documents.iter().enumerate() {
-                        for word in doc.1.iter() {
-                            let true_idx = *wordset.get(word).unwrap();
-                            let docs = Tensor::from_ints([[docidx as i32]], &self.device);
-                            let words = self.build_word_indices(&wordset, vec![(&doc.1, true_idx)]);
-                            let logits = self.model.forward(docs, words, &self.agg);
-                            let loss = self.loss.forward(
-                                Tensor::from_ints([[true_idx as i32]], &self.device),
-                                Tensor::from_ints([[true_idx as i32]], &self.device), // TODO fix this broken crap
-                                logits,
-                            );
+            let (tx, mut rx): (Sender<ProgramBatch<B>>, Receiver<ProgramBatch<B>>) =
+                channel(counter as usize / num_cpus as usize);
 
-                            let grads = GradientsParams::from_grads(loss.backward(), &self.model);
+            for _ in 0..num_cpus {
+                let batcher = batcher.clone();
+                let txt = tx.clone();
 
-                            self.model = self.optim.step(self.learning_rate, self.model, grads);
-                        }
-                    }
+                tokio::spawn(async move {});
+            }
+
+            drop(tx);
+
+            // while let Some(item) = rx.recv().await {}
+
+            for (docidx, doc) in documents.iter().enumerate() {
+                for word in doc.1.iter() {
+                    let true_idx = *wordset.get(word).unwrap();
+                    let docs = Tensor::from_ints([[docidx as i32]], &self.device);
+                    let words = self.build_word_indices(&wordset, vec![(&doc.1, true_idx)]);
+                    let logits = self.model.forward(docs, words, &self.agg);
+                    let loss = self.loss.forward(
+                        Tensor::from_ints([[true_idx as i32]], &self.device),
+                        Tensor::from_ints([[true_idx as i32]], &self.device), // TODO fix this broken crap
+                        logits,
+                    );
+
+                    let grads = GradientsParams::from_grads(loss.backward(), &self.model);
+
+                    self.model = self.optim.step(self.learning_rate, self.model, grads);
                 }
             }
         }
