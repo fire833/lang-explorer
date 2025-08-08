@@ -23,6 +23,7 @@ use burn::{
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Device, Int, Tensor},
 };
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 use crate::{
     errors::LangExplorerError,
@@ -133,43 +134,29 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
     }
 }
 
-pub(super) struct ProgramLoader {
-    batcher: Arc<ProgramBatcher>,
-    items: Vec<TrainingItem>,
+pub(super) struct MultiThreadedProgramLoader<D, W, B: Backend> {
+    batcher: ProgramBatcher,
+    send: Sender<ProgramBatch<B>>,
+    items: Vec<(D, Vec<W>)>,
 }
 
-impl ProgramLoader {
-    fn new(items: Vec<TrainingItem>, n_neg_samples: usize, n_total_words: usize) -> Self {
-        Self {
-            items,
-            batcher: Arc::new(ProgramBatcher::new(n_neg_samples, n_total_words)),
-        }
-    }
-}
+impl<D, W, B: Backend> MultiThreadedProgramLoader<D, W, B> {
+    fn new(
+        items: Vec<(D, Vec<W>)>,
+        n_neg_samples: usize,
+        n_total_words: usize,
+    ) -> (Self, Receiver<ProgramBatch<B>>) {
+        let (tx, rx) = channel(n_total_words / 12);
 
-impl<B: Backend> DataLoader<B, ProgramBatch<B>> for ProgramLoader {
-    fn iter<'a>(&'a self) -> Box<dyn DataLoaderIterator<ProgramBatch<B>> + 'a> {
-        todo!()
-    }
-
-    fn num_items(&self) -> usize {
-        todo!()
-    }
-
-    fn to_device(&self, _device: &B::Device) -> Arc<dyn DataLoader<B, ProgramBatch<B>>> {
-        todo!()
+        (
+            Self {
+                items,
+                send: tx,
+                batcher: ProgramBatcher::new(n_neg_samples, n_total_words),
+            },
+            rx,
+        )
     }
 
-    fn slice(&self, start: usize, end: usize) -> Arc<dyn DataLoader<B, ProgramBatch<B>>> {
-        let mut new_items = vec![];
-        for i in start..end {
-            new_items.push(self.items[i].clone());
-        }
-
-        Arc::new(ProgramLoader::new(
-            new_items,
-            self.batcher.n_neg_samples,
-            self.batcher.n_total_words,
-        ))
-    }
+    async fn stream(&self) {}
 }
