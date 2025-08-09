@@ -141,23 +141,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 
     fn fit(
-        self,
-        _documents: Vec<(Self::Document, Vec<Self::Word>)>,
+        mut self,
+        documents: Vec<(Self::Document, Vec<Self::Word>)>,
     ) -> Result<Self, LangExplorerError> {
-        todo!()
-    }
-
-    fn embed(
-        &mut self,
-        _document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, 1>, LangExplorerError> {
-        todo!()
-    }
-}
-
-impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
-    pub async fn fit<D, W: Ord + Copy>(mut self, documents: Vec<(D, Vec<W>)>) {
-        let mut wordset: BTreeMap<W, u32> = BTreeMap::new();
+        let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
 
         let mut counter: u32 = 0;
         documents.iter().for_each(|doc| {
@@ -195,8 +182,19 @@ impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
                 }
             }
         }
+
+        Ok(self)
     }
 
+    fn embed(
+        &mut self,
+        _document: (Self::Document, Vec<Self::Word>),
+    ) -> Result<Tensor<B, 1>, LangExplorerError> {
+        todo!()
+    }
+}
+
+impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
     fn train_batch(mut self, batch: ProgramBatch<B>, agg: AggregationMethod) -> Self {
         let logits = self
             .model
