@@ -22,7 +22,7 @@ use std::{
     string::FromUtf8Error,
 };
 
-use burn::record::RecorderError;
+use burn::{record::RecorderError, tensor::DataError};
 use tokio::sync::mpsc::error::SendError;
 
 use crate::languages::ProgramResult;
@@ -35,6 +35,7 @@ pub enum LangExplorerError {
     RecorderError(RecorderError),
     #[allow(private_interfaces)]
     SendError(SendError<ProgramResult>),
+    DataError(DataError),
 }
 
 impl Display for LangExplorerError {
@@ -46,6 +47,7 @@ impl Display for LangExplorerError {
             Self::FromUtf8Error(e) => write!(f, "utf8: {}", e),
             Self::RecorderError(e) => write!(f, "recorder: {}", e),
             Self::SendError(e) => write!(f, "sender: {}", e),
+            Self::DataError(e) => write!(f, "data: {:?}", e),
         }
     }
 }
@@ -95,5 +97,11 @@ impl From<RecorderError> for LangExplorerError {
 impl From<SendError<ProgramResult>> for LangExplorerError {
     fn from(value: SendError<ProgramResult>) -> Self {
         Self::SendError(value)
+    }
+}
+
+impl From<DataError> for LangExplorerError {
+    fn from(value: DataError) -> Self {
+        Self::DataError(value)
     }
 }
