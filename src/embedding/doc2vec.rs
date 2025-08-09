@@ -192,6 +192,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     ) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }
+
+    fn get_embeddings(&self) -> Result<Vec<Vec<f64>>, LangExplorerError> {
+        todo!()
+    }
 }
 
 impl<B: AutodiffBackend> Doc2VecEmbedder<B> {

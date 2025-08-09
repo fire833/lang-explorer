@@ -57,6 +57,9 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
         &mut self,
         document: (Self::Document, Vec<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError>;
+
+    /// Returns the embeddings of the documents that were trained on.
+    fn get_embeddings(&self) -> Result<Vec<Vec<f64>>, LangExplorerError>;
 }
 
 /// A training item represents a single item in a batch that should be trained on.
