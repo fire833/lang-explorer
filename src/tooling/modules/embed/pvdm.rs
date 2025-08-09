@@ -106,22 +106,15 @@ impl<B: Backend> Doc2VecDM<B> {
         return out;
     }
 
-    pub fn get_embeddings(&self) -> Result<Vec<Vec<f64>>, LangExplorerError> {
-        let n_words = self.documents.weight.shape().dims[0];
-        let n_dims = self.documents.weight.shape().dims[1];
-        let mut data: Vec<f64> = self.documents.weight.to_data().convert::<f64>().to_vec()?;
-
-        let mut res = vec![];
-
-        for _ in 0..n_words {
-            let new = data.drain(0..n_dims).collect();
-            res.push(new);
-        }
-
-        Ok(res)
+    /// Returns a vector of the embedding tensor. It should be structured in
+    /// such a way that each n_dim elements correspond to a single embedding.
+    pub fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
+        let vec: Vec<f64> = self.documents.weight.to_data().convert::<f64>().to_vec()?;
+        Ok(vec)
     }
 
     /// Save the current embeddings to a separate file.
+    #[allow(unused)]
     pub fn save_embeddings<FR: FileRecorder<B>, PB: Into<PathBuf>>(
         &self,
         file_path: PB,

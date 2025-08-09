@@ -31,8 +31,9 @@ use utoipa::ToSchema;
 
 use crate::embedding::doc2vec::{Doc2VecEmbedder, Doc2VecEmbedderParams};
 use crate::embedding::LanguageEmbedder;
-use crate::grammar::program::{InstanceId, ProgramInstance, WLKernelHashingOrder};
+use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
+use crate::languages::strings::StringValue;
 use crate::tooling::modules::embed::loss::EmbeddingLossFunction;
 use crate::tooling::modules::embed::AggregationMethod;
 use crate::{
@@ -433,10 +434,23 @@ impl GenerateParams {
                     self.learning_rate,
                 );
 
-                let mut model: Doc2VecEmbedder<Autodiff<NdArray>> =
-                    Doc2VecEmbedder::new(&grammar, params, Default::default());
+                let model: Doc2VecEmbedder<StringValue, StringValue, Autodiff<NdArray>> =
+                    Doc2VecEmbedder::<StringValue, StringValue, Autodiff<NdArray>>::new(
+                        &grammar,
+                        params,
+                        Default::default(),
+                    )
+                    .fit(&documents)?;
 
-                // let model = model.fit(documents)?;
+                let mut embeddings = model.get_embeddings()?;
+
+                for prog in results.programs.iter_mut() {
+                    prog.set_embedding(
+                        embeddings
+                            .drain(0..self.embedding_dimension as usize)
+                            .collect(),
+                    );
+                }
             }
         }
 

@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::BTreeMap, vec};
+use std::{collections::BTreeMap, marker::PhantomData, vec};
 
 use burn::{
     config::Config,
@@ -41,7 +41,10 @@ use crate::{
     },
 };
 
-pub struct Doc2VecEmbedder<B: AutodiffBackend> {
+pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
+    d1: PhantomData<T>,
+    d2: PhantomData<I>,
+
     /// The model itself.
     model: Doc2VecDM<B>,
     loss: NegativeSampling<B>,
@@ -59,7 +62,9 @@ pub struct Doc2VecEmbedder<B: AutodiffBackend> {
     learning_rate: f64,
 }
 
-impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<B> {
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
+    TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<T, I, B>
+{
     fn step(&self, item: ProgramBatch<B>) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
@@ -72,7 +77,9 @@ impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc
     }
 }
 
-impl<B: AutodiffBackend, VI, VO> ValidStep<VI, VO> for Doc2VecEmbedder<B> {
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend, VI, VO> ValidStep<VI, VO>
+    for Doc2VecEmbedder<T, I, B>
+{
     fn step(&self, _item: VI) -> VO {
         todo!()
     }
@@ -109,7 +116,7 @@ pub struct Doc2VecEmbedderParams {
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
-    for Doc2VecEmbedder<B>
+    for Doc2VecEmbedder<T, I, B>
 {
     type Document = String;
     type Word = Feature;
@@ -126,6 +133,8 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         let loss = NegativeSamplingConfig::new().init(&device);
 
         Self {
+            d1: PhantomData,
+            d2: PhantomData,
             model: model,
             device,
             loss: loss,
@@ -142,7 +151,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn fit(
         mut self,
-        documents: Vec<(Self::Document, Vec<Self::Word>)>,
+        documents: &Vec<(Self::Document, Vec<Self::Word>)>,
     ) -> Result<Self, LangExplorerError> {
         let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
 
@@ -193,12 +202,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         todo!()
     }
 
-    fn get_embeddings(&self) -> Result<Vec<Vec<f64>>, LangExplorerError> {
+    fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
         self.model.get_embeddings()
     }
 }
 
-impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
     fn train_batch(mut self, batch: ProgramBatch<B>, agg: AggregationMethod) -> Self {
         let logits = self
             .model
