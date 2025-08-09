@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, vec};
 
 use burn::{
     config::Config,
@@ -178,6 +178,7 @@ impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
                 for (wordidx, _) in words.iter().enumerate() {
                     let ctx_indices = get_context_indices(
                         &wordset,
+                        &words,
                         self.window_left,
                         self.window_right,
                         wordidx,
@@ -211,8 +212,9 @@ impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
     }
 }
 
-fn get_context_indices<W>(
+fn get_context_indices<W: Ord>(
     wordset: &BTreeMap<W, u32>,
+    document: &Vec<W>,
     window_left: usize,
     window_right: usize,
     center_word: usize,
@@ -222,17 +224,25 @@ fn get_context_indices<W>(
 
     for prefix in (center_word as isize - window_left as isize)..(center_word as isize) {
         if prefix < 0 {
-            indices.push(1);
+            indices.push(total_words + 1);
         } else {
-            indices.push(prefix as usize + 2);
+            if let Some(idx) = wordset.get(document.get(prefix as usize).unwrap()) {
+                indices.push(*idx as usize);
+            } else {
+                indices.push(total_words);
+            }
         }
     }
 
-    for suffix in ((center_word + window_right)..(center_word)).rev() {
-        if suffix > total_words + 2 {
-            indices.push(1);
+    for suffix in center_word + 1..(center_word + window_right + 1) {
+        if suffix >= document.len() {
+            indices.push(total_words + 1);
         } else {
-            indices.push(suffix + 2);
+            if let Some(idx) = wordset.get(document.get(suffix).unwrap()) {
+                indices.push(*idx as usize);
+            } else {
+                indices.push(total_words);
+            }
         }
     }
 
@@ -240,4 +250,56 @@ fn get_context_indices<W>(
 }
 
 #[test]
-fn test_get_context_indices() {}
+fn test_get_context_indices() {
+    let mut wordset = BTreeMap::new();
+
+    for i in 0..1001 {
+        wordset.insert(i as usize, i as u32);
+    }
+
+    let doc1 = vec![4, 5, 6, 78, 89, 90, 100, 789, 521, 654, 54, 128];
+
+    assert_eq!(
+        vec![5, 6, 89, 90],
+        get_context_indices(&wordset, &doc1, 2, 2, 3, wordset.len())
+    );
+
+    assert_eq!(
+        vec![89, 90, 789, 521],
+        get_context_indices(&wordset, &doc1, 2, 2, 6, wordset.len())
+    );
+
+    assert_eq!(
+        vec![4, 5, 6, 89, 90, 100],
+        get_context_indices(&wordset, &doc1, 3, 3, 3, wordset.len())
+    );
+
+    assert_eq!(
+        vec![521, 654, 54, 1002, 1002, 1002],
+        get_context_indices(&wordset, &doc1, 3, 3, 11, wordset.len())
+    );
+
+    assert_eq!(
+        vec![1002, 5, 6, 78],
+        get_context_indices(&wordset, &doc1, 1, 3, 0, wordset.len())
+    );
+
+    assert_eq!(
+        vec![1002, 1002, 5, 6, 78],
+        get_context_indices(&wordset, &doc1, 2, 3, 0, wordset.len())
+    );
+
+    let doc2 = vec![
+        564, 536, 987, 234, 111, 743, 13, 197, 10000, 100003, 548, 435,
+    ];
+
+    assert_eq!(
+        vec![1001, 548, 1002, 1002],
+        get_context_indices(&wordset, &doc2, 2, 2, 11, wordset.len())
+    );
+
+    assert_eq!(
+        vec![234, 111, 743, 197, 1001, 1001],
+        get_context_indices(&wordset, &doc2, 3, 3, 6, wordset.len())
+    )
+}
