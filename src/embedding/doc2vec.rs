@@ -21,7 +21,6 @@ use std::collections::BTreeMap;
 use async_trait::async_trait;
 use burn::{
     config::Config,
-    data::dataloader::batcher::Batcher,
     optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
@@ -176,7 +175,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
             drop(tx);
 
-            // while let Some(item) = rx.recv().await {}
+            // while let Some(item) = rx.recv().await {
+            //     self = self.train_batch(item, self.agg);
+            // }
 
             for (docidx, doc) in documents.iter().enumerate() {
                 for word in doc.1.iter() {
