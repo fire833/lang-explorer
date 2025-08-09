@@ -16,18 +16,25 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
+use burn::backend::{Autodiff, NdArray};
 use burn::data::dataset::Dataset;
+use burn::optim::AdamConfig;
 use clap::ValueEnum;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
-use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
+use crate::embedding::doc2vec::{Doc2VecEmbedder, Doc2VecEmbedderParams};
+use crate::embedding::LanguageEmbedder;
+use crate::grammar::program::{InstanceId, ProgramInstance, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
+use crate::tooling::modules::embed::loss::EmbeddingLossFunction;
+use crate::tooling::modules::embed::AggregationMethod;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -141,6 +148,10 @@ pub struct GenerateParams {
     #[serde(alias = "return_edge_lists", default)]
     return_edge_lists: bool,
 
+    /// Toggle whether to return embeddings along with each program.
+    #[serde(alias = "return_embeddings", default)]
+    return_embeddings: bool,
+
     /// Toggle whether to return the grammar in BNF form that was
     /// used to generate programs.
     #[serde(alias = "return_grammar", default)]
@@ -192,6 +203,41 @@ pub struct GenerateParams {
     /// with each graph to extract features.
     #[serde(alias = "wl_degree", default = "default_wl_degree")]
     wl_degree: u32,
+
+    /// When creating embeddings, specify the learning rate to use
+    /// when training the embeddings.
+    #[serde(alias = "learning_rate", default = "default_learning_rate")]
+    learning_rate: f64,
+
+    /// When creating embeddings, specify the number of epochs
+    /// to train with.
+    #[serde(alias = "num_epochs", default = "default_epochs")]
+    num_epochs: u32,
+
+    /// When creating embeddings, specify the size of the
+    /// batches to train on.
+    #[serde(alias = "batch_size", default = "default_batch_size")]
+    batch_size: u32,
+
+    /// When creating embeddings, specify the desired dimension
+    /// of the constructed embeddings.
+    #[serde(alias = "embedding_dim", default = "default_embedding_dim")]
+    embedding_dimension: u32,
+
+    /// When creating embeddings, specify the number of negative samples
+    /// to update when training new embeddings.
+    #[serde(alias = "num_negative_samples", default = "default_n_neg_samples")]
+    num_negative_samples: u32,
+
+    /// When creating embeddings, specify the number of context words to
+    /// the left of the center word that will be trained.
+    #[serde(alias = "window_left", default = "default_window_left")]
+    window_left: u32,
+
+    /// When creating embeddings, specify the number of context words to
+    /// the right of the center word that will be trained.
+    #[serde(alias = "window_right", default = "default_window_right")]
+    window_right: u32,
 }
 
 fn default_count() -> u64 {
@@ -200,6 +246,34 @@ fn default_count() -> u64 {
 
 fn default_wl_degree() -> u32 {
     3
+}
+
+fn default_n_neg_samples() -> u32 {
+    512
+}
+
+fn default_window_left() -> u32 {
+    5
+}
+
+fn default_window_right() -> u32 {
+    5
+}
+
+fn default_embedding_dim() -> u32 {
+    128
+}
+
+fn default_epochs() -> u32 {
+    15
+}
+
+fn default_batch_size() -> u32 {
+    100
+}
+
+fn default_learning_rate() -> f64 {
+    0.001
 }
 
 fn default_return_partials() -> bool {
@@ -325,6 +399,45 @@ impl GenerateParams {
                 results.programs.len(),
                 elapsed.as_secs()
             );
+
+            if self.return_embeddings && self.return_features {
+                // Hack for now, recompute the number of words, even
+                // though this is going to be done again.
+                let mut set = HashSet::new();
+                let mut documents = vec![];
+
+                for prog in results.programs.iter() {
+                    documents.push((
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    ));
+                    if let Some(words) = &prog.features {
+                        for word in words.iter() {
+                            set.insert(*word);
+                        }
+                    }
+                }
+
+                let params = Doc2VecEmbedderParams::new(
+                    AdamConfig::new(),
+                    set.len(),
+                    results.programs.len(),
+                    self.embedding_dimension as usize,
+                    self.num_negative_samples as usize,
+                    self.window_left as usize,
+                    self.window_right as usize,
+                    AggregationMethod::Average,
+                    EmbeddingLossFunction::NegativeSampling,
+                    self.batch_size as usize,
+                    self.num_epochs as usize,
+                    self.learning_rate,
+                );
+
+                let mut model: Doc2VecEmbedder<Autodiff<NdArray>> =
+                    Doc2VecEmbedder::new(&grammar, params, Default::default());
+
+                // let model = model.fit(documents)?;
+            }
         }
 
         Ok(results)
@@ -515,6 +628,10 @@ pub(crate) struct ProgramResult {
     #[serde(alias = "features")]
     features: Option<Vec<Feature>>,
 
+    /// If enabled, returns the embedding of the program.
+    #[serde(alias = "embedding")]
+    embedding: Option<Vec<f64>>,
+
     /// If enabled, returns the program graph in edge-list format.
     #[serde(alias = "edge_list")]
     edge_list: Option<Vec<(InstanceId, InstanceId)>>,
@@ -530,6 +647,7 @@ impl ProgramResult {
             program: None,
             graphviz: None,
             features: None,
+            embedding: None,
             edge_list: None,
             is_partial: false,
         }
@@ -549,5 +667,9 @@ impl ProgramResult {
 
     pub(crate) fn set_edge_list(&mut self, edge_list: Vec<(InstanceId, InstanceId)>) {
         self.edge_list = Some(edge_list);
+    }
+
+    pub(crate) fn set_embedding(&mut self, embedding: Vec<f64>) {
+        self.embedding = Some(embedding);
     }
 }

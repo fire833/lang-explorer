@@ -41,7 +41,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Initializes an Embedder system. This typically involves either
     /// initializing a new model, or retrieving an already trained model
     /// instance from disk.
-    fn init(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self;
+    fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self;
 
     /// Trains the embedder on the provided corpus.
     fn fit(

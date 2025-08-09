@@ -29,7 +29,7 @@ use burn::{
 use crate::{
     embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, TrainingItem},
     errors::LangExplorerError,
-    grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
     tooling::modules::{
         embed::{
@@ -111,11 +111,11 @@ pub struct Doc2VecEmbedderParams {
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     for Doc2VecEmbedder<B>
 {
-    type Document = ProgramInstance<T, I>;
+    type Document = String;
     type Word = Feature;
     type Params = Doc2VecEmbedderParams;
 
-    fn init(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
+    fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
 
         // TODO: for now, just load a new model every time.
