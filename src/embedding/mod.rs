@@ -67,6 +67,16 @@ pub(super) struct TrainingItem {
     center_word_idx: usize,
 }
 
+impl TrainingItem {
+    fn new(document_idx: usize, center_word_idx: usize, context_word_indices: Vec<usize>) -> Self {
+        Self {
+            document_idx,
+            context_word_indices,
+            center_word_idx,
+        }
+    }
+}
+
 /// A batch of document/word context items that are already in their correct tensor form.
 pub(super) struct ProgramBatch<B: Backend> {
     documents: Tensor<B, 1, Int>,
@@ -134,29 +144,51 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
     }
 }
 
-pub(super) struct MultiThreadedProgramLoader<'a, D, W, B: Backend> {
-    batcher: ProgramBatcher,
-    send: Sender<ProgramBatch<B>>,
+pub(super) struct MultiThreadedProgramLoader<
+    'a,
+    D: Send + Sync + Sized,
+    W: Send + Sync + Sized,
+    B: Backend,
+> {
+    _batcher: ProgramBatcher,
+    _send: Sender<ProgramBatch<B>>,
     items: &'a Vec<(D, Vec<W>)>,
 }
 
-impl<'a, D, W, B: Backend> MultiThreadedProgramLoader<'a, D, W, B> {
+impl<'a, D: Send + Sync, W: Send + Sync, B: Backend> MultiThreadedProgramLoader<'a, D, W, B> {
+    #[allow(unused)]
     fn new(
         items: &'a Vec<(D, Vec<W>)>,
         n_neg_samples: usize,
         n_total_words: usize,
     ) -> (Self, Receiver<ProgramBatch<B>>) {
-        let (tx, rx) = channel(n_total_words / 12);
+        let num_cpus = num_cpus::get();
+        let (tx, rx) = channel(n_total_words / num_cpus);
 
         (
             Self {
                 items,
-                send: tx,
-                batcher: ProgramBatcher::new(n_neg_samples, n_total_words),
+                _send: tx,
+                _batcher: ProgramBatcher::new(n_neg_samples, n_total_words),
             },
             rx,
         )
     }
 
-    async fn stream(&self) {}
+    #[allow(unused)]
+    async fn stream(&'a self) {
+        let num_cpus = num_cpus::get();
+        let num_items = self.items.len();
+
+        // for i in 0..num_cpus {
+        //     let batcher = self.batcher.clone();
+        //     let tx = self.send.clone();
+        //     let num_docs = num_items / num_cpus;
+        //     let docs = &self.items[(i * num_docs)..(i + 1 * num_docs)].clone();
+
+        //     // Spawn tasks to divvy up the work and produce batches
+        //     // to then train the embedder model.
+        //     tokio::spawn(async move { for _doc in docs {} });
+        // }
+    }
 }

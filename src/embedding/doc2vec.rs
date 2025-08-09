@@ -20,13 +20,14 @@ use std::collections::BTreeMap;
 
 use burn::{
     config::Config,
+    data::dataloader::batcher::Batcher,
     optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
-    tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
+    tensor::{backend::AutodiffBackend, Device, Float, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
 
 use crate::{
-    embedding::{LanguageEmbedder, MultiThreadedProgramLoader, ProgramBatch},
+    embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, TrainingItem},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
     languages::Feature,
@@ -168,18 +169,29 @@ impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
             })
         });
 
+        let batcher = ProgramBatcher::new(self.n_neg_samples, wordset.len());
+        let agg = self.agg.clone();
         for _ in 0..self.n_epochs {
-            let (loader, mut rx) = MultiThreadedProgramLoader::<D, W, B>::new(
-                &documents,
-                self.n_neg_samples,
-                wordset.len() + 2,
-            );
+            let mut items = vec![];
 
-            loader.stream();
+            for (docidx, (_, words)) in documents.iter().enumerate() {
+                for (wordidx, _) in words.iter().enumerate() {
+                    let ctx_indices = get_context_indices(
+                        &wordset,
+                        self.window_left,
+                        self.window_right,
+                        wordidx,
+                        wordset.len(),
+                    );
+                    let train_item = TrainingItem::new(docidx, wordidx, ctx_indices);
+                    items.push(train_item);
 
-            let agg = self.agg.clone();
-            while let Some(item) = rx.recv().await {
-                self = self.train_batch(item, agg.clone());
+                    if items.len() >= self.batch_size {
+                        let moved = items.drain(..).collect();
+                        let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
+                        self = self.train_batch(batch, agg.clone());
+                    }
+                }
             }
         }
     }
@@ -198,3 +210,34 @@ impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
         self
     }
 }
+
+fn get_context_indices<W>(
+    wordset: &BTreeMap<W, u32>,
+    window_left: usize,
+    window_right: usize,
+    center_word: usize,
+    total_words: usize,
+) -> Vec<usize> {
+    let mut indices = vec![];
+
+    for prefix in (center_word as isize - window_left as isize)..(center_word as isize) {
+        if prefix < 0 {
+            indices.push(1);
+        } else {
+            indices.push(prefix as usize + 2);
+        }
+    }
+
+    for suffix in ((center_word + window_right)..(center_word)).rev() {
+        if suffix > total_words + 2 {
+            indices.push(1);
+        } else {
+            indices.push(suffix + 2);
+        }
+    }
+
+    indices
+}
+
+#[test]
+fn test_get_context_indices() {}
