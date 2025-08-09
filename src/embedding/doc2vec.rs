@@ -18,17 +18,15 @@
 
 use std::collections::BTreeMap;
 
-use async_trait::async_trait;
 use burn::{
     config::Config,
     optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep, ValidStep},
 };
-use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 use crate::{
-    embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher},
+    embedding::{LanguageEmbedder, MultiThreadedProgramLoader, ProgramBatch},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
     languages::Feature,
@@ -109,7 +107,6 @@ pub struct Doc2VecEmbedderParams {
     pub learning_rate: f64,
 }
 
-#[async_trait]
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     for Doc2VecEmbedder<B>
 {
@@ -143,62 +140,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 
     fn fit(
-        mut self,
-        documents: &Vec<(Self::Document, Vec<Self::Word>)>,
+        self,
+        _documents: Vec<(Self::Document, Vec<Self::Word>)>,
     ) -> Result<Self, LangExplorerError> {
-        let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
-
-        let mut counter: u32 = 0;
-        documents.iter().for_each(|doc| {
-            doc.1.iter().for_each(|word| {
-                if !wordset.contains_key(word) {
-                    wordset.insert(*word, counter);
-                    counter += 1;
-                }
-            })
-        });
-
-        let batcher = ProgramBatcher::new(self.n_neg_samples, wordset.len() + 2);
-
-        let num_cpus = num_cpus::get() as u64;
-
-        for epoch in 0..self.n_epochs {
-            let (tx, mut rx): (Sender<ProgramBatch<B>>, Receiver<ProgramBatch<B>>) =
-                channel(counter as usize / num_cpus as usize);
-
-            for _ in 0..num_cpus {
-                let batcher = batcher.clone();
-                let txt = tx.clone();
-
-                tokio::spawn(async move {});
-            }
-
-            drop(tx);
-
-            // while let Some(item) = rx.recv().await {
-            //     self = self.train_batch(item, self.agg);
-            // }
-
-            for (docidx, doc) in documents.iter().enumerate() {
-                for word in doc.1.iter() {
-                    let true_idx = *wordset.get(word).unwrap();
-                    let docs = Tensor::from_ints([[docidx as i32]], &self.device);
-                    let words = self.build_word_indices(&wordset, vec![(&doc.1, true_idx)]);
-                    let logits = self.model.forward(docs, words, &self.agg);
-                    let loss = self.loss.forward(
-                        Tensor::from_ints([[true_idx as i32]], &self.device),
-                        Tensor::from_ints([[true_idx as i32]], &self.device), // TODO fix this broken crap
-                        logits,
-                    );
-
-                    let grads = GradientsParams::from_grads(loss.backward(), &self.model);
-
-                    self.model = self.optim.step(self.learning_rate, self.model, grads);
-                }
-            }
-        }
-
-        Ok(self)
+        todo!()
     }
 
     fn embed(
@@ -210,6 +155,35 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
+    pub async fn fit<D, W: Ord + Copy>(mut self, documents: Vec<(D, Vec<W>)>) {
+        let mut wordset: BTreeMap<W, u32> = BTreeMap::new();
+
+        let mut counter: u32 = 0;
+        documents.iter().for_each(|doc| {
+            doc.1.iter().for_each(|word| {
+                if !wordset.contains_key(word) {
+                    wordset.insert(*word, counter);
+                    counter += 1;
+                }
+            })
+        });
+
+        for _ in 0..self.n_epochs {
+            let (loader, mut rx) = MultiThreadedProgramLoader::<D, W, B>::new(
+                &documents,
+                self.n_neg_samples,
+                wordset.len() + 2,
+            );
+
+            loader.stream();
+
+            let agg = self.agg.clone();
+            while let Some(item) = rx.recv().await {
+                self = self.train_batch(item, agg.clone());
+            }
+        }
+    }
+
     fn train_batch(mut self, batch: ProgramBatch<B>, agg: AggregationMethod) -> Self {
         let logits = self
             .model
@@ -222,16 +196,5 @@ impl<B: AutodiffBackend> Doc2VecEmbedder<B> {
         self.model = self.optim.step(self.learning_rate, self.model, grads);
 
         self
-    }
-
-    fn build_word_indices<W>(
-        &self,
-        word_map: &BTreeMap<W, u32>,
-        // The vector of document words, and the center word for each batch element.
-        batch_elements: Vec<(&Vec<W>, u32)>,
-    ) -> Tensor<B, 2, Int> {
-        // let indices = vec![];
-
-        Tensor::from_ints([[1], [2]], &self.device)
     }
 }

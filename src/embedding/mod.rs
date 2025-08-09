@@ -18,7 +18,6 @@
 
 use std::collections::HashSet;
 
-use async_trait::async_trait;
 use burn::{
     data::dataloader::batcher::Batcher,
     prelude::Backend,
@@ -34,7 +33,6 @@ use crate::{
 pub mod doc2vec;
 
 /// Main trait for creating embeddings of programs.
-#[async_trait]
 pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     type Document;
     type Word: PartialEq + PartialOrd;
@@ -48,7 +46,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Trains the embedder on the provided corpus.
     fn fit(
         self,
-        documents: &Vec<(Self::Document, Vec<Self::Word>)>,
+        documents: Vec<(Self::Document, Vec<Self::Word>)>,
     ) -> Result<Self, LangExplorerError>
     where
         Self: Sized;
@@ -136,15 +134,15 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
     }
 }
 
-pub(super) struct MultiThreadedProgramLoader<D, W, B: Backend> {
+pub(super) struct MultiThreadedProgramLoader<'a, D, W, B: Backend> {
     batcher: ProgramBatcher,
     send: Sender<ProgramBatch<B>>,
-    items: Vec<(D, Vec<W>)>,
+    items: &'a Vec<(D, Vec<W>)>,
 }
 
-impl<D, W, B: Backend> MultiThreadedProgramLoader<D, W, B> {
+impl<'a, D, W, B: Backend> MultiThreadedProgramLoader<'a, D, W, B> {
     fn new(
-        items: Vec<(D, Vec<W>)>,
+        items: &'a Vec<(D, Vec<W>)>,
         n_neg_samples: usize,
         n_total_words: usize,
     ) -> (Self, Receiver<ProgramBatch<B>>) {
