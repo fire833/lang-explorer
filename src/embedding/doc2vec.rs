@@ -185,6 +185,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     }
                 }
             }
+
+            // Extra items need to be trained on too.
+            if !items.is_empty() {
+                let batch: ProgramBatch<B> = batcher.batch(items, &self.device);
+                self = self.train_batch(batch, counter);
+            }
         }
 
         Ok(self)

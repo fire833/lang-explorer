@@ -42,6 +42,7 @@ class GenerateParams:
 	return_partial_graphs: bool
 	return_embeddings: bool
 	wl_degree: int
+	batch_size: int
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters
