@@ -7,7 +7,7 @@ import pandas as pd
 def generate_embeddings(args):
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc", 
-		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.batch_size, args.num_neg_samples, args.seed, 128, 1,
+		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.batch_size, args.num_neg_samples, args.seed, 128, 5,
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
 	        "#20b01c",
@@ -72,7 +72,6 @@ def save_embedding_new(output_path, programs, dimensions):
 	"""
 	out = []
 	for prog in programs:
-		print(len(prog["embedding"]))
 		out.append([prog["program"], prog["graphviz"]] + list(prog["embedding"]))
 	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dimensions)]
 	out = pd.DataFrame(out, columns=column_names)
