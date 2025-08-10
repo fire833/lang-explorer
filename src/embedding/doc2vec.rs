@@ -178,11 +178,11 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             println!("Running epoch {} of {}", num + 1, self.n_epochs);
             let mut items = vec![];
 
-            // // Adaptive learning rate
-            // self.learning_rate *= 0.9;
-            // if self.learning_rate < 0.00001 {
-            //     self.learning_rate = 0.00001;
-            // }
+            // Adaptive learning rate
+            self.learning_rate *= 0.8;
+            if self.learning_rate < 0.00001 {
+                self.learning_rate = 0.00001;
+            }
 
             let mut counter = 0;
             for (docidx, (_, words)) in documents.iter().enumerate() {
