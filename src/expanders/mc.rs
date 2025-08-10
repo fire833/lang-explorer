@@ -16,6 +16,11 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaCha8Rng,
+};
+
 use crate::{
     errors::LangExplorerError,
     grammar::{
@@ -30,20 +35,24 @@ use super::GrammarExpander;
 /// selects paths to go down within the range of possible outcomes.
 /// This could lead to very dumb outputs, and take a very long time to
 /// create fully terminated words in a particular language.
-pub struct MonteCarloExpander {}
+pub struct MonteCarloExpander {
+    rng: ChaCha8Rng,
+}
 
 impl MonteCarloExpander {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(seed: u64) -> Self {
+        Self {
+            rng: ChaCha8Rng::seed_from_u64(seed),
+        }
     }
 }
 
 impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
-    fn init(_grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
-        Ok(Self::new())
+        Ok(Self::new(seed))
     }
 
     fn expand_rule<'a>(
@@ -51,7 +60,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         _grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        let idx = rand::random::<usize>() % production.len();
+        let idx = self.rng.next_u64() as usize % production.len();
         production.get(idx).expect("got out of bounds index")
     }
 
@@ -65,11 +74,11 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         _grammar: &'a Grammar<T, I>,
         lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize) {
-        let idx = rand::random::<usize>() % lhs_location_matrix.len();
+        let idx = self.rng.next_u64() as usize % lhs_location_matrix.len();
         let (lhs, indices) = lhs_location_matrix
             .get(idx)
             .expect("got out of bounds index for lhs");
-        let idx = rand::random::<usize>() % indices.len();
+        let idx = self.rng.next_u64() as usize % indices.len();
         let index = indices
             .get(idx)
             .expect("got invalid index for frontier indices");

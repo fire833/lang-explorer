@@ -86,7 +86,7 @@ where
 }
 
 impl<T: Terminal, I: NonTerminal, B: Backend> GrammarExpander<T, I> for LearnedExpander<T, I, B> {
-    fn init(grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError> {
+    fn init(grammar: &Grammar<T, I>, _seed: u64) -> Result<Self, LangExplorerError> {
         let device = Default::default();
         let recorder = BinGzFileRecorder::<FullPrecisionSettings>::new();
         let mut map = HashMap::new();

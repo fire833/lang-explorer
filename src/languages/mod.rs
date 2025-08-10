@@ -338,7 +338,7 @@ impl GenerateParams {
                 let txt = tx.clone();
                 let all_progs = all_programs.clone(); // Need to do this twice, idk
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander().unwrap();
+                    let mut expander = exp.get_expander(self.seed).unwrap();
                     let all_programs = all_progs.clone();
                     let count = self.count / num_cpus; // TODO fix
 
@@ -519,7 +519,7 @@ impl GenerateParams {
                 let gc = grammar.clone();
                 let txt = tx.clone();
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander().unwrap();
+                    let mut expander = exp.get_expander(self.seed).unwrap();
                     let count = self.count / num_cpus; // TODO fix
 
                     for _ in 0..count {

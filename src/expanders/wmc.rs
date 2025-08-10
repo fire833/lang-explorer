@@ -16,6 +16,11 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use rand_chacha::{
+    rand_core::{RngCore, SeedableRng},
+    ChaCha8Rng,
+};
+
 use crate::{
     errors::LangExplorerError,
     expanders::GrammarExpander,
@@ -28,11 +33,15 @@ use crate::{
 /// A Weighted Monte Carlo explorer is a slightly less naive expander
 /// that selects paths to go down using a weighted sample from the possible
 /// expansion paths available at any given step.
-pub struct WeightedMonteCarloExpander {}
+pub struct WeightedMonteCarloExpander {
+    rng: ChaCha8Rng,
+}
 
 impl WeightedMonteCarloExpander {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(seed: u64) -> Self {
+        Self {
+            rng: ChaCha8Rng::seed_from_u64(seed),
+        }
     }
 }
 
@@ -41,11 +50,11 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init(_grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
-        Ok(Self::new())
+        Ok(Self::new(seed))
     }
 
     fn expand_rule<'a>(
@@ -94,7 +103,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
 
         // Take the softmax
         let distribution: Vec<f64> = logits.iter().map(|item| *item as f64 / total).collect();
-        let sample = rand::random::<f64>() % 1.0;
+        let sample = self.rng.next_u64() as f64 % 1.0;
 
         let mut idx = production.len() - 1;
         let mut cumsum = 0.0;
