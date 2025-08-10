@@ -250,7 +250,7 @@ fn default_wl_degree() -> u32 {
 }
 
 fn default_n_neg_samples() -> u32 {
-    512
+    32
 }
 
 fn default_window_left() -> u32 {
@@ -266,7 +266,7 @@ fn default_embedding_dim() -> u32 {
 }
 
 fn default_epochs() -> u32 {
-    10
+    5
 }
 
 fn default_batch_size() -> u32 {
