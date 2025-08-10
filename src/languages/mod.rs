@@ -342,12 +342,16 @@ impl GenerateParams {
                     let all_programs = all_progs.clone();
                     let count = self.count / num_cpus; // TODO fix
 
-                    for _ in 0..count {
+                    let mut created_count = 0;
+
+                    while created_count < count {
                         match Grammar::generate_program_instance(&gc, &mut expander) {
                             Ok(prog) => {
                                 let s = prog.to_string();
                                 if !all_programs.contains_key(&s) {
                                     all_programs.insert(s, 0);
+                                    created_count += 1;
+
                                     match prog.to_result(
                                         self.return_features,
                                         self.return_edge_lists,
