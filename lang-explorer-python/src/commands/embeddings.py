@@ -7,37 +7,36 @@ import pandas as pd
 def generate_embeddings(args):
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc", 
-		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.batch_size, args.num_neg_samples, args.seed,
+		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.batch_size, args.num_neg_samples, args.seed, 128, 1,
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
-            "#20b01c",
-            "#7d1dc1",
-            "#42a1dc",
-            "#da8454",
-            "#8ec5d2",
-            "#a69657",
-            "#a69657",
-            "#664ba3",
-            "#3b6a42",
-            "rgb(39, 37, 193)",
-            "rgb(37, 138, 166)",
-            "rgb(84, 183, 126)",
-            "rgb(104, 36, 170)",
-            "rgb(207, 106, 144)",
-            "rgb(203, 135, 198)",
-            "rgb(231, 100, 187)",
-            "rgb(143, 143, 143)",
-            "rgb(68, 68, 68)",
-            "rgb(160, 160, 160)",
-            "rgb(141, 141, 141)",
-            "rgb(95, 95, 95)",
+	        "#20b01c",
+	        "#7d1dc1",
+	        "#42a1dc",
+	        "#da8454",
+	        "#8ec5d2",
+	        "#a69657",
+	        "#a69657",
+	        "#664ba3",
+	        "#3b6a42",
+	        "rgb(39, 37, 193)",
+	        "rgb(37, 138, 166)",
+	        "rgb(84, 183, 126)",
+	        "rgb(104, 36, 170)",
+	        "rgb(207, 106, 144)",
+	        "rgb(203, 135, 198)",
+	        "rgb(231, 100, 187)",
+	        "rgb(143, 143, 143)",
+	        "rgb(68, 68, 68)",
+	        "rgb(160, 160, 160)",
+	        "rgb(141, 141, 141)",
+	        "rgb(95, 95, 95)",
 		]),
 		taco_expression=TacoExpressionParameters(args.version, 
-            ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"], 
-            ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
+	        ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"], 
+	        ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
 		taco_schedule=TacoScheduleParameters(args.version, index_variables=["i"], workspace_index_variables=["j"], fused_index_variables=["k"], split_factor_variables=["l"], divide_factor_variables=["m"], unroll_factor_variables=["n"]),
-        karel=KarelLanguageParameters()))
-
+	    karel=KarelLanguageParameters()))	
 	document_collections = []
 
 	print("extracting explorer response")
@@ -59,21 +58,39 @@ def generate_embeddings(args):
 		epochs=args.epochs,
 		alpha=args.learning_rate)
 
-	output = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}.csv"
-	save_embedding(output, model, res.programs, args.dimensions)
+	output1 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}.csv"
+	output2 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}_new.csv"
+	save_embedding(output1, model, res.programs, args.dimensions)
+	save_embedding_new(output2, res.programs, args.dimensions)
+
+def save_embedding_new(output_path, programs, dimensions):
+	"""
+	Function to save the embedding.
+	:param output_path: Path to the embedding csv.
+	:param programs: The list of program results.
+	:param dimensions: The embedding dimension parameter.
+	"""
+	out = []
+	for prog in programs:
+		print(len(prog["embedding"]))
+		out.append([prog["program"], prog["graphviz"]] + list(prog["embedding"]))
+	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dimensions)]
+	out = pd.DataFrame(out, columns=column_names)
+	out = out.sort_values(["type"])
+	out.to_csv(output_path, index=None)
 
 def save_embedding(output_path, model, programs, dimensions):
-    """
-    Function to save the embedding.
-    :param output_path: Path to the embedding csv.
-    :param model: The embedding model object.
-    :param files: The list of files.
-    :param dimensions: The embedding dimension parameter.
-    """
-    out = []
-    for prog in programs:
-        out.append([prog["program"], prog["graphviz"]] + list(model.docvecs[prog["program"]])) 
-    column_names = ["type" ,"graphviz"] + ["x_"+str(dim) for dim in range(dimensions)]
-    out = pd.DataFrame(out, columns=column_names)
-    out = out.sort_values(["type"])
-    out.to_csv(output_path, index=None)
+	"""
+	Function to save the embedding.
+	:param output_path: Path to the embedding csv.
+	:param model: The embedding model object.
+	:param files: The list of files.
+	:param dimensions: The embedding dimension parameter.
+	"""
+	out = []
+	for prog in programs:
+		out.append([prog["program"], prog["graphviz"]] + list(model.docvecs[prog["program"]])) 
+	column_names = ["type" ,"graphviz"] + ["x_"+str(dim) for dim in range(dimensions)]
+	out = pd.DataFrame(out, columns=column_names)
+	out = out.sort_values(["type"])
+	out.to_csv(output_path, index=None)

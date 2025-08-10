@@ -45,6 +45,8 @@ class GenerateParams:
 	batch_size: int
 	num_negative_samples: int
 	seed: int
+	embedding_dim: int
+	num_epochs: int
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters
@@ -55,6 +57,7 @@ class GenerateParams:
 class ProgramResult:
 	program: str
 	graphviz: str
+	embedding: list[float]
 	features: list[int]
 	edge_lists: list[str]
 	is_partial: bool
