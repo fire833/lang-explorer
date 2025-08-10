@@ -80,7 +80,7 @@ impl<B: Backend> Doc2VecDBOW<B> {
     pub fn forward(&self, doc_inputs: Tensor<B, 1, Int>) -> Tensor<B, 2, Float> {
         let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(docs);
-        return out.squeeze::<2>(0);
+        out.squeeze::<2>(0)
     }
 
     /// Save the current embeddings to a separate file.

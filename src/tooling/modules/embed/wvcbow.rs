@@ -82,7 +82,7 @@ impl<B: Backend> Word2VecCBOW<B> {
             AggregationMethod::Sum => vecs.sum_dim(1),
         };
         let out = self.hidden.forward(int);
-        return out.squeeze::<2>(0);
+        out.squeeze::<2>(0)
     }
 
     /// Save the current embeddings to a separate file.

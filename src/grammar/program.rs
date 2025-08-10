@@ -89,11 +89,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     }
 
     pub(super) fn is_non_terminal(&self) -> bool {
-        if let GrammarElement::NonTerminal(_) = self.node {
-            true
-        } else {
-            false
-        }
+        matches!(self.node, GrammarElement::NonTerminal(_))
     }
 
     /// Add a child node to this current program tree.
@@ -137,7 +133,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             node_features_old.insert(node, hash);
         });
 
-        let mut found_features: Vec<Feature> = node_features_old.values().map(|u| *u).collect();
+        let mut found_features: Vec<Feature> = node_features_old.values().copied().collect();
 
         for _ in 0..degree {
             for node in nodes.iter() {
@@ -154,13 +150,13 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
                         parent_feature.to_ne_bytes()
                     }
-                    None => [0 as u8; 8],
+                    None => [0_u8; 8],
                 };
                 let mut child_bytes: Vec<Feature> = node
                     .children
                     .iter()
                     .map(|child| node_features_old.get(child).unwrap())
-                    .map(|v| *v)
+                    .copied()
                     .collect();
 
                 let mut hasher = city::Hasher64::new();
@@ -213,7 +209,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     pub(crate) fn get_edge_list(&self) -> Vec<(InstanceId, InstanceId)> {
         let mut edges = vec![];
 
-        if self.children.len() == 0 {
+        if self.children.is_empty() {
             return edges;
         }
 
@@ -331,7 +327,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     #[deprecated()]
     fn get_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
         if degree == 0 {
-            return ProgramInstance::new(self.node.clone(), self.id);
+            ProgramInstance::new(self.node.clone(), self.id)
         } else {
             let mut newchildren = vec![];
             for child in self.children.iter() {
@@ -341,7 +337,8 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
             let mut prog = ProgramInstance::new(self.node.clone(), self.id);
             prog.children = newchildren;
-            return prog;
+
+            prog
         }
     }
 
@@ -354,7 +351,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             subgraphs.append(&mut child.get_all_subgraphs(degree));
         }
 
-        return subgraphs;
+        subgraphs
     }
 }
 

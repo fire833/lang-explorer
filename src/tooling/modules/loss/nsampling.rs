@@ -74,7 +74,8 @@ impl<B: Backend> NegativeSampling<B> {
         let positive = sigmoid(input.gather(1, true_word_indices.unsqueeze_dim(1)))
             .log()
             .squeeze(1);
-        return -positive.add(-negatives);
+
+        -positive.add(-negatives)
     }
 }
 

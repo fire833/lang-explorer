@@ -52,7 +52,6 @@ impl TacoCompileMode {
 
 /// A wrapper for doing taco compilation stuff.
 #[allow(unused)]
-
 pub struct TacoCompiler {}
 
 impl TacoCompiler {

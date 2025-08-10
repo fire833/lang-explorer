@@ -39,7 +39,7 @@ impl MonteCarloExpander {
 }
 
 impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
-    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {

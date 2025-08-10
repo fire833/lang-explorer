@@ -48,7 +48,7 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init(grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError>
     where
         Self: Sized;
 
@@ -89,11 +89,9 @@ impl ExpanderWrapper {
         match self {
             ExpanderWrapper::MonteCarlo => Ok(Box::new(MonteCarloExpander::new())),
             ExpanderWrapper::WeightedMonteCarlo => Ok(Box::new(WeightedMonteCarloExpander::new())),
-            ExpanderWrapper::ML => {
-                return Err(LangExplorerError::General(
-                    "ml method not implemented".into(),
-                ))
-            }
+            ExpanderWrapper::ML => Err(LangExplorerError::General(
+                "ml method not implemented".into(),
+            )),
         }
     }
 }

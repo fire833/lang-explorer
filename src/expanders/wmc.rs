@@ -41,7 +41,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
@@ -106,8 +106,8 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
             }
         }
 
-        if let Some(rule) = production.get(idx as usize) {
-            return rule;
+        if let Some(rule) = production.get(idx) {
+            rule
         } else {
             panic!(
                 "got an index not valid within production rules: {} out of length: {}",

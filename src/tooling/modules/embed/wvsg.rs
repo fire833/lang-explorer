@@ -77,7 +77,7 @@ impl<B: Backend> Word2VecSG<B> {
     pub fn forward(&self, input: Tensor<B, 1, Int>) -> Tensor<B, 2, Float> {
         let vecs = self.embed.forward(input.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(vecs);
-        return out.squeeze::<2>(0);
+        out.squeeze::<2>(0)
     }
 
     /// Save the current embeddings to a separate file.

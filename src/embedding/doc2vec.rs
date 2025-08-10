@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::BTreeMap, marker::PhantomData, vec};
+use std::{collections::BTreeMap, marker::PhantomData, mem, vec};
 
 use burn::{
     config::Config,
@@ -130,7 +130,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             d2: PhantomData,
             model: model,
             device,
-            loss: loss,
+            loss,
             optim: params.adam_config.init(),
             n_epochs: params.n_epochs,
             n_neg_samples: params.n_neg_samples,
@@ -144,7 +144,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn fit(
         mut self,
-        documents: &Vec<(Self::Document, Vec<Self::Word>)>,
+        documents: &[(Self::Document, Vec<Self::Word>)],
     ) -> Result<Self, LangExplorerError> {
         let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
 
@@ -169,7 +169,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     counter += 1;
                     let ctx_indices = get_context_indices(
                         &wordset,
-                        &words,
+                        words,
                         self.window_left,
                         self.window_right,
                         wordidx,
@@ -179,7 +179,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     items.push(train_item);
 
                     if items.len() >= self.batch_size {
-                        let moved = items.drain(..).collect();
+                        let moved = mem::take(&mut items);
                         let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
                         self = self.train_batch(batch, counter);
                     }
@@ -225,7 +225,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
 
 fn get_context_indices<W: Ord>(
     wordset: &BTreeMap<W, u32>,
-    document: &Vec<W>,
+    document: &[W],
     window_left: usize,
     window_right: usize,
     center_word: usize,
@@ -236,24 +236,20 @@ fn get_context_indices<W: Ord>(
     for prefix in (center_word as isize - window_left as isize)..(center_word as isize) {
         if prefix < 0 {
             indices.push(total_words + 1);
+        } else if let Some(idx) = wordset.get(document.get(prefix as usize).unwrap()) {
+            indices.push(*idx as usize);
         } else {
-            if let Some(idx) = wordset.get(document.get(prefix as usize).unwrap()) {
-                indices.push(*idx as usize);
-            } else {
-                indices.push(total_words);
-            }
+            indices.push(total_words);
         }
     }
 
     for suffix in center_word + 1..(center_word + window_right + 1) {
         if suffix >= document.len() {
             indices.push(total_words + 1);
+        } else if let Some(idx) = wordset.get(document.get(suffix).unwrap()) {
+            indices.push(*idx as usize);
         } else {
-            if let Some(idx) = wordset.get(document.get(suffix).unwrap()) {
-                indices.push(*idx as usize);
-            } else {
-                indices.push(total_words);
-            }
+            indices.push(total_words);
         }
     }
 

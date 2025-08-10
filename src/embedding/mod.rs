@@ -46,7 +46,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Trains the embedder on the provided corpus.
     fn fit(
         self,
-        documents: &Vec<(Self::Document, Vec<Self::Word>)>,
+        documents: &[(Self::Document, Vec<Self::Word>)],
     ) -> Result<Self, LangExplorerError>
     where
         Self: Sized;

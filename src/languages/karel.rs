@@ -75,14 +75,8 @@ terminal_str!(T_19, "19");
 pub struct KarelLanguage;
 
 /// Parameters for Karel Language.
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct KarelLanguageParameters {}
-
-impl Default for KarelLanguageParameters {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl GrammarBuilder for KarelLanguage {
     type Term = StringValue;

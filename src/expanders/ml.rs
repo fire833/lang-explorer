@@ -86,7 +86,7 @@ where
 }
 
 impl<T: Terminal, I: NonTerminal, B: Backend> GrammarExpander<T, I> for LearnedExpander<T, I, B> {
-    fn init<'a>(grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError> {
+    fn init(grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError> {
         let device = Default::default();
         let recorder = BinGzFileRecorder::<FullPrecisionSettings>::new();
         let mut map = HashMap::new();
@@ -115,7 +115,7 @@ impl<T: Terminal, I: NonTerminal, B: Backend> GrammarExpander<T, I> for LearnedE
         _grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        if let Some(model) = self.production_to_model.get(&production) {
+        if let Some(model) = self.production_to_model.get(production) {
             let distribution = match model {
                 ModuleWrapper::Linear(linear) => {
                     log_softmax(linear.forward(Tensor::<B, 1>::ones([128], &self.dev)), 0)
@@ -171,7 +171,7 @@ impl<T: Terminal, I: NonTerminal, B: Backend> GrammarExpander<T, I> for LearnedE
                 }
             };
 
-            return production.get(index).unwrap();
+            production.get(index).unwrap()
         } else {
             panic!(
                 "expander does not have model for production rule {:?}",

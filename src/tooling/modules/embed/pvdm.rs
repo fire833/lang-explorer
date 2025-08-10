@@ -102,8 +102,7 @@ impl<B: Backend> Doc2VecDM<B> {
         .squeeze::<2>(1);
 
         let int = docs.add(words_summed);
-        let out = self.hidden.forward(int);
-        return out;
+        self.hidden.forward(int)
     }
 
     /// Returns a vector of the embedding tensor. It should be structured in

@@ -73,11 +73,11 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     }
 
     pub fn get_name(&self) -> String {
-        return format!("{}_{}", self.canonical_name, &self.generate_uuid()[0..16]);
+        format!("{}_{}", self.canonical_name, &self.generate_uuid()[0..16])
     }
 
     pub fn get_productions(&self) -> Vec<&Production<T, I>> {
-        return Vec::from_iter(self.productions.values());
+        Vec::from_iter(self.productions.values())
     }
 
     /// Main entrypoint for generating programs from a particular grammar.
@@ -88,9 +88,9 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         if !grammar.is_context_sensitive {
-            return grammar.generate_program_instance_ctx_free(expander);
+            grammar.generate_program_instance_ctx_free(expander)
         } else {
-            return grammar.generate_program_instance_ctx_sensitive(expander);
+            grammar.generate_program_instance_ctx_sensitive(expander)
         }
     }
 
@@ -104,7 +104,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
             }
         }
 
-        return false;
+        false
     }
 
     fn generate_program_instance_ctx_sensitive(
@@ -126,12 +126,12 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
                 }
             }
 
-            let (lhs, idx) = expander.choose_lhs_and_slot(&self, &lhs_slots);
+            let (lhs, idx) = expander.choose_lhs_and_slot(self, &lhs_slots);
             // We literally picked the subset of LHSs that were valid and narrowed
             // down further for this, so it shouldn't fail unless I screw up an
             // expander implementation.
             let prod = self.productions.get(lhs).unwrap();
-            let rule = expander.expand_rule(&self, prod);
+            let rule = expander.expand_rule(self, prod);
 
             // Get the element to be removed and replaced in the frontier.
             let ntp = frontier.remove(idx);
@@ -238,7 +238,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
             }
         }
 
-        return set;
+        set
     }
 
     /// Generate a unique hash for a given grammar. Essentially it just creates a hash
@@ -256,9 +256,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
             });
         });
 
-        let digest = hex::encode(hash.finalize());
-
-        digest
+        hex::encode(hash.finalize())
     }
 
     /// Experimental feature to create parsers efficiently

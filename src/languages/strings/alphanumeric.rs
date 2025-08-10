@@ -88,7 +88,7 @@ terminal_str!(pub, T_8, "8");
 terminal_str!(pub, T_9, "9");
 
 fn productions_alpha_lower() -> Vec<ProductionRule<StringValue, StringValue>> {
-    return vec![
+    vec![
         production_rule!(T_LO_A),
         production_rule!(T_LO_B),
         production_rule!(T_LO_C),
@@ -115,11 +115,11 @@ fn productions_alpha_lower() -> Vec<ProductionRule<StringValue, StringValue>> {
         production_rule!(T_LO_X),
         production_rule!(T_LO_Y),
         production_rule!(T_LO_Z),
-    ];
+    ]
 }
 
 fn productions_alpha_upper() -> Vec<ProductionRule<StringValue, StringValue>> {
-    return vec![
+    vec![
         production_rule!(T_UP_A),
         production_rule!(T_UP_B),
         production_rule!(T_UP_C),
@@ -146,11 +146,11 @@ fn productions_alpha_upper() -> Vec<ProductionRule<StringValue, StringValue>> {
         production_rule!(T_UP_X),
         production_rule!(T_UP_Y),
         production_rule!(T_UP_Z),
-    ];
+    ]
 }
 
 fn productions_digits() -> Vec<ProductionRule<StringValue, StringValue>> {
-    return vec![
+    vec![
         production_rule!(T_0),
         production_rule!(T_1),
         production_rule!(T_2),
@@ -161,7 +161,7 @@ fn productions_digits() -> Vec<ProductionRule<StringValue, StringValue>> {
         production_rule!(T_7),
         production_rule!(T_8),
         production_rule!(T_9),
-    ];
+    ]
 }
 
 pub fn alphanumeric_character_production_context_free(
@@ -173,7 +173,7 @@ pub fn alphanumeric_character_production_context_free(
     productions.append(&mut productions_alpha_upper());
     productions.append(&mut productions_digits());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn alpha_character_production_context_free(
@@ -184,7 +184,7 @@ pub fn alpha_character_production_context_free(
     productions.append(&mut productions_alpha_lower());
     productions.append(&mut productions_alpha_upper());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn alpha_lower_character_production_context_free(
@@ -194,7 +194,7 @@ pub fn alpha_lower_character_production_context_free(
 
     productions.append(&mut productions_alpha_lower());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn alpha_upper_character_production_context_free(
@@ -204,7 +204,7 @@ pub fn alpha_upper_character_production_context_free(
 
     productions.append(&mut productions_alpha_upper());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn numeric_character_production_context_free(
@@ -214,7 +214,7 @@ pub fn numeric_character_production_context_free(
 
     productions.append(&mut productions_digits());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn alphanumeric_string_production_context_free(
@@ -230,7 +230,7 @@ pub fn alphanumeric_string_production_context_free(
     productions.append(&mut productions_alpha_upper());
     productions.append(&mut productions_digits());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn alpha_string_production_context_free(
@@ -245,7 +245,7 @@ pub fn alpha_string_production_context_free(
     productions.append(&mut productions_alpha_lower());
     productions.append(&mut productions_alpha_upper());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn lowercase_string_production_context_free(
@@ -259,7 +259,7 @@ pub fn lowercase_string_production_context_free(
 
     productions.append(&mut productions_alpha_lower());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
 pub fn uppercase_string_production_context_free(
@@ -273,5 +273,5 @@ pub fn uppercase_string_production_context_free(
 
     productions.append(&mut productions_alpha_upper());
 
-    return Production::new(ProductionLHS::new_context_free(root), productions);
+    Production::new(ProductionLHS::new_context_free(root), productions)
 }

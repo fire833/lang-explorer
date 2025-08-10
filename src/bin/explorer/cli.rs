@@ -40,10 +40,11 @@ impl LangExplorerArgs {
                     count: _,
                 } => Ok(()),
                 Subcommand::Serve { address, port } => {
-                    Ok(api::start_server(address.as_str(), *port).await)
+                    let _ = api::start_server(address.as_str(), *port).await;
+                    Ok(())
                 }
             },
-            None => return Err("no command provided".into()),
+            None => Err("no command provided".into()),
         }
     }
 }

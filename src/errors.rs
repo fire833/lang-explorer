@@ -33,8 +33,7 @@ pub enum LangExplorerError {
     CCError(cc::Error),
     FromUtf8Error(FromUtf8Error),
     RecorderError(RecorderError),
-    #[allow(private_interfaces)]
-    SendError(SendError<ProgramResult>),
+    SendError(String),
     DataError(DataError),
 }
 
@@ -96,7 +95,7 @@ impl From<RecorderError> for LangExplorerError {
 
 impl From<SendError<ProgramResult>> for LangExplorerError {
     fn from(value: SendError<ProgramResult>) -> Self {
-        Self::SendError(value)
+        Self::SendError(value.to_string())
     }
 }
 

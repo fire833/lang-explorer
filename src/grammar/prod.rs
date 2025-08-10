@@ -58,6 +58,10 @@ impl<T: Terminal, I: NonTerminal> Production<T, I> {
         self.items.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.items.len() == 0
+    }
+
     /// Wrapper to return a specific rule.
     pub fn get(&self, i: usize) -> Option<&ProductionRule<T, I>> {
         self.items.get(i)

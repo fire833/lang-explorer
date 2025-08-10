@@ -257,7 +257,7 @@ fn internal_error(err: String) -> WithStatus<Json> {
 
 pub trait OpenApiExtensions: OpenApi {
     fn api_docs_reply() -> WithStatus<Json> {
-        return warp::reply::with_status(warp::reply::json(&Self::openapi()), StatusCode::OK);
+        warp::reply::with_status(warp::reply::json(&Self::openapi()), StatusCode::OK)
     }
 
     #[allow(unused)]

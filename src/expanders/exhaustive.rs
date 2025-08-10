@@ -32,7 +32,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init<'a>(_grammar: &'a Grammar<T, I>) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar<T, I>) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {

@@ -39,11 +39,9 @@ impl CCompiler {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e.into()),
             },
-            (None, None) | (Some(_), None) | (None, Some(_)) => {
-                return Err(LangExplorerError::General(
-                    "outfile must have an output file".to_string(),
-                ))
-            }
+            (None, None) | (Some(_), None) | (None, Some(_)) => Err(LangExplorerError::General(
+                "outfile must have an output file".to_string(),
+            )),
         }
     }
 }

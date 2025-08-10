@@ -86,8 +86,8 @@ impl<B: Backend> Linear3Deep<B> {
             Activation::Sigmoid => sigmoid(x),
             Activation::ReLU => relu(x),
         };
-        let x = self.output.forward(x);
-        return x;
+
+        self.output.forward(x)
     }
 }
 

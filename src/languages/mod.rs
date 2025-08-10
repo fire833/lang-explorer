@@ -487,12 +487,11 @@ impl GenerateParams {
         let mut features = vec![];
         let mut edge_lists = vec![];
 
-        let grammar_fmt;
-        if self.return_grammar {
-            grammar_fmt = Some(format!("{}", &grammar));
+        let grammar_fmt = if self.return_grammar {
+            Some(format!("{}", &grammar))
         } else {
-            grammar_fmt = None;
-        }
+            None
+        };
 
         if self.count > 0 {
             let start = SystemTime::now();
@@ -619,13 +618,9 @@ pub struct GenerateResultsV2 {
 
 impl Dataset<ProgramResult> for GenerateResultsV2 {
     fn get(&self, index: usize) -> Option<ProgramResult> {
-        if let Some(item) = self.programs.get(index) {
-            // This crap is going to be expensive and I shouldn't be doing it,
-            // but that's a problem for later.
-            Some(item.clone())
-        } else {
-            None
-        }
+        // This crap is going to be expensive and I shouldn't be doing it,
+        // but that's a problem for later.
+        self.programs.get(index).cloned()
     }
 
     fn len(&self) -> usize {

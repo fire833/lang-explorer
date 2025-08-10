@@ -124,7 +124,7 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
 
     pub(super) fn get_all_context_instances(
         &self,
-        frontier: &Vec<&mut ProgramInstance<T, I>>,
+        frontier: &[&mut ProgramInstance<T, I>],
     ) -> Vec<usize> {
         let mut instances = vec![];
         let tokens = &self.full_token_list;
