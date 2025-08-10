@@ -126,7 +126,7 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
             let mut negative_samples = HashSet::new();
             let cwidx = item.center_word_idx as i32;
             while negative_samples.len() < self.n_neg_samples {
-                let idx = (rand::random::<usize>() % self.n_total_words) as i32;
+                let idx = (rand::random::<u64>() as usize % self.n_total_words) as i32;
                 if !negative_samples.contains(&idx) && idx != cwidx {
                     negative_samples.insert(idx);
                 }

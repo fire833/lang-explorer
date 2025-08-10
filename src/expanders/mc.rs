@@ -16,10 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rand_chacha::{
-    rand_core::{RngCore, SeedableRng},
-    ChaCha8Rng,
-};
+use rand::Rng;
+use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
 
 use crate::{
     errors::LangExplorerError,
@@ -60,7 +58,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         _grammar: &'a Grammar<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        let idx = self.rng.next_u64() as usize % production.len();
+        let idx = self.rng.random::<u64>() as usize % production.len();
         production.get(idx).expect("got out of bounds index")
     }
 
@@ -74,11 +72,11 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         _grammar: &'a Grammar<T, I>,
         lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize) {
-        let idx = self.rng.next_u64() as usize % lhs_location_matrix.len();
+        let idx = self.rng.random::<u64>() as usize % lhs_location_matrix.len();
         let (lhs, indices) = lhs_location_matrix
             .get(idx)
             .expect("got out of bounds index for lhs");
-        let idx = self.rng.next_u64() as usize % indices.len();
+        let idx = self.rng.random::<u64>() as usize % indices.len();
         let index = indices
             .get(idx)
             .expect("got invalid index for frontier indices");

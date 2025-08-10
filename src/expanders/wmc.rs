@@ -16,10 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rand_chacha::{
-    rand_core::{RngCore, SeedableRng},
-    ChaCha8Rng,
-};
+use rand::Rng;
+use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
 
 use crate::{
     errors::LangExplorerError,
@@ -103,7 +101,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
 
         // Take the softmax
         let distribution: Vec<f64> = logits.iter().map(|item| *item as f64 / total).collect();
-        let sample = self.rng.next_u64() as f64 % 1.0;
+        let sample = self.rng.random::<f64>() % 1.0;
 
         let mut idx = production.len() - 1;
         let mut cumsum = 0.0;

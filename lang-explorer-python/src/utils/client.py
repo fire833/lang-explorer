@@ -44,6 +44,7 @@ class GenerateParams:
 	wl_degree: int
 	batch_size: int
 	num_negative_samples: int
+	seed: int
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters
