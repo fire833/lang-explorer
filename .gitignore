@@ -7,3 +7,5 @@ Makefile
 CMakeCache.txt
 cmake_install.cmake
 CMakeFiles
+perf.data.old
+perf.data

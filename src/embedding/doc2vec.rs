@@ -231,26 +231,31 @@ fn get_context_indices<W: Ord>(
     center_word: usize,
     total_words: usize,
 ) -> Vec<usize> {
-    let mut indices = vec![];
+    let mut indices = vec![0; window_left + window_right];
+    let mut counter = 0;
 
     for prefix in (center_word as isize - window_left as isize)..(center_word as isize) {
         if prefix < 0 {
-            indices.push(total_words + 1);
+            indices[counter] = total_words + 1;
         } else if let Some(idx) = wordset.get(document.get(prefix as usize).unwrap()) {
-            indices.push(*idx as usize);
+            indices[counter] = *idx as usize;
         } else {
-            indices.push(total_words);
+            indices[counter] = total_words;
         }
+
+        counter += 1;
     }
 
     for suffix in center_word + 1..(center_word + window_right + 1) {
         if suffix >= document.len() {
-            indices.push(total_words + 1);
+            indices[counter] = total_words + 1;
         } else if let Some(idx) = wordset.get(document.get(suffix).unwrap()) {
-            indices.push(*idx as usize);
+            indices[counter] = *idx as usize;
         } else {
-            indices.push(total_words);
+            indices[counter] = total_words;
         }
+
+        counter += 1;
     }
 
     indices
