@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::BTreeMap, marker::PhantomData, mem, vec};
+use std::{collections::BTreeMap, marker::PhantomData, mem, time::SystemTime, vec};
 
 use burn::{
     config::Config,
@@ -106,6 +106,8 @@ pub struct Doc2VecEmbedderParams {
     pub n_epochs: usize,
     /// the learning rate
     pub learning_rate: f64,
+    /// the seed.
+    pub seed: u64,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
@@ -117,6 +119,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
+        B::seed(params.seed);
 
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
@@ -210,18 +213,23 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
     fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
+        let start = SystemTime::now();
+
         let train = self.step(batch);
         self.model = self.optim.step(self.learning_rate, self.model, train.grads);
 
         if counter % 1000 == 0 {
+            let elapsed = start.elapsed().unwrap();
+
             println!(
-                "Training loss = {}",
+                "Training loss = {} (took {} microseconds)",
                 train
                     .item
                     .to_data()
                     .convert::<f64>()
                     .to_vec()
-                    .unwrap_or(vec![0.0])[0]
+                    .unwrap_or(vec![0.0])[0],
+                elapsed.as_micros()
             );
         }
 

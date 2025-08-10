@@ -43,6 +43,7 @@ class GenerateParams:
 	return_embeddings: bool
 	wl_degree: int
 	batch_size: int
+	num_negative_samples: int
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters

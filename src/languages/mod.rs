@@ -200,6 +200,11 @@ pub struct GenerateParams {
     #[serde(alias = "count", default = "default_count")]
     count: u64,
 
+    /// Specify a seed to use when running experiments to deterministically
+    /// set RNGs.
+    #[serde(alias = "seed", default = "default_seed")]
+    seed: u64,
+
     /// Specify the number of WL-kernel iterations to be run
     /// with each graph to extract features.
     #[serde(alias = "wl_degree", default = "default_wl_degree")]
@@ -239,6 +244,10 @@ pub struct GenerateParams {
     /// the right of the center word that will be trained.
     #[serde(alias = "window_right", default = "default_window_right")]
     window_right: u32,
+}
+
+fn default_seed() -> u64 {
+    rand::random::<u64>()
 }
 
 fn default_count() -> u64 {
@@ -432,6 +441,7 @@ impl GenerateParams {
                     self.batch_size as usize,
                     self.num_epochs as usize,
                     self.learning_rate,
+                    self.seed,
                 );
 
                 println!(
