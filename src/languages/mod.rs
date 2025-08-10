@@ -332,13 +332,13 @@ impl GenerateParams {
 
             let (tx, mut rx): (Sender<ProgramResult>, Receiver<ProgramResult>) = channel(size);
 
-            for _ in 0..num_cpus {
+            for i in 0..num_cpus {
                 let exp = expander.clone();
                 let gc = grammar.clone();
                 let txt = tx.clone();
                 let all_progs = all_programs.clone(); // Need to do this twice, idk
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander(self.seed).unwrap();
+                    let mut expander = exp.get_expander(self.seed + i * 5).unwrap();
                     let all_programs = all_progs.clone();
                     let count = self.count / num_cpus; // TODO fix
 
