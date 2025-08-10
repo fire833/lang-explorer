@@ -266,7 +266,7 @@ fn default_embedding_dim() -> u32 {
 }
 
 fn default_epochs() -> u32 {
-    15
+    10
 }
 
 fn default_batch_size() -> u32 {
@@ -432,6 +432,12 @@ impl GenerateParams {
                     self.batch_size as usize,
                     self.num_epochs as usize,
                     self.learning_rate,
+                );
+
+                println!(
+                    "Training embeddings, there are {} documents being learned and {} total words being used.",
+                    documents.len(),
+                    set.len()
                 );
 
                 let model: Doc2VecEmbedder<StringValue, StringValue, Autodiff<NdArray>> =

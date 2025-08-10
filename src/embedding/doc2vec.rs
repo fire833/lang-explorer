@@ -21,9 +21,9 @@ use std::{collections::BTreeMap, marker::PhantomData, vec};
 use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
-    optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, GradientsParams, Optimizer},
+    optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Tensor},
-    train::{TrainOutput, TrainStep, ValidStep},
+    train::{TrainOutput, TrainStep},
 };
 
 use crate::{
@@ -42,6 +42,7 @@ use crate::{
 };
 
 pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
+    // Some bullcrap.
     d1: PhantomData<T>,
     d2: PhantomData<I>,
 
@@ -74,14 +75,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
             .forward(item.true_words, item.negative_words, logits);
 
         TrainOutput::new(&self.model, loss.backward(), loss)
-    }
-}
-
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend, VI, VO> ValidStep<VI, VO>
-    for Doc2VecEmbedder<T, I, B>
-{
-    fn step(&self, _item: VI) -> VO {
-        todo!()
     }
 }
 
@@ -166,12 +159,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         });
 
         let batcher = ProgramBatcher::new(self.n_neg_samples, wordset.len());
-        let agg = self.agg.clone();
-        for _ in 0..self.n_epochs {
+        for num in 0..self.n_epochs {
+            println!("Running epoch {} of {}", num + 1, self.n_epochs);
             let mut items = vec![];
 
+            let mut counter = 0;
             for (docidx, (_, words)) in documents.iter().enumerate() {
                 for (wordidx, _) in words.iter().enumerate() {
+                    counter += 1;
                     let ctx_indices = get_context_indices(
                         &wordset,
                         &words,
@@ -186,7 +181,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     if items.len() >= self.batch_size {
                         let moved = items.drain(..).collect();
                         let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
-                        self = self.train_batch(batch, agg.clone());
+                        self = self.train_batch(batch, counter);
                     }
                 }
             }
@@ -208,16 +203,21 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
-    fn train_batch(mut self, batch: ProgramBatch<B>, agg: AggregationMethod) -> Self {
-        let logits = self
-            .model
-            .forward(batch.documents, batch.context_words, &agg);
-        let loss = self
-            .loss
-            .forward(batch.true_words, batch.negative_words, logits);
+    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
+        let train = self.step(batch);
+        self.model = self.optim.step(self.learning_rate, self.model, train.grads);
 
-        let grads = GradientsParams::from_grads(loss.backward(), &self.model);
-        self.model = self.optim.step(self.learning_rate, self.model, grads);
+        if counter % 1000 == 0 {
+            println!(
+                "Training loss = {}",
+                train
+                    .item
+                    .to_data()
+                    .convert::<f64>()
+                    .to_vec()
+                    .unwrap_or(vec![0.0])[0]
+            );
+        }
 
         self
     }

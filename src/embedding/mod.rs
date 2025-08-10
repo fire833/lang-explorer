@@ -109,8 +109,8 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
     fn batch(&self, items: Vec<TrainingItem>, device: &B::Device) -> ProgramBatch<B> {
         let mut doc_idx = vec![];
         let mut center_word_idx = vec![];
-        let mut context_word_idx = vec![];
-        let mut negative_indices = vec![];
+        let mut context_word_idx: Vec<Tensor<B, 1, Int>> = vec![];
+        let mut negative_indices: Vec<Tensor<B, 1, Int>> = vec![];
 
         for item in items.iter() {
             doc_idx.push(item.document_idx as i32);
@@ -140,8 +140,8 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
 
         ProgramBatch {
             documents: Tensor::from_data(doc_idx.as_slice(), device),
-            context_words: Tensor::cat(context_word_idx, 2),
-            negative_words: Tensor::cat(negative_indices, 2),
+            context_words: Tensor::stack::<2>(context_word_idx, 0),
+            negative_words: Tensor::stack::<2>(negative_indices, 0),
             true_words: Tensor::from_data(center_word_idx.as_slice(), device),
         }
     }

@@ -40,6 +40,7 @@ class GenerateParams:
 	return_graphviz: bool
 	return_grammar: bool
 	return_partial_graphs: bool
+	return_embeddings: bool
 	wl_degree: int
 
 	css: CSSLanguageParameters
