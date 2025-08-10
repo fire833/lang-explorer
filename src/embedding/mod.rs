@@ -16,8 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::HashSet;
-
 use burn::{
     data::dataloader::batcher::Batcher,
     prelude::Backend,
@@ -68,14 +66,21 @@ pub(super) struct TrainingItem {
     document_idx: usize,
     context_word_indices: Vec<usize>,
     center_word_idx: usize,
+    negative_sample_indices: Vec<usize>,
 }
 
 impl TrainingItem {
-    fn new(document_idx: usize, center_word_idx: usize, context_word_indices: Vec<usize>) -> Self {
+    fn new(
+        document_idx: usize,
+        center_word_idx: usize,
+        context_word_indices: Vec<usize>,
+        negative_sample_indices: Vec<usize>,
+    ) -> Self {
         Self {
             document_idx,
             context_word_indices,
             center_word_idx,
+            negative_sample_indices,
         }
     }
 }
@@ -89,19 +94,11 @@ pub(super) struct ProgramBatch<B: Backend> {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct ProgramBatcher {
-    /// The number of negative samples to sample.
-    n_neg_samples: usize,
-    /// the total number of words to sample from.
-    n_total_words: usize,
-}
+pub(super) struct ProgramBatcher {}
 
 impl ProgramBatcher {
-    fn new(n_neg_samples: usize, n_total_words: usize) -> Self {
-        Self {
-            n_neg_samples,
-            n_total_words,
-        }
+    fn new() -> Self {
+        Self {}
     }
 }
 
@@ -122,18 +119,8 @@ impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
                 .collect();
 
             context_word_idx.push(Tensor::from_data(ctx_word_indices.as_slice(), device));
-
-            let mut negative_samples = HashSet::new();
-            let cwidx = item.center_word_idx as i32;
-            while negative_samples.len() < self.n_neg_samples {
-                let idx = (rand::random::<u64>() as usize % self.n_total_words) as i32;
-                if !negative_samples.contains(&idx) && idx != cwidx {
-                    negative_samples.insert(idx);
-                }
-            }
-
             negative_indices.push(Tensor::from_data(
-                negative_samples.into_iter().collect::<Vec<_>>().as_slice(),
+                item.negative_sample_indices.as_slice(),
                 device,
             ));
         }
@@ -160,11 +147,7 @@ pub(super) struct MultiThreadedProgramLoader<
 
 impl<'a, D: Send + Sync, W: Send + Sync, B: Backend> MultiThreadedProgramLoader<'a, D, W, B> {
     #[allow(unused)]
-    fn new(
-        items: &'a Vec<(D, Vec<W>)>,
-        n_neg_samples: usize,
-        n_total_words: usize,
-    ) -> (Self, Receiver<ProgramBatch<B>>) {
+    fn new(items: &'a Vec<(D, Vec<W>)>, n_total_words: usize) -> (Self, Receiver<ProgramBatch<B>>) {
         let num_cpus = num_cpus::get();
         let (tx, rx) = channel(n_total_words / num_cpus);
 
@@ -172,7 +155,7 @@ impl<'a, D: Send + Sync, W: Send + Sync, B: Backend> MultiThreadedProgramLoader<
             Self {
                 items,
                 _send: tx,
-                _batcher: ProgramBatcher::new(n_neg_samples, n_total_words),
+                _batcher: ProgramBatcher::new(),
             },
             rx,
         )

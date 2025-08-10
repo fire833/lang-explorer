@@ -16,7 +16,13 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::BTreeMap, marker::PhantomData, mem, time::SystemTime, vec};
+use std::{
+    collections::{BTreeMap, HashSet},
+    marker::PhantomData,
+    mem,
+    time::SystemTime,
+    vec,
+};
 
 use burn::{
     config::Config,
@@ -25,6 +31,8 @@ use burn::{
     tensor::{backend::AutodiffBackend, Device, Float, Tensor},
     train::{TrainOutput, TrainStep},
 };
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 use crate::{
     embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, TrainingItem},
@@ -51,6 +59,9 @@ pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     loss: NegativeSampling<B>,
 
     device: Device<B>,
+
+    /// RNG stuff.
+    rng: ChaCha8Rng,
 
     optim: OptimizerAdaptor<Adam, Doc2VecDM<B>, B>,
 
@@ -142,6 +153,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             window_right: params.window_right,
             agg: params.agg,
             learning_rate: params.learning_rate,
+            rng: ChaCha8Rng::seed_from_u64(params.seed),
         }
     }
 
@@ -161,10 +173,16 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             })
         });
 
-        let batcher = ProgramBatcher::new(self.n_neg_samples, wordset.len());
+        let batcher = ProgramBatcher::new();
         for num in 0..self.n_epochs {
             println!("Running epoch {} of {}", num + 1, self.n_epochs);
             let mut items = vec![];
+
+            // // Adaptive learning rate
+            // self.learning_rate *= 0.9;
+            // if self.learning_rate < 0.00001 {
+            //     self.learning_rate = 0.00001;
+            // }
 
             let mut counter = 0;
             for (docidx, (_, words)) in documents.iter().enumerate() {
@@ -178,7 +196,16 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                         wordidx,
                         wordset.len(),
                     );
-                    let train_item = TrainingItem::new(docidx, wordidx, ctx_indices);
+
+                    let negative_indices = get_negative_indices(
+                        self.n_neg_samples,
+                        &mut self.rng,
+                        wordset.len() + 2,
+                        wordidx,
+                    );
+
+                    let train_item =
+                        TrainingItem::new(docidx, wordidx, ctx_indices, negative_indices);
                     items.push(train_item);
 
                     if items.len() >= self.batch_size {
@@ -273,6 +300,23 @@ fn get_context_indices<W: Ord>(
     }
 
     indices
+}
+
+fn get_negative_indices<R: Rng>(
+    num_negative_samples: usize,
+    rng: &mut R,
+    total_words: usize,
+    center_word_idx: usize,
+) -> Vec<usize> {
+    let mut negative_samples = HashSet::new();
+    while negative_samples.len() < num_negative_samples {
+        let idx = rng.random::<u64>() as usize % total_words;
+        if !negative_samples.contains(&idx) && idx != center_word_idx {
+            negative_samples.insert(idx);
+        }
+    }
+
+    negative_samples.into_iter().collect()
 }
 
 #[test]
