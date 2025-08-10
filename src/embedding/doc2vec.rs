@@ -77,7 +77,7 @@ pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
     TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<T, I, B>
 {
-    fn step(&self, item: ProgramBatch<B>) -> burn::train::TrainOutput<Tensor<B, 1, Float>> {
+    fn step(&self, item: ProgramBatch<B>) -> TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
             .forward(item.documents, item.context_words, &self.agg);
@@ -179,7 +179,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             let mut items = vec![];
 
             // Adaptive learning rate
-            self.learning_rate *= 0.8;
+            self.learning_rate *= 0.6;
             if self.learning_rate < 0.000001 {
                 self.learning_rate = 0.000001;
             }
@@ -249,13 +249,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
             let elapsed = start.elapsed().unwrap();
 
             println!(
-                "Training loss = {} (took {} microseconds)",
+                "Training loss = {:?} (took {} microseconds)",
                 train
                     .item
                     .to_data()
                     .convert::<f64>()
                     .to_vec()
-                    .unwrap_or(vec![0.0])[0],
+                    .unwrap_or(vec![0.0]),
                 elapsed.as_micros()
             );
         }

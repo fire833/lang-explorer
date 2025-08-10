@@ -47,6 +47,9 @@ class GenerateParams:
 	seed: int
 	embedding_dim: int
 	num_epochs: int
+	window_left: int
+	window_right: int
+	learning_rate: float
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters

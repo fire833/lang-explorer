@@ -283,7 +283,7 @@ fn default_batch_size() -> u32 {
 }
 
 fn default_learning_rate() -> f64 {
-    0.0001
+    0.001
 }
 
 fn default_return_partials() -> bool {
