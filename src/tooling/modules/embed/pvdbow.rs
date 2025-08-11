@@ -31,9 +31,6 @@ use burn::{
     tensor::{Float, Int, Tensor},
 };
 
-#[allow(unused)]
-use burn::backend::NdArray;
-
 use crate::errors::LangExplorerError;
 
 #[derive(Debug, Config)]
@@ -98,6 +95,8 @@ impl<B: Backend> Doc2VecDBOW<B> {
 
 #[test]
 fn test_forward() {
+    use burn::backend::NdArray;
+
     let dev = Default::default();
     let model = Doc2VecDBOWConfig::new(10, 5, 3).init::<NdArray>(&dev);
 

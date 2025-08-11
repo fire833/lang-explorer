@@ -32,9 +32,6 @@ use burn::{
     tensor::{Float, Int, Tensor},
 };
 
-#[allow(unused)]
-use burn::backend::NdArray;
-
 use crate::{errors::LangExplorerError, tooling::modules::embed::AggregationMethod};
 
 #[derive(Debug, Config)]
@@ -128,6 +125,8 @@ impl<B: Backend> Doc2VecDM<B> {
 
 #[test]
 fn test_forward() {
+    use burn::backend::NdArray;
+
     let dev = Default::default();
     let model = Doc2VecDMConfig::new(10, 5, 3).init::<NdArray>(&dev);
 

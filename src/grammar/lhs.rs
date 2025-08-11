@@ -24,9 +24,6 @@ use std::{
 
 use crate::grammar::{elem::GrammarElement, program::ProgramInstance, NonTerminal, Terminal};
 
-#[allow(unused)]
-use crate::languages::strings::{nterminal_str, terminal_str, StringValue};
-
 /// A wrapper type for left-hand sides of grammars, which can include grammars that are
 /// context-sensitive. This type allows you to provide optional prefix and suffix
 /// grammar elements around the non-terminal as context for the expander.
@@ -163,6 +160,8 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
 
 #[test]
 fn test_get_all_context_instances() {
+    use crate::languages::strings::{nterminal_str, terminal_str, StringValue};
+
     nterminal_str!(FOO, "foo");
     terminal_str!(BAR, "bar");
     terminal_str!(BAR2, "bar2");

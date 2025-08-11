@@ -25,12 +25,6 @@ use burn::{
     tensor::{activation::sigmoid, Float, Int, Tensor},
 };
 
-#[allow(unused)]
-use burn::tensor::Distribution;
-
-#[allow(unused)]
-use burn::backend::NdArray;
-
 #[derive(Debug, Config)]
 pub struct NegativeSamplingConfig;
 
@@ -81,6 +75,9 @@ impl<B: Backend> NegativeSampling<B> {
 
 #[test]
 fn test_forward() {
+    use burn::backend::NdArray;
+    use burn::tensor::Distribution;
+
     let dev = Default::default();
     let model = NegativeSamplingConfig::new().init::<NdArray>(&dev);
 

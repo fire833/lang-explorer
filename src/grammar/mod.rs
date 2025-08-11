@@ -25,16 +25,12 @@ pub mod rule;
 
 use std::{fmt::Debug, hash::Hash};
 
-#[allow(unused)]
-use crate::languages::strings::{nterminal_str, StringValue};
-
 use crate::grammar::elem::GrammarElement;
 
 /// Trait for non-terminals to implement in order to be serialized
 /// to an output program.
 pub trait BinarySerialize {
     /// Serialize into a Vec.
-    #[allow(unused)]
     fn serialize(&self) -> Vec<u8>;
 
     /// Serialize by appending to the output vector.

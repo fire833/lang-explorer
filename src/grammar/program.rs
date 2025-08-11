@@ -30,9 +30,6 @@ use crate::{
     languages::{Feature, ProgramResult},
 };
 
-#[allow(unused)]
-use crate::languages::strings::{nterminal_str, StringValue};
-
 /// Type alias for program instance unique identifiers.
 pub type InstanceId = u64;
 
@@ -357,6 +354,8 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
 #[test]
 fn test_extract_words_wl_kernel() {
+    use crate::languages::strings::{nterminal_str, StringValue};
+
     nterminal_str!(FOO, "foo");
     nterminal_str!(BAR, "bar");
     nterminal_str!(BAZ, "baz");
