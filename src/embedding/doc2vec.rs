@@ -243,20 +243,27 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
         let start = SystemTime::now();
 
         let train = self.step(batch);
+        let grads = train.grads.len();
         self.model = self.optim.step(self.learning_rate, self.model, train.grads);
 
         if counter % 1000 == 0 {
             let elapsed = start.elapsed().unwrap();
+            // let emb = self.model.get_embeddings().unwrap();
+            let loss_data = train
+                .item
+                .to_data()
+                .convert::<f64>()
+                .to_vec()
+                .unwrap_or(vec![0.0]);
+
+            let avg = Iterator::sum::<f64>(loss_data.iter()) / loss_data.len() as f64;
 
             println!(
-                "Training loss = {:?} (took {} microseconds)",
-                train
-                    .item
-                    .to_data()
-                    .convert::<f64>()
-                    .to_vec()
-                    .unwrap_or(vec![0.0]),
-                elapsed.as_micros()
+                "Training loss ({} gradients) = {} (took {} microseconds)",
+                grads,
+                avg,
+                elapsed.as_micros(),
+                // &emb[0..128],
             );
         }
 
