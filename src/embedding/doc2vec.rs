@@ -35,7 +35,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
-    embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, TrainingItem},
+    embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, ProgramTrainingItem},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
@@ -205,7 +205,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     );
 
                     let train_item =
-                        TrainingItem::new(docidx, wordidx, ctx_indices, negative_indices);
+                        ProgramTrainingItem::new(docidx, wordidx, ctx_indices, negative_indices);
                     items.push(train_item);
 
                     if items.len() >= self.batch_size {

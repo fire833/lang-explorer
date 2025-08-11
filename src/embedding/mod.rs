@@ -62,14 +62,14 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 
 /// A training item represents a single item in a batch that should be trained on.
 #[derive(Debug, Clone)]
-pub(super) struct TrainingItem {
+pub(super) struct ProgramTrainingItem {
     document_idx: usize,
     context_word_indices: Vec<usize>,
     center_word_idx: usize,
     negative_sample_indices: Vec<usize>,
 }
 
-impl TrainingItem {
+impl ProgramTrainingItem {
     fn new(
         document_idx: usize,
         center_word_idx: usize,
@@ -102,8 +102,8 @@ impl ProgramBatcher {
     }
 }
 
-impl<B: Backend> Batcher<B, TrainingItem, ProgramBatch<B>> for ProgramBatcher {
-    fn batch(&self, items: Vec<TrainingItem>, device: &B::Device) -> ProgramBatch<B> {
+impl<B: Backend> Batcher<B, ProgramTrainingItem, ProgramBatch<B>> for ProgramBatcher {
+    fn batch(&self, items: Vec<ProgramTrainingItem>, device: &B::Device) -> ProgramBatch<B> {
         let mut doc_idx = vec![];
         let mut center_word_idx = vec![];
         let mut context_word_idx: Vec<Tensor<B, 1, Int>> = vec![];
