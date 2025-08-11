@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.82"
-burn = { version = "0.17.1", features = ["autodiff", "cuda", "metrics", "ndarray", "network", "router", "train", "tui"] }
+burn = { version = "0.18.0", features = ["autodiff", "cuda", "metrics", "ndarray", "network", "router", "train", "tui"] }
 cc = "1.1.20"
 clap = { version = "4.5.17", features = ["derive"] }
 dashmap = "6.1.0"
