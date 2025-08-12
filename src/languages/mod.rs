@@ -22,6 +22,7 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use burn::backend::{Autodiff, NdArray};
 use burn::data::dataset::Dataset;
+use burn::grad_clipping::GradientClippingConfig;
 use burn::optim::AdamWConfig;
 use clap::ValueEnum;
 use dashmap::DashMap;
@@ -244,6 +245,10 @@ pub struct GenerateParams {
     /// the right of the center word that will be trained.
     #[serde(alias = "window_right", default = "default_window_right")]
     window_right: u32,
+
+    /// Set the clipping value for gradients.
+    #[serde(alias = "gradient_clip_norm", default = "default_grad_clip")]
+    gradient_clip_norm: f32,
 }
 
 fn default_seed() -> u64 {
@@ -264,6 +269,10 @@ fn default_n_neg_samples() -> u32 {
 
 fn default_window_left() -> u32 {
     5
+}
+
+fn default_grad_clip() -> f32 {
+    0.7
 }
 
 fn default_window_right() -> u32 {
@@ -433,7 +442,7 @@ impl GenerateParams {
                 }
 
                 let params = Doc2VecEmbedderParams::new(
-                    AdamWConfig::new(),
+                    AdamWConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(0.5))),
                     set.len(),
                     results.programs.len(),
                     self.embedding_dimension as usize,

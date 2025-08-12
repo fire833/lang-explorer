@@ -243,7 +243,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
         let start = SystemTime::now();
 
         let train = self.step(batch);
-        let grads = train.grads.len();
+        let grads_count = train.grads.len();
         self.model = self.optim.step(self.learning_rate, self.model, train.grads);
 
         if counter % 1000 == 0 {
@@ -260,7 +260,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
 
             println!(
                 "Training loss ({} gradients) = {} (took {} microseconds)",
-                grads,
+                grads_count,
                 avg,
                 elapsed.as_micros(),
                 // &emb[0..128],

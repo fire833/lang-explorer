@@ -50,6 +50,7 @@ class GenerateParams:
 	window_left: int
 	window_right: int
 	learning_rate: float
+	gradient_clip_norm: float
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters
