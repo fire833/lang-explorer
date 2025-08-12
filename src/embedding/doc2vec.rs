@@ -27,7 +27,7 @@ use std::{
 use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
-    optim::{adaptor::OptimizerAdaptor, Adam, AdamConfig, Optimizer},
+    optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Tensor},
     train::{TrainOutput, TrainStep},
 };
@@ -63,7 +63,7 @@ pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// RNG stuff.
     rng: ChaCha8Rng,
 
-    optim: OptimizerAdaptor<Adam, Doc2VecDM<B>, B>,
+    optim: OptimizerAdaptor<AdamW, Doc2VecDM<B>, B>,
 
     agg: AggregationMethod,
     window_left: usize,
@@ -92,7 +92,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
 #[derive(Config)]
 pub struct Doc2VecEmbedderParams {
     /// Configuration for Adam.
-    pub adam_config: AdamConfig,
+    pub ada_config: AdamWConfig,
     /// The number of words within the model.
     pub n_words: usize,
     /// The number of documents within the model.
@@ -145,7 +145,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             model: model,
             device,
             loss,
-            optim: params.adam_config.init(),
+            optim: params.ada_config.init(),
             n_epochs: params.n_epochs,
             n_neg_samples: params.n_neg_samples,
             batch_size: params.batch_size,

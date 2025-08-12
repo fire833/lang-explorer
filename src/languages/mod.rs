@@ -22,7 +22,7 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use burn::backend::{Autodiff, NdArray};
 use burn::data::dataset::Dataset;
-use burn::optim::AdamConfig;
+use burn::optim::AdamWConfig;
 use clap::ValueEnum;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
@@ -433,7 +433,7 @@ impl GenerateParams {
                 }
 
                 let params = Doc2VecEmbedderParams::new(
-                    AdamConfig::new(),
+                    AdamWConfig::new(),
                     set.len(),
                     results.programs.len(),
                     self.embedding_dimension as usize,
