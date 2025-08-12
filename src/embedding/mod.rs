@@ -134,6 +134,14 @@ impl<B: Backend> Batcher<B, ProgramTrainingItem, ProgramBatch<B>> for ProgramBat
     }
 }
 
+#[test]
+fn test_program_batcher() {
+    // let batcher = ProgramBatcher::new();
+    // let backend = burn::backend::NdArray::default();
+
+    // batcher.batch(vec![], &dev);
+}
+
 pub(super) struct MultiThreadedProgramLoader<
     'a,
     D: Send + Sync + Sized,
