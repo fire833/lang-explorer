@@ -449,10 +449,12 @@ impl GenerateParams {
                 );
 
                 println!(
-                    "Training embeddings, there are {} documents being learned and {} total words being used.",
+                    "training embeddings, there are {} documents being learned and {} total words being used.",
                     documents.len(),
                     set.len()
                 );
+
+                let start = SystemTime::now();
 
                 let model: Doc2VecEmbedder<StringValue, StringValue, Autodiff<NdArray>> =
                     Doc2VecEmbedder::<StringValue, StringValue, Autodiff<NdArray>>::new(
@@ -461,6 +463,16 @@ impl GenerateParams {
                         Default::default(),
                     )
                     .fit(&documents)?;
+
+                let end = start.elapsed().unwrap();
+
+                println!(
+                    "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
+                    documents.len(),
+                    set.len(),
+                    self.num_epochs,
+                    end.as_secs()
+                );
 
                 let mut embeddings = model.get_embeddings()?;
 
