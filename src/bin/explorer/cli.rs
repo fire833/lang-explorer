@@ -39,6 +39,11 @@ impl LangExplorerArgs {
                     expander: _,
                     count: _,
                 } => Ok(()),
+                Subcommand::EmbedGen {
+                    language: _,
+                    expander: _,
+                    count: _,
+                } => Ok(()),
                 Subcommand::Serve { address, port } => {
                     let _ = api::start_server(address.as_str(), *port).await;
                     Ok(())
@@ -63,6 +68,19 @@ enum Subcommand {
     /// a given specification with a given expander.
     #[command()]
     Generate {
+        #[arg(short, long, value_enum)]
+        language: LanguageWrapper,
+
+        #[arg(short, long, value_enum)]
+        expander: ExpanderWrapper,
+
+        #[arg(short, long, default_value_t = 1)]
+        count: u64,
+    },
+
+    /// Generate a new set of programs along with
+    /// corresponding embeddings.
+    EmbedGen {
         #[arg(short, long, value_enum)]
         language: LanguageWrapper,
 
