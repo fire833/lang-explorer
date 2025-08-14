@@ -126,6 +126,10 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
                 }
             }
 
+            // TODO: need to handle backtracking if we don't have any places
+            // where any productions can be expanded, otherwise we stall.
+            if lhs_slots.len() == 0 {}
+
             let (lhs, idx) = expander.choose_lhs_and_slot(self, &lhs_slots);
             // We literally picked the subset of LHSs that were valid and narrowed
             // down further for this, so it shouldn't fail unless I screw up an
