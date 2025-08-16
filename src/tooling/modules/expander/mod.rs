@@ -18,6 +18,7 @@
 
 pub mod lin2;
 pub mod lin3;
+pub mod lin4;
 
 pub enum Activation {
     Sigmoid,
