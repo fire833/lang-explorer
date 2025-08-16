@@ -18,9 +18,8 @@
 
 use burn::{
     config::Config,
-    data::dataloader::batcher::Batcher,
     prelude::Backend,
-    tensor::{backend::AutodiffBackend, Device, Int, Tensor},
+    tensor::{backend::AutodiffBackend, Device, Tensor},
 };
 
 use crate::{
@@ -75,8 +74,30 @@ pub struct GeneralEmbeddingTrainingParams {
     /// to predict on.
     #[config(default = 5)]
     pub window_right: usize,
+    /// The number of negative samples to update if using the
+    /// negative sampling loss function.
+    #[config(default = 32)]
+    pub n_neg_samples: usize,
     /// The aggregation method to use.
     pub agg: AggregationMethod,
     /// General training params.
     pub gen_params: TrainingParams,
+}
+
+impl GeneralEmbeddingTrainingParams {
+    pub fn get_batch_size(&self) -> usize {
+        self.gen_params.batch_size
+    }
+
+    pub fn get_num_epochs(&self) -> usize {
+        self.gen_params.n_epochs
+    }
+
+    pub fn get_learning_rate(&self) -> f64 {
+        self.gen_params.learning_rate
+    }
+
+    pub fn get_seed(&self) -> u64 {
+        self.gen_params.seed
+    }
 }

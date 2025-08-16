@@ -41,10 +41,7 @@ use crate::{
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
     tooling::modules::{
-        embed::{
-            pvdm::{Doc2VecDM, Doc2VecDMConfig},
-            AggregationMethod,
-        },
+        embed::pvdm::{Doc2VecDM, Doc2VecDMConfig},
         loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
     },
 };
@@ -65,13 +62,7 @@ pub struct Doc2VecEmbedderDM<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 
     optim: OptimizerAdaptor<AdamW, Doc2VecDM<B>, B>,
 
-    agg: AggregationMethod,
-    window_left: usize,
-    window_right: usize,
-    batch_size: usize,
-    n_epochs: usize,
-    n_neg_samples: usize,
-    learning_rate: f64,
+    params: GeneralEmbeddingTrainingParams,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
@@ -80,7 +71,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
     fn step(&self, item: ProgramBatch<B>) -> TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
-            .forward(item.documents, item.context_words, &self.agg);
+            .forward(item.documents, item.context_words, &self.params.agg);
         let loss = self.loss.forward(
             item.true_words.unsqueeze_dim(1),
             item.negative_words,
@@ -132,14 +123,8 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             device,
             loss,
             optim: params.ada_config.init(),
-            n_epochs: params.gen_params.gen_params.n_epochs,
-            n_neg_samples: params.n_neg_samples,
-            batch_size: params.gen_params.gen_params.batch_size,
-            window_left: params.gen_params.window_left,
-            window_right: params.gen_params.window_right,
-            agg: params.gen_params.agg,
-            learning_rate: params.gen_params.gen_params.learning_rate,
             rng: ChaCha8Rng::seed_from_u64(params.gen_params.gen_params.seed),
+            params: params.gen_params,
         }
     }
 
@@ -160,14 +145,18 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         });
 
         let batcher = ProgramBatcher::new();
-        for num in 0..self.n_epochs {
-            println!("Running epoch {} of {}", num + 1, self.n_epochs);
+        for num in 0..self.params.get_num_epochs() {
+            println!(
+                "Running epoch {} of {}",
+                num + 1,
+                self.params.get_num_epochs()
+            );
             let mut items = vec![];
 
             // Adaptive learning rate
-            self.learning_rate *= 0.6;
-            if self.learning_rate < 0.000001 {
-                self.learning_rate = 0.000001;
+            self.params.gen_params.learning_rate *= 0.6;
+            if self.params.get_learning_rate() < 0.000001 {
+                self.params.gen_params.learning_rate = 0.000001;
             }
 
             let mut counter = 0;
@@ -177,14 +166,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     let ctx_indices = get_context_indices(
                         &wordset,
                         words,
-                        self.window_left,
-                        self.window_right,
+                        self.params.window_left,
+                        self.params.window_right,
                         wordidx,
                         wordset.len(),
                     );
 
                     let negative_indices = get_negative_indices(
-                        self.n_neg_samples,
+                        self.params.n_neg_samples,
                         &mut self.rng,
                         wordset.len() + 2,
                         wordidx,
@@ -194,7 +183,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                         ProgramTrainingItem::new(docidx, wordidx, ctx_indices, negative_indices);
                     items.push(train_item);
 
-                    if items.len() >= self.batch_size {
+                    if items.len() >= self.params.get_batch_size() {
                         let moved = mem::take(&mut items);
                         let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
                         self = self.train_batch(batch, counter);
@@ -230,7 +219,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDM<T, I, B>
 
         let train = self.step(batch);
         let grads_count = train.grads.len();
-        self.model = self.optim.step(self.learning_rate, self.model, train.grads);
+        self.model = self
+            .optim
+            .step(self.params.get_learning_rate(), self.model, train.grads);
 
         if counter % 1000 == 0 {
             let elapsed = start.elapsed().unwrap();
