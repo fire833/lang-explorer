@@ -46,17 +46,18 @@ impl<B: Backend> NegativeSampling<B> {
     /// and returns the loss. k denotes the number of negative samples that will be
     /// updated on any given backward pass. For computational efficiency, the positive index
     /// should be the 0th index for every batch item, because the log sigmoid value is
-    /// computed on the entire tensor at once for speed.
+    /// computed on the entire tensor at once for speed. k denotes the number of positive
+    /// samples that will be updated on a given backward pass.
     ///
     /// # Shapes
     ///
-    /// - true_word_indices: `[batch_size]`
+    /// - true_word_indices: `[batch_size, j]`
     /// - negative_word_indices: `[batch_size, k]`
     /// - input: `[batch_size, n_words]`
     /// - output: `[1]`
     pub fn forward(
         &self,
-        true_word_indices: Tensor<B, 1, Int>,
+        true_word_indices: Tensor<B, 2, Int>,
         negative_word_indices: Tensor<B, 2, Int>,
         input: Tensor<B, 2, Float>,
     ) -> Tensor<B, 1, Float> {
@@ -65,8 +66,9 @@ impl<B: Backend> NegativeSampling<B> {
             .log()
             .sum_dim(1)
             .squeeze(1);
-        let positive = sigmoid(input.gather(1, true_word_indices.unsqueeze_dim(1)))
+        let positive = sigmoid(input.gather(1, true_word_indices))
             .log()
+            .sum_dim(1)
             .squeeze(1);
 
         -positive.add(-negatives)
@@ -92,10 +94,12 @@ fn test_forward() {
         ],
         &dev,
     );
-    let true_words = Tensor::<NdArray, 1, Int>::from_data([23, 23, 23, 23, 23], &dev);
+    let true_words =
+        Tensor::<NdArray, 1, Int>::from_data([23, 23, 23, 23, 23], &dev).unsqueeze_dim(1);
 
     println!("inputs: {input}");
     println!("words: {words}");
+    println!("true words: {}", true_words);
 
     let res = model.forward(true_words, words, input);
 
