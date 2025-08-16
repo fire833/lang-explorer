@@ -31,11 +31,10 @@ use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
 use crate::embedding::doc2vecdm::{Doc2VecDMEmbedderParams, Doc2VecEmbedderDM};
-use crate::embedding::LanguageEmbedder;
+use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
-use crate::tooling::modules::embed::loss::EmbeddingLossFunction;
 use crate::tooling::modules::embed::AggregationMethod;
 use crate::tooling::training::TrainingParams;
 use crate::{
@@ -446,9 +445,10 @@ impl GenerateParams {
                     AdamWConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(0.5))),
                     set.len(),
                     results.programs.len(),
-                    AggregationMethod::Average,
-                    EmbeddingLossFunction::NegativeSampling,
-                    TrainingParams::new(),
+                    GeneralEmbeddingTrainingParams::new(
+                        AggregationMethod::Average,
+                        TrainingParams::new(),
+                    ),
                 );
 
                 println!(

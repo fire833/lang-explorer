@@ -29,7 +29,7 @@ use burn::{
 use crate::{
     embedding::{
         doc2vecdm::{Doc2VecDMEmbedderParams, Doc2VecEmbedderDM},
-        LanguageEmbedder,
+        GeneralEmbeddingTrainingParams, LanguageEmbedder,
     },
     errors::LangExplorerError,
     expanders::GrammarExpander,
@@ -44,7 +44,7 @@ use crate::{
     languages::Feature,
     tooling::{
         modules::{
-            embed::{loss::EmbeddingLossFunction, AggregationMethod},
+            embed::AggregationMethod,
             expander::{
                 lin2::{Linear2Deep, Linear2DeepConfig},
                 lin3::Linear3Deep,
@@ -134,9 +134,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
                 AdamWConfig::new(),
                 1000,
                 1000,
-                AggregationMethod::Average,
-                EmbeddingLossFunction::NegativeSampling,
-                TrainingParams::new(),
+                GeneralEmbeddingTrainingParams::new(
+                    AggregationMethod::Average,
+                    TrainingParams::new(),
+                ),
             ),
             device,
         );

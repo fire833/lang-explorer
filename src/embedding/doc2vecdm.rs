@@ -35,20 +35,19 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
-    embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, ProgramTrainingItem},
+    embedding::{
+        GeneralEmbeddingTrainingParams, LanguageEmbedder, ProgramBatch, ProgramBatcher,
+        ProgramTrainingItem,
+    },
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
-    tooling::{
-        modules::{
-            embed::{
-                loss::EmbeddingLossFunction,
-                pvdm::{Doc2VecDM, Doc2VecDMConfig},
-                AggregationMethod,
-            },
-            loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
+    tooling::modules::{
+        embed::{
+            pvdm::{Doc2VecDM, Doc2VecDMConfig},
+            AggregationMethod,
         },
-        training::TrainingParams,
+        loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
     },
 };
 
@@ -102,26 +101,11 @@ pub struct Doc2VecDMEmbedderParams {
     pub n_words: usize,
     /// The number of documents within the model.
     pub n_docs: usize,
-    /// The dimension of embeddings within the model.
-    #[config(default = 128)]
-    pub d_model: usize,
     /// The number of negative samples to update on each training run.
     #[config(default = 32)]
     pub n_neg_samples: usize,
-    /// The number of words to the left of the center word
-    /// to predict on.
-    #[config(default = 5)]
-    pub window_left: usize,
-    /// The number of words to the right of the center word
-    /// to predict on.
-    #[config(default = 5)]
-    pub window_right: usize,
-    /// The aggregation method to use.
-    pub agg: AggregationMethod,
-    /// The loss function to use.
-    pub loss: EmbeddingLossFunction,
-    /// General training params.
-    pub gen_params: TrainingParams,
+    /// General parameters shared among all embedder params.
+    pub gen_params: GeneralEmbeddingTrainingParams,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
@@ -133,12 +117,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
-        B::seed(params.gen_params.seed);
+        B::seed(params.gen_params.gen_params.seed);
 
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
         let model =
-            Doc2VecDMConfig::new(params.n_words + 2, params.n_docs, params.d_model).init(&device);
+            Doc2VecDMConfig::new(params.n_words + 2, params.n_docs, params.gen_params.d_model)
+                .init(&device);
 
         let loss = NegativeSamplingConfig::new().init(&device);
 
@@ -149,14 +134,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             device,
             loss,
             optim: params.ada_config.init(),
-            n_epochs: params.gen_params.n_epochs,
+            n_epochs: params.gen_params.gen_params.n_epochs,
             n_neg_samples: params.n_neg_samples,
-            batch_size: params.gen_params.batch_size,
-            window_left: params.window_left,
-            window_right: params.window_right,
-            agg: params.agg,
-            learning_rate: params.gen_params.learning_rate,
-            rng: ChaCha8Rng::seed_from_u64(params.gen_params.seed),
+            batch_size: params.gen_params.gen_params.batch_size,
+            window_left: params.gen_params.window_left,
+            window_right: params.gen_params.window_right,
+            agg: params.gen_params.agg,
+            learning_rate: params.gen_params.gen_params.learning_rate,
+            rng: ChaCha8Rng::seed_from_u64(params.gen_params.gen_params.seed),
         }
     }
 

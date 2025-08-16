@@ -17,15 +17,16 @@
  */
 
 use burn::{
+    config::Config,
     data::dataloader::batcher::Batcher,
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Device, Int, Tensor},
 };
-use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
+    tooling::{modules::embed::AggregationMethod, training::TrainingParams},
 };
 
 pub mod doc2vecdbow;
@@ -133,4 +134,23 @@ impl<B: Backend> Batcher<B, ProgramTrainingItem, ProgramBatch<B>> for ProgramBat
             true_words: Tensor::from_data(center_word_idx.as_slice(), device),
         }
     }
+}
+
+#[derive(Config, Debug)]
+pub(super) struct GeneralEmbeddingTrainingParams {
+    /// The dimension of embeddings within the model.
+    #[config(default = 128)]
+    pub d_model: usize,
+    /// The number of words to the left of the center word
+    /// to predict on.
+    #[config(default = 5)]
+    pub window_left: usize,
+    /// The number of words to the right of the center word
+    /// to predict on.
+    #[config(default = 5)]
+    pub window_right: usize,
+    /// The aggregation method to use.
+    pub agg: AggregationMethod,
+    /// General training params.
+    pub gen_params: TrainingParams,
 }
