@@ -28,17 +28,15 @@ use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
     optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig, Optimizer},
-    tensor::{backend::AutodiffBackend, Device, Float, Tensor},
+    prelude::Backend,
+    tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep},
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
-    embedding::{
-        GeneralEmbeddingTrainingParams, LanguageEmbedder, ProgramBatch, ProgramBatcher,
-        ProgramTrainingItem,
-    },
+    embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder},
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
@@ -256,6 +254,80 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDM<T, I, B>
         }
 
         self
+    }
+}
+
+/// A training item represents a single item in a batch that should be trained on.
+#[derive(Debug, Clone)]
+struct ProgramTrainingItem {
+    document_idx: usize,
+    context_word_indices: Vec<usize>,
+    center_word_idx: usize,
+    negative_sample_indices: Vec<usize>,
+}
+
+impl ProgramTrainingItem {
+    fn new(
+        document_idx: usize,
+        center_word_idx: usize,
+        context_word_indices: Vec<usize>,
+        negative_sample_indices: Vec<usize>,
+    ) -> Self {
+        Self {
+            document_idx,
+            context_word_indices,
+            center_word_idx,
+            negative_sample_indices,
+        }
+    }
+}
+
+/// A batch of document/word context items that are already in their correct tensor form.
+struct ProgramBatch<B: Backend> {
+    documents: Tensor<B, 1, Int>,
+    context_words: Tensor<B, 2, Int>,
+    negative_words: Tensor<B, 2, Int>,
+    true_words: Tensor<B, 1, Int>,
+}
+
+#[derive(Debug, Clone)]
+struct ProgramBatcher {}
+
+impl ProgramBatcher {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
+impl<B: Backend> Batcher<B, ProgramTrainingItem, ProgramBatch<B>> for ProgramBatcher {
+    fn batch(&self, items: Vec<ProgramTrainingItem>, device: &B::Device) -> ProgramBatch<B> {
+        let mut doc_idx = vec![];
+        let mut center_word_idx = vec![];
+        let mut context_word_idx: Vec<Tensor<B, 1, Int>> = vec![];
+        let mut negative_indices: Vec<Tensor<B, 1, Int>> = vec![];
+
+        for item in items.iter() {
+            doc_idx.push(item.document_idx as i32);
+            center_word_idx.push(item.center_word_idx as i32);
+            let ctx_word_indices: Vec<i32> = item
+                .context_word_indices
+                .iter()
+                .map(|v| *v as i32)
+                .collect();
+
+            context_word_idx.push(Tensor::from_data(ctx_word_indices.as_slice(), device));
+            negative_indices.push(Tensor::from_data(
+                item.negative_sample_indices.as_slice(),
+                device,
+            ));
+        }
+
+        ProgramBatch {
+            documents: Tensor::from_data(doc_idx.as_slice(), device),
+            context_words: Tensor::stack::<2>(context_word_idx, 0),
+            negative_words: Tensor::stack::<2>(negative_indices, 0),
+            true_words: Tensor::from_data(center_word_idx.as_slice(), device),
+        }
     }
 }
 
