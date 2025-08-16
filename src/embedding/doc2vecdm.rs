@@ -106,7 +106,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
-        B::seed(params.gen_params.gen_params.seed);
+        B::seed(params.gen_params.get_seed());
 
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
@@ -123,7 +123,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             device,
             loss,
             optim: params.ada_config.init(),
-            rng: ChaCha8Rng::seed_from_u64(params.gen_params.gen_params.seed),
+            rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
             params: params.gen_params,
         }
     }

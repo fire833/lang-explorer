@@ -16,16 +16,17 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::marker::PhantomData;
+use std::{collections::BTreeMap, marker::PhantomData};
 
 use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
-    optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig},
+    optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig, Optimizer},
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep},
 };
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
@@ -33,7 +34,10 @@ use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
-    tooling::modules::{embed::pvdbow::Doc2VecDBOW, loss::nsampling::NegativeSampling},
+    tooling::modules::{
+        embed::pvdbow::{Doc2VecDBOW, Doc2VecDBOWConfig},
+        loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
+    },
 };
 
 pub struct Doc2VecEmbedderDBOW<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
@@ -86,14 +90,43 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     type Word = Feature;
     type Params = Doc2VecDBOWEmbedderParams;
 
-    fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
-        todo!()
+    fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
+        B::seed(params.gen_params.get_seed());
+
+        let model =
+            Doc2VecDBOWConfig::new(params.n_words + 2, params.n_docs, params.gen_params.d_model)
+                .init(&device);
+
+        Self {
+            d1: PhantomData,
+            d2: PhantomData,
+            model: model,
+            loss: NegativeSamplingConfig::new().init(&device),
+            device: device,
+            optim: params.ada_config.init(),
+            rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
+            params: params.gen_params,
+        }
     }
 
     fn fit(self, documents: &[(Self::Document, Vec<Self::Word>)]) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
+        let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
+
+        let mut counter: u32 = 0;
+        documents.iter().for_each(|doc| {
+            doc.1.iter().for_each(|word| {
+                if !wordset.contains_key(word) {
+                    wordset.insert(*word, counter);
+                    counter += 1;
+                }
+            })
+        });
+
+        let batcher = ProgramBatcher::new();
+
         todo!()
     }
 
@@ -105,7 +138,19 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 
     fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
-        todo!()
+        self.model.get_embeddings()
+    }
+}
+
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, B> {
+    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
+        let train = self.step(batch);
+        let grads_count = train.grads.len();
+        self.model = self
+            .optim
+            .step(self.params.get_learning_rate(), self.model, train.grads);
+
+        self
     }
 }
 

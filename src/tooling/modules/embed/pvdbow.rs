@@ -80,7 +80,15 @@ impl<B: Backend> Doc2VecDBOW<B> {
         out.squeeze::<2>(0)
     }
 
+    /// Returns a vector of the embedding tensor. It should be structured in
+    /// such a way that each n_dim elements correspond to a single embedding.
+    pub fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
+        let vec: Vec<f64> = self.documents.weight.to_data().convert::<f64>().to_vec()?;
+        Ok(vec)
+    }
+
     /// Save the current embeddings to a separate file.
+    #[allow(unused)]
     pub fn save_embeddings<FR: FileRecorder<B>, PB: Into<PathBuf>>(
         &self,
         file_path: PB,
