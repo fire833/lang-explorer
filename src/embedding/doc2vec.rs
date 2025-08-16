@@ -27,14 +27,12 @@ use std::{
 use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
-    grad_clipping::GradientClippingConfig,
     optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig, Optimizer},
     tensor::{backend::AutodiffBackend, Device, Float, Tensor},
     train::{TrainOutput, TrainStep},
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use utoipa::ToSchema;
 
 use crate::{
     embedding::{LanguageEmbedder, ProgramBatch, ProgramBatcher, ProgramTrainingItem},
@@ -91,8 +89,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
     }
 }
 
-#[derive(Config, Debug, ToSchema)]
+#[derive(Config)]
 pub struct Doc2VecEmbedderParams {
+    /// Configuration for Adam.
+    pub ada_config: AdamWConfig,
     /// The number of words within the model.
     pub n_words: usize,
     /// The number of documents within the model.
@@ -117,55 +117,8 @@ pub struct Doc2VecEmbedderParams {
     pub n_epochs: usize,
     /// the learning rate
     pub learning_rate: f64,
-    /// The seed to train with doc2vec on.
+    /// the seed.
     pub seed: u64,
-    /// Set the clipping value for gradients.
-    pub gradient_clip_norm: f32,
-}
-
-#[allow(unused)]
-fn default_seed() -> u64 {
-    rand::random::<u64>()
-}
-
-#[allow(unused)]
-fn default_n_neg_samples() -> u32 {
-    32
-}
-
-#[allow(unused)]
-fn default_window_left() -> u32 {
-    5
-}
-
-#[allow(unused)]
-fn default_grad_clip() -> f32 {
-    0.7
-}
-
-#[allow(unused)]
-fn default_window_right() -> u32 {
-    5
-}
-
-#[allow(unused)]
-fn default_embedding_dim() -> u32 {
-    128
-}
-
-#[allow(unused)]
-fn default_epochs() -> u32 {
-    5
-}
-
-#[allow(unused)]
-fn default_batch_size() -> u32 {
-    100
-}
-
-#[allow(unused)]
-fn default_learning_rate() -> f64 {
-    0.001
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
@@ -192,9 +145,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             model: model,
             device,
             loss,
-            optim: AdamWConfig::new()
-                .with_grad_clipping(Some(GradientClippingConfig::Norm(0.5)))
-                .init(),
+            optim: params.ada_config.init(),
             n_epochs: params.n_epochs,
             n_neg_samples: params.n_neg_samples,
             batch_size: params.batch_size,

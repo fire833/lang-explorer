@@ -22,6 +22,8 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 
 use burn::backend::{Autodiff, NdArray};
 use burn::data::dataset::Dataset;
+use burn::grad_clipping::GradientClippingConfig;
+use burn::optim::AdamWConfig;
 use clap::ValueEnum;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
@@ -33,6 +35,8 @@ use crate::embedding::LanguageEmbedder;
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
+use crate::tooling::modules::embed::loss::EmbeddingLossFunction;
+use crate::tooling::modules::embed::AggregationMethod;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -165,9 +169,6 @@ pub struct GenerateParams {
     #[serde(alias = "return_partial_graphs", default = "default_return_partials")]
     return_partial_graphs: bool,
 
-    #[serde(flatten)]
-    doc2vec_params: Doc2VecEmbedderParams,
-
     /// Parameters for CSS Language.
     #[serde(alias = "css", default)]
     css: CSSLanguageParameters,
@@ -200,10 +201,58 @@ pub struct GenerateParams {
     #[serde(alias = "count", default = "default_count")]
     count: u64,
 
+    /// Specify a seed to use when running experiments to deterministically
+    /// set RNGs.
+    #[serde(alias = "seed", default = "default_seed")]
+    seed: u64,
+
     /// Specify the number of WL-kernel iterations to be run
     /// with each graph to extract features.
     #[serde(alias = "wl_degree", default = "default_wl_degree")]
     wl_degree: u32,
+
+    /// When creating embeddings, specify the learning rate to use
+    /// when training the embeddings.
+    #[serde(alias = "learning_rate", default = "default_learning_rate")]
+    learning_rate: f64,
+
+    /// When creating embeddings, specify the number of epochs
+    /// to train with.
+    #[serde(alias = "num_epochs", default = "default_epochs")]
+    num_epochs: u32,
+
+    /// When creating embeddings, specify the size of the
+    /// batches to train on.
+    #[serde(alias = "batch_size", default = "default_batch_size")]
+    batch_size: u32,
+
+    /// When creating embeddings, specify the desired dimension
+    /// of the constructed embeddings.
+    #[serde(alias = "embedding_dim", default = "default_embedding_dim")]
+    embedding_dimension: u32,
+
+    /// When creating embeddings, specify the number of negative samples
+    /// to update when training new embeddings.
+    #[serde(alias = "num_negative_samples", default = "default_n_neg_samples")]
+    num_negative_samples: u32,
+
+    /// When creating embeddings, specify the number of context words to
+    /// the left of the center word that will be trained.
+    #[serde(alias = "window_left", default = "default_window_left")]
+    window_left: u32,
+
+    /// When creating embeddings, specify the number of context words to
+    /// the right of the center word that will be trained.
+    #[serde(alias = "window_right", default = "default_window_right")]
+    window_right: u32,
+
+    /// Set the clipping value for gradients.
+    #[serde(alias = "gradient_clip_norm", default = "default_grad_clip")]
+    gradient_clip_norm: f32,
+}
+
+fn default_seed() -> u64 {
+    rand::random::<u64>()
 }
 
 fn default_count() -> u64 {
@@ -212,6 +261,38 @@ fn default_count() -> u64 {
 
 fn default_wl_degree() -> u32 {
     3
+}
+
+fn default_n_neg_samples() -> u32 {
+    32
+}
+
+fn default_window_left() -> u32 {
+    5
+}
+
+fn default_grad_clip() -> f32 {
+    0.7
+}
+
+fn default_window_right() -> u32 {
+    5
+}
+
+fn default_embedding_dim() -> u32 {
+    128
+}
+
+fn default_epochs() -> u32 {
+    5
+}
+
+fn default_batch_size() -> u32 {
+    100
+}
+
+fn default_learning_rate() -> f64 {
+    0.001
 }
 
 fn default_return_partials() -> bool {
@@ -266,7 +347,7 @@ impl GenerateParams {
                 let txt = tx.clone();
                 let all_progs = all_programs.clone(); // Need to do this twice, idk
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander(self.doc2vec_params.seed + i * 5).unwrap();
+                    let mut expander = exp.get_expander(self.seed + i * 5).unwrap();
                     let all_programs = all_progs.clone();
                     let count = self.count / num_cpus; // TODO fix
 
@@ -360,6 +441,22 @@ impl GenerateParams {
                     }
                 }
 
+                let params = Doc2VecEmbedderParams::new(
+                    AdamWConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(0.5))),
+                    set.len(),
+                    results.programs.len(),
+                    self.embedding_dimension as usize,
+                    self.num_negative_samples as usize,
+                    self.window_left as usize,
+                    self.window_right as usize,
+                    AggregationMethod::Average,
+                    EmbeddingLossFunction::NegativeSampling,
+                    self.batch_size as usize,
+                    self.num_epochs as usize,
+                    self.learning_rate,
+                    self.seed,
+                );
+
                 println!(
                     "training embeddings, there are {} documents being learned and {} total words being used.",
                     documents.len(),
@@ -367,13 +464,11 @@ impl GenerateParams {
                 );
 
                 let start = SystemTime::now();
-                let n_epochs = self.doc2vec_params.n_epochs;
-                let embed_dim = self.doc2vec_params.d_model;
 
                 let model: Doc2VecEmbedder<StringValue, StringValue, Autodiff<NdArray>> =
                     Doc2VecEmbedder::<StringValue, StringValue, Autodiff<NdArray>>::new(
                         &grammar,
-                        self.doc2vec_params,
+                        params,
                         Default::default(),
                     )
                     .fit(&documents)?;
@@ -384,14 +479,18 @@ impl GenerateParams {
                     "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
                     documents.len(),
                     set.len(),
-                    n_epochs,
+                    self.num_epochs,
                     end.as_secs()
                 );
 
                 let mut embeddings = model.get_embeddings()?;
 
                 for prog in results.programs.iter_mut() {
-                    prog.set_embedding(embeddings.drain(0..embed_dim as usize).collect());
+                    prog.set_embedding(
+                        embeddings
+                            .drain(0..self.embedding_dimension as usize)
+                            .collect(),
+                    );
                 }
             }
         }
@@ -445,7 +544,7 @@ impl GenerateParams {
                 let gc = grammar.clone();
                 let txt = tx.clone();
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander(self.doc2vec_params.seed).unwrap();
+                    let mut expander = exp.get_expander(self.seed).unwrap();
                     let count = self.count / num_cpus; // TODO fix
 
                     for _ in 0..count {
