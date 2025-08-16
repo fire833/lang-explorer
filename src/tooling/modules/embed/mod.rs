@@ -20,7 +20,6 @@ use burn::config::Config;
 use utoipa::ToSchema;
 
 pub mod code2vec;
-pub mod graph2vec;
 pub mod loss;
 pub mod pvdbow;
 pub mod pvdm;
