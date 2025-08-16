@@ -72,7 +72,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         &mut self,
         _grammar: &'a Grammar<T, I>,
         _context: &'a ProgramInstance<T, I>,
-        lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
+        lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize) {
         let idx = self.rng.random::<u64>() as usize % lhs_location_matrix.len();
         let (lhs, indices) = lhs_location_matrix

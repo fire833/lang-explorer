@@ -70,7 +70,7 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
         &mut self,
         grammar: &'a Grammar<T, I>,
         context: &'a ProgramInstance<T, I>,
-        lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
+        lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize);
 }
 

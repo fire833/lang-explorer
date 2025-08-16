@@ -128,7 +128,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
             // TODO: need to handle backtracking if we don't have any places
             // where any productions can be expanded, otherwise we stall.
-            if lhs_slots.len() == 0 {}
+            if lhs_slots.is_empty() {}
 
             let temp_root = ProgramInstance::new(GrammarElement::Epsilon, 0);
 
@@ -191,7 +191,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         context: Option<&ProgramInstance<T, I>>,
         production: &Production<T, I>,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
-        mut counter: &mut InstanceId,
+        counter: &mut InstanceId,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
         let mut program = ProgramInstance::new(
             GrammarElement::NonTerminal(production.non_terminal.non_terminal.clone()),
@@ -214,7 +214,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
                     match grammar.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
             {
                 Some(prod) => {
-                    match Grammar::generate_program_instance_ctx_free_recursive(grammar, Some(ctx), prod, expander, &mut counter)  {
+                    match Grammar::generate_program_instance_ctx_free_recursive(grammar, Some(ctx), prod, expander, counter)  {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
                     }
