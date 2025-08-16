@@ -116,7 +116,7 @@ pub struct Doc2VecDMEmbedderParams {
     /// to predict on.
     #[config(default = 5)]
     pub window_right: usize,
-    /// The aggregation methdo to use.
+    /// The aggregation method to use.
     pub agg: AggregationMethod,
     /// The loss function to use.
     pub loss: EmbeddingLossFunction,
