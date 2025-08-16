@@ -17,10 +17,11 @@
  */
 
 use burn::config::Config;
+use utoipa::ToSchema;
 
 /// Enumeration of loss functions for learning embeddings.
 /// All embedding models should support all of these loss functions.
-#[derive(Config)]
+#[derive(Config, Debug, ToSchema)]
 pub enum EmbeddingLossFunction {
     NegativeSampling,
 }

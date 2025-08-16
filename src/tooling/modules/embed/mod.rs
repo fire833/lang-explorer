@@ -17,6 +17,7 @@
  */
 
 use burn::config::Config;
+use utoipa::ToSchema;
 
 pub mod code2vec;
 pub mod graph2vec;
@@ -26,7 +27,7 @@ pub mod pvdm;
 pub mod wvcbow;
 pub mod wvsg;
 
-#[derive(Debug, Config)]
+#[derive(Debug, Config, ToSchema)]
 pub enum AggregationMethod {
     Average,
     Sum,
