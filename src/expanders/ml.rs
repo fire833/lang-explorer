@@ -28,7 +28,7 @@ use burn::{
 
 use crate::{
     embedding::{
-        doc2vec::{Doc2VecEmbedder, Doc2VecEmbedderParams},
+        doc2vecdm::{Doc2VecDMEmbedderParams, Doc2VecEmbedderDM},
         LanguageEmbedder,
     },
     errors::LangExplorerError,
@@ -42,14 +42,17 @@ use crate::{
         NonTerminal, Terminal,
     },
     languages::Feature,
-    tooling::modules::{
-        embed::{loss::EmbeddingLossFunction, AggregationMethod},
-        expander::{
-            lin2::{Linear2Deep, Linear2DeepConfig},
-            lin3::Linear3Deep,
-            lin4::Linear4Deep,
-            Activation,
+    tooling::{
+        modules::{
+            embed::{loss::EmbeddingLossFunction, AggregationMethod},
+            expander::{
+                lin2::{Linear2Deep, Linear2DeepConfig},
+                lin3::Linear3Deep,
+                lin4::Linear4Deep,
+                Activation,
+            },
         },
+        training::TrainingParams,
     },
 };
 
@@ -92,7 +95,7 @@ enum ModuleWrapper<B: Backend> {
 
 /// Another hack to allow us to use multiple embedders.
 enum EmbedderWrapper<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    Doc2Vec(Doc2VecEmbedder<T, I, B>),
+    Doc2Vec(Doc2VecEmbedderDM<T, I, B>),
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
@@ -125,22 +128,15 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             map.insert(production.clone(), module);
         }
 
-        let d2v = Doc2VecEmbedder::new(
+        let d2v = Doc2VecEmbedderDM::new(
             grammar,
-            Doc2VecEmbedderParams::new(
+            Doc2VecDMEmbedderParams::new(
                 AdamWConfig::new(),
                 1000,
                 1000,
-                128,
-                32,
-                3,
-                3,
                 AggregationMethod::Average,
                 EmbeddingLossFunction::NegativeSampling,
-                512,
-                10,
-                0.001,
-                10,
+                TrainingParams::new(),
             ),
             device,
         );

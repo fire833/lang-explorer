@@ -20,7 +20,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
-use burn::backend::{Autodiff, NdArray};
+use burn::backend::{Autodiff, Cuda};
 use burn::data::dataset::Dataset;
 use burn::grad_clipping::GradientClippingConfig;
 use burn::optim::AdamWConfig;
@@ -30,13 +30,14 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
-use crate::embedding::doc2vec::{Doc2VecEmbedder, Doc2VecEmbedderParams};
+use crate::embedding::doc2vecdm::{Doc2VecDMEmbedderParams, Doc2VecEmbedderDM};
 use crate::embedding::LanguageEmbedder;
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
 use crate::tooling::modules::embed::loss::EmbeddingLossFunction;
 use crate::tooling::modules::embed::AggregationMethod;
+use crate::tooling::training::TrainingParams;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -441,20 +442,13 @@ impl GenerateParams {
                     }
                 }
 
-                let params = Doc2VecEmbedderParams::new(
+                let params = Doc2VecDMEmbedderParams::new(
                     AdamWConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(0.5))),
                     set.len(),
                     results.programs.len(),
-                    self.embedding_dimension as usize,
-                    self.num_negative_samples as usize,
-                    self.window_left as usize,
-                    self.window_right as usize,
                     AggregationMethod::Average,
                     EmbeddingLossFunction::NegativeSampling,
-                    self.batch_size as usize,
-                    self.num_epochs as usize,
-                    self.learning_rate,
-                    self.seed,
+                    TrainingParams::new(),
                 );
 
                 println!(
@@ -465,8 +459,8 @@ impl GenerateParams {
 
                 let start = SystemTime::now();
 
-                let model: Doc2VecEmbedder<StringValue, StringValue, Autodiff<NdArray>> =
-                    Doc2VecEmbedder::<StringValue, StringValue, Autodiff<NdArray>>::new(
+                let model: Doc2VecEmbedderDM<StringValue, StringValue, Autodiff<Cuda>> =
+                    Doc2VecEmbedderDM::<StringValue, StringValue, Autodiff<Cuda>>::new(
                         &grammar,
                         params,
                         Default::default(),

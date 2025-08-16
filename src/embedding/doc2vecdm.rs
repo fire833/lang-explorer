@@ -95,7 +95,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
 }
 
 #[derive(Config)]
-pub struct Doc2VecEmbedderParams {
+pub struct Doc2VecDMEmbedderParams {
     /// Configuration for Adam.
     pub ada_config: AdamWConfig,
     /// The number of words within the model.
@@ -129,7 +129,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 {
     type Document = String;
     type Word = Feature;
-    type Params = Doc2VecEmbedderParams;
+    type Params = Doc2VecDMEmbedderParams;
 
     fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
