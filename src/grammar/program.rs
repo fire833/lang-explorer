@@ -20,6 +20,7 @@ use std::{
     collections::{HashMap, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
+    sync::Arc,
 };
 
 use fasthash::{city, FastHasher};
@@ -440,5 +441,16 @@ impl<T: Terminal, I: NonTerminal> ToString for ProgramInstance<T, I> {
         }
 
         res
+    }
+}
+
+impl<T: Terminal, I: NonTerminal> From<Arc<ProgramInstance<T, I>>> for ProgramInstance<T, I> {
+    fn from(value: Arc<ProgramInstance<T, I>>) -> Self {
+        Self {
+            node: value.node.clone(),
+            children: value.children.clone(),
+            id: value.id,
+            parent_id: value.parent_id,
+        }
     }
 }

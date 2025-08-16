@@ -130,12 +130,16 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
             // where any productions can be expanded, otherwise we stall.
             if lhs_slots.len() == 0 {}
 
-            let (lhs, idx) = expander.choose_lhs_and_slot(self, &lhs_slots);
+            let temp_root = ProgramInstance::new(GrammarElement::Epsilon, 0);
+
+            // TODO: fix this crap
+            let (lhs, idx) = expander.choose_lhs_and_slot(self, &temp_root, &lhs_slots);
             // We literally picked the subset of LHSs that were valid and narrowed
             // down further for this, so it shouldn't fail unless I screw up an
             // expander implementation.
             let prod = self.productions.get(lhs).unwrap();
-            let rule = expander.expand_rule(self, prod);
+            // TODO: fix this crap
+            let rule = expander.expand_rule(self, &temp_root, prod);
 
             // Get the element to be removed and replaced in the frontier.
             let ntp = frontier.remove(idx);
@@ -172,6 +176,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
         match Grammar::generate_program_instance_ctx_free_recursive(
             self,
+            None,
             prod,
             expander,
             &mut counter,
@@ -183,6 +188,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
     fn generate_program_instance_ctx_free_recursive(
         grammar: &Self,
+        context: Option<&ProgramInstance<T, I>>,
         production: &Production<T, I>,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
         mut counter: &mut InstanceId,
@@ -191,7 +197,14 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
             GrammarElement::NonTerminal(production.non_terminal.non_terminal.clone()),
             *counter,
         );
-        let rule = expander.expand_rule(grammar, production);
+
+        let ctx = if let Some(ctx) = context {
+            ctx
+        } else {
+            &program
+        };
+
+        let rule = expander.expand_rule(grammar, ctx, production);
         let mut children: Vec<ProgramInstance<T, I>> = vec![];
         for item in rule.items.iter() {
             *counter += 1;
@@ -201,7 +214,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
                     match grammar.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
             {
                 Some(prod) => {
-                    match Grammar::generate_program_instance_ctx_free_recursive(grammar, prod, expander, &mut counter)  {
+                    match Grammar::generate_program_instance_ctx_free_recursive(grammar, Some(ctx), prod, expander, &mut counter)  {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
                     }

@@ -20,8 +20,8 @@ use crate::{
     errors::LangExplorerError,
     expanders::GrammarExpander,
     grammar::{
-        grammar::Grammar, lhs::ProductionLHS, prod::Production, rule::ProductionRule, NonTerminal,
-        Terminal,
+        grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
+        rule::ProductionRule, NonTerminal, Terminal,
     },
 };
 
@@ -44,6 +44,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     fn expand_rule<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
+        _context: &'a ProgramInstance<T, I>,
         _production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
         todo!()
@@ -57,6 +58,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     fn choose_lhs_and_slot<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
+        _context: &'a ProgramInstance<T, I>,
         _lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize) {
         todo!()

@@ -27,8 +27,8 @@ use crate::{
     errors::LangExplorerError,
     expanders::{mc::MonteCarloExpander, wmc::WeightedMonteCarloExpander},
     grammar::{
-        grammar::Grammar, lhs::ProductionLHS, prod::Production, rule::ProductionRule, NonTerminal,
-        Terminal,
+        grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
+        rule::ProductionRule, NonTerminal, Terminal,
     },
 };
 
@@ -57,6 +57,7 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
     fn expand_rule<'a>(
         &mut self,
         grammar: &'a Grammar<T, I>,
+        context: &'a ProgramInstance<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I>;
 
@@ -68,6 +69,7 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
     fn choose_lhs_and_slot<'a>(
         &mut self,
         grammar: &'a Grammar<T, I>,
+        context: &'a ProgramInstance<T, I>,
         lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize);
 }

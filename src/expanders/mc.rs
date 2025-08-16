@@ -22,8 +22,8 @@ use rand_chacha::{rand_core::SeedableRng, ChaCha8Rng};
 use crate::{
     errors::LangExplorerError,
     grammar::{
-        grammar::Grammar, lhs::ProductionLHS, prod::Production, rule::ProductionRule, NonTerminal,
-        Terminal,
+        grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
+        rule::ProductionRule, NonTerminal, Terminal,
     },
 };
 
@@ -56,6 +56,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
     fn expand_rule<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
+        _context: &'a ProgramInstance<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
         let idx = self.rng.random::<u64>() as usize % production.len();
@@ -70,6 +71,7 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
     fn choose_lhs_and_slot<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
+        _context: &'a ProgramInstance<T, I>,
         lhs_location_matrix: &Vec<(&'a ProductionLHS<T, I>, Vec<usize>)>,
     ) -> (&'a ProductionLHS<T, I>, usize) {
         let idx = self.rng.random::<u64>() as usize % lhs_location_matrix.len();
