@@ -39,17 +39,20 @@ use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
-    tooling::modules::{
-        embed::{
-            loss::EmbeddingLossFunction,
-            pvdm::{Doc2VecDM, Doc2VecDMConfig},
-            AggregationMethod,
+    tooling::{
+        modules::{
+            embed::{
+                loss::EmbeddingLossFunction,
+                pvdm::{Doc2VecDM, Doc2VecDMConfig},
+                AggregationMethod,
+            },
+            loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
         },
-        loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
+        training::TrainingParams,
     },
 };
 
-pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
+pub struct Doc2VecEmbedderDM<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     // Some bullcrap.
     d1: PhantomData<T>,
     d2: PhantomData<I>,
@@ -75,15 +78,17 @@ pub struct Doc2VecEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
-    TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedder<T, I, B>
+    TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedderDM<T, I, B>
 {
     fn step(&self, item: ProgramBatch<B>) -> TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
             .forward(item.documents, item.context_words, &self.agg);
-        let loss = self
-            .loss
-            .forward(item.true_words, item.negative_words, logits);
+        let loss = self.loss.forward(
+            item.true_words.unsqueeze_dim(1),
+            item.negative_words,
+            logits,
+        );
 
         TrainOutput::new(&self.model, loss.backward(), loss)
     }
@@ -98,31 +103,29 @@ pub struct Doc2VecEmbedderParams {
     /// The number of documents within the model.
     pub n_docs: usize,
     /// The dimension of embeddings within the model.
+    #[config(default = 128)]
     pub d_model: usize,
     /// The number of negative samples to update on each training run.
+    #[config(default = 32)]
     pub n_neg_samples: usize,
     /// The number of words to the left of the center word
     /// to predict on.
+    #[config(default = 5)]
     pub window_left: usize,
     /// The number of words to the right of the center word
     /// to predict on.
+    #[config(default = 5)]
     pub window_right: usize,
     /// The aggregation methdo to use.
     pub agg: AggregationMethod,
     /// The loss function to use.
     pub loss: EmbeddingLossFunction,
-    /// The size of the batches fed through the model.
-    pub batch_size: usize,
-    /// number of epochs to train on.
-    pub n_epochs: usize,
-    /// the learning rate
-    pub learning_rate: f64,
-    /// the seed.
-    pub seed: u64,
+    /// General training params.
+    pub gen_params: TrainingParams,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
-    for Doc2VecEmbedder<T, I, B>
+    for Doc2VecEmbedderDM<T, I, B>
 {
     type Document = String;
     type Word = Feature;
@@ -130,7 +133,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
-        B::seed(params.seed);
+        B::seed(params.gen_params.seed);
 
         // TODO: for now, just load a new model every time.
         // Custom model storage will be added soon.
@@ -146,14 +149,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             device,
             loss,
             optim: params.ada_config.init(),
-            n_epochs: params.n_epochs,
+            n_epochs: params.gen_params.n_epochs,
             n_neg_samples: params.n_neg_samples,
-            batch_size: params.batch_size,
+            batch_size: params.gen_params.batch_size,
             window_left: params.window_left,
             window_right: params.window_right,
             agg: params.agg,
-            learning_rate: params.learning_rate,
-            rng: ChaCha8Rng::seed_from_u64(params.seed),
+            learning_rate: params.gen_params.learning_rate,
+            rng: ChaCha8Rng::seed_from_u64(params.gen_params.seed),
         }
     }
 
@@ -238,7 +241,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedder<T, I, B> {
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDM<T, I, B> {
     fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
         let start = SystemTime::now();
 

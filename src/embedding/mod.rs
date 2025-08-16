@@ -28,7 +28,8 @@ use crate::{
     grammar::{grammar::Grammar, NonTerminal, Terminal},
 };
 
-pub mod doc2vec;
+pub mod doc2vecdbow;
+pub mod doc2vecdm;
 
 /// Main trait for creating embeddings of programs.
 pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
