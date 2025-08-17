@@ -223,6 +223,7 @@ fn invalid_authorization() -> WithStatus<Json> {
 #[allow(unused)]
 async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, Infallible> {
     let code = StatusCode::BAD_REQUEST;
+    println!("invalid request made: {:?}", rej);
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
@@ -234,6 +235,7 @@ async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, I
 
 fn invalid_request(err: String) -> WithStatus<Json> {
     let code = StatusCode::BAD_REQUEST;
+    println!("invalid request made: {}", err);
     warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
