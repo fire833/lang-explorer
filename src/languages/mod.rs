@@ -20,9 +20,9 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
+#[allow(unused)]
 use burn::backend::{Autodiff, Cuda, NdArray};
 use burn::data::dataset::Dataset;
-use burn::grad_clipping::GradientClippingConfig;
 use burn::optim::AdamWConfig;
 use clap::ValueEnum;
 use dashmap::DashMap;
@@ -201,58 +201,13 @@ pub struct GenerateParams {
     #[serde(alias = "count", default = "default_count")]
     count: u64,
 
-    /// Specify a seed to use when running experiments to deterministically
-    /// set RNGs.
-    #[serde(alias = "seed", default = "default_seed")]
-    seed: u64,
-
     /// Specify the number of WL-kernel iterations to be run
     /// with each graph to extract features.
     #[serde(alias = "wl_degree", default = "default_wl_degree")]
     wl_degree: u32,
 
-    /// When creating embeddings, specify the learning rate to use
-    /// when training the embeddings.
-    #[serde(alias = "learning_rate", default = "default_learning_rate")]
-    learning_rate: f64,
-
-    /// When creating embeddings, specify the number of epochs
-    /// to train with.
-    #[serde(alias = "num_epochs", default = "default_epochs")]
-    num_epochs: u32,
-
-    /// When creating embeddings, specify the size of the
-    /// batches to train on.
-    #[serde(alias = "batch_size", default = "default_batch_size")]
-    batch_size: u32,
-
-    /// When creating embeddings, specify the desired dimension
-    /// of the constructed embeddings.
-    #[serde(alias = "embedding_dim", default = "default_embedding_dim")]
-    embedding_dimension: u32,
-
-    /// When creating embeddings, specify the number of negative samples
-    /// to update when training new embeddings.
-    #[serde(alias = "num_negative_samples", default = "default_n_neg_samples")]
-    num_negative_samples: u32,
-
-    /// When creating embeddings, specify the number of context words to
-    /// the left of the center word that will be trained.
-    #[serde(alias = "window_left", default = "default_window_left")]
-    window_left: u32,
-
-    /// When creating embeddings, specify the number of context words to
-    /// the right of the center word that will be trained.
-    #[serde(alias = "window_right", default = "default_window_right")]
-    window_right: u32,
-
-    /// Set the clipping value for gradients.
-    #[serde(alias = "gradient_clip_norm", default = "default_grad_clip")]
-    gradient_clip_norm: f32,
-}
-
-fn default_seed() -> u64 {
-    rand::random::<u64>()
+    #[serde(flatten)]
+    params: GeneralEmbeddingTrainingParams,
 }
 
 fn default_count() -> u64 {
@@ -261,38 +216,6 @@ fn default_count() -> u64 {
 
 fn default_wl_degree() -> u32 {
     3
-}
-
-fn default_n_neg_samples() -> u32 {
-    32
-}
-
-fn default_window_left() -> u32 {
-    5
-}
-
-fn default_grad_clip() -> f32 {
-    0.7
-}
-
-fn default_window_right() -> u32 {
-    5
-}
-
-fn default_embedding_dim() -> u32 {
-    128
-}
-
-fn default_epochs() -> u32 {
-    5
-}
-
-fn default_batch_size() -> u32 {
-    100
-}
-
-fn default_learning_rate() -> f64 {
-    0.001
 }
 
 fn default_return_partials() -> bool {
@@ -346,8 +269,9 @@ impl GenerateParams {
                 let gc = grammar.clone();
                 let txt = tx.clone();
                 let all_progs = all_programs.clone(); // Need to do this twice, idk
+                let seed = self.params.get_seed();
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander(self.seed + i * 5).unwrap();
+                    let mut expander = exp.get_expander(seed + i * 5).unwrap();
                     let all_programs = all_progs.clone();
                     let count = self.count / num_cpus; // TODO fix
 
@@ -473,18 +397,16 @@ impl GenerateParams {
                     "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
                     documents.len(),
                     set.len(),
-                    self.num_epochs,
+                    self.params.get_num_epochs(),
                     end.as_secs()
                 );
 
                 let mut embeddings = model.get_embeddings()?;
 
+                let dim = self.params.d_model;
+
                 for prog in results.programs.iter_mut() {
-                    prog.set_embedding(
-                        embeddings
-                            .drain(0..self.embedding_dimension as usize)
-                            .collect(),
-                    );
+                    prog.set_embedding(embeddings.drain(0..dim as usize).collect());
                 }
             }
         }
@@ -537,8 +459,9 @@ impl GenerateParams {
                 let exp = expander.clone();
                 let gc = grammar.clone();
                 let txt = tx.clone();
+                let seed = self.params.get_seed();
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander(self.seed).unwrap();
+                    let mut expander = exp.get_expander(seed).unwrap();
                     let count = self.count / num_cpus; // TODO fix
 
                     for _ in 0..count {

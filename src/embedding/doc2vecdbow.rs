@@ -158,12 +158,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 let set = HashSet::from_iter(words.iter().cloned());
                 for (_, _) in words.iter().enumerate() {
                     counter += 1;
-                    let positive_indices = get_positive_indices(&wordset, words, 4, &mut self.rng);
+                    let positive_indices = get_positive_indices(&wordset, words, 1, &mut self.rng);
 
                     let negative_indices = get_negative_indices(
                         &wordvec,
                         &set,
-                        self.params.n_neg_samples,
+                        self.params.num_neg_samples,
                         &mut self.rng,
                     );
 

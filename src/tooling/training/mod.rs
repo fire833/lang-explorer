@@ -17,9 +17,10 @@
  */
 
 use burn::config::Config;
+use utoipa::ToSchema;
 
 /// Common training parameters used by most (if not all) modules.
-#[derive(Config, Debug)]
+#[derive(Config, Debug, ToSchema)]
 pub struct TrainingParams {
     /// The size of the batches fed through the model.
     #[config(default = 128)]

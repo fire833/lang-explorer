@@ -173,7 +173,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     );
 
                     let negative_indices = get_negative_indices(
-                        self.params.n_neg_samples,
+                        self.params.num_neg_samples,
                         &mut self.rng,
                         wordset.len() + 2,
                         wordidx,

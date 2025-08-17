@@ -20,6 +20,7 @@ use burn::{
     config::Config,
     tensor::{backend::AutodiffBackend, Device, Tensor},
 };
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
@@ -60,7 +61,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError>;
 }
 
-#[derive(Config, Debug)]
+#[derive(Config, Debug, ToSchema)]
 pub struct GeneralEmbeddingTrainingParams {
     /// The dimension of embeddings within the model.
     #[config(default = 128)]
@@ -75,8 +76,8 @@ pub struct GeneralEmbeddingTrainingParams {
     pub window_right: usize,
     /// The number of negative samples to update if using the
     /// negative sampling loss function.
-    #[config(default = 32)]
-    pub n_neg_samples: usize,
+    #[config(default = 4)]
+    pub num_neg_samples: usize,
     /// The aggregation method to use.
     pub agg: AggregationMethod,
     /// General training params.
