@@ -22,14 +22,16 @@ use burn::config::Config;
 #[derive(Config, Debug)]
 pub struct TrainingParams {
     /// The size of the batches fed through the model.
-    #[config(default = 256)]
+    #[config(default = 128)]
     pub batch_size: usize,
     /// Number of epochs to train.
     #[config(default = 10)]
     pub n_epochs: usize,
     /// The learning rate
-    #[config(default = 0.005)]
+    #[config(default = 0.001)]
     pub learning_rate: f64,
+    #[config(default = 0.75)]
+    pub learning_rate_drop: f64,
     /// The seed.
     #[config(default = 10)]
     pub seed: u64,

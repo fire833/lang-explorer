@@ -442,7 +442,7 @@ impl GenerateParams {
                 }
 
                 let params = Doc2VecDBOWEmbedderParams::new(
-                    AdamWConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(0.5))),
+                    AdamWConfig::new(),
                     set.len(),
                     results.programs.len(),
                     GeneralEmbeddingTrainingParams::new(

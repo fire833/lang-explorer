@@ -148,7 +148,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             let mut items = vec![];
 
             // Adaptive learning rate
-            self.params.gen_params.learning_rate *= 0.6;
+            self.params.gen_params.learning_rate *= self.params.gen_params.learning_rate_drop;
             if self.params.get_learning_rate() < 0.000001 {
                 self.params.gen_params.learning_rate = 0.000001;
             }
