@@ -1,13 +1,13 @@
 
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from src.utils.client import generate, TacoExpressionParameters, TacoScheduleParameters, CSSLanguageParameters, GenerateParams, GenerateResults, KarelLanguageParameters
+from src.utils.client import generate, TacoExpressionParameters, TacoScheduleParameters, CSSLanguageParameters, GenerateParams, GenerateResults, GeneralTrainingParameters, KarelLanguageParameters
 import os
 import pandas as pd
 
 def generate_embeddings(args):
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc", 
-		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.batch_size, args.num_neg_samples, args.seed, 128, 10, 3, 3, 0.00075, args.grad_clip,
+		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(128, 10, 0.001, 0.8, args.seed),
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
 	        "#20b01c",

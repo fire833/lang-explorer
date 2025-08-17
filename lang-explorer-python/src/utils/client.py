@@ -33,6 +33,14 @@ class KarelLanguageParameters:
 	pass
 
 @dataclass
+class GeneralTrainingParameters:
+	batch_size: int
+	n_epochs: int
+	learning_rate: float
+	learning_rate_drop: float
+	seed: int
+
+@dataclass
 class GenerateParams:
 	count: int
 	return_edge_lists: bool
@@ -42,15 +50,13 @@ class GenerateParams:
 	return_partial_graphs: bool
 	return_embeddings: bool
 	wl_degree: int
-	batch_size: int
-	num_negative_samples: int
-	seed: int
-	embedding_dim: int
-	num_epochs: int
+	num_neg_samples: int
+	d_model: int
 	window_left: int
 	window_right: int
-	learning_rate: float
 	gradient_clip_norm: float
+	agg: str
+	gen_params: GeneralTrainingParameters
 
 	css: CSSLanguageParameters
 	taco_schedule: TacoScheduleParameters
