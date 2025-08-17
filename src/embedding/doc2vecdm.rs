@@ -130,7 +130,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn fit(
         mut self,
-        documents: &[(Self::Document, Vec<Self::Word>)],
+        documents: &[(Self::Document, HashSet<Self::Word>)],
     ) -> Result<Self, LangExplorerError> {
         let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
 
@@ -165,7 +165,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     counter += 1;
                     let ctx_indices = get_context_indices(
                         &wordset,
-                        words,
+                        words.iter().map(|v| *v).collect::<Vec<u64>>().as_slice(),
                         self.params.window_left,
                         self.params.window_right,
                         wordidx,
@@ -203,7 +203,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn embed(
         &mut self,
-        _document: (Self::Document, Vec<Self::Word>),
+        _document: (Self::Document, HashSet<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }
