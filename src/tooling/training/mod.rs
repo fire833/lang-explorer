@@ -28,7 +28,7 @@ pub struct TrainingParams {
     #[config(default = 10)]
     pub n_epochs: usize,
     /// The learning rate
-    #[config(default = 0.001)]
+    #[config(default = 0.005)]
     pub learning_rate: f64,
     /// The seed.
     #[config(default = 10)]

@@ -21,6 +21,7 @@ use std::{
     hash::Hash,
     marker::PhantomData,
     mem,
+    time::SystemTime,
 };
 
 use burn::{
@@ -157,12 +158,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 let set = HashSet::from_iter(words.iter().cloned());
                 for (_, _) in words.iter().enumerate() {
                     counter += 1;
-                    let positive_indices = get_positive_indices(
-                        &wordset,
-                        words,
-                        self.params.n_neg_samples,
-                        &mut self.rng,
-                    );
+                    let positive_indices = get_positive_indices(&wordset, words, 4, &mut self.rng);
 
                     let negative_indices = get_negative_indices(
                         &wordvec,
@@ -206,12 +202,35 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, B> {
-    fn train_batch(mut self, batch: ProgramBatch<B>, _counter: usize) -> Self {
+    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
+        let start = SystemTime::now();
+
         let train = self.step(batch);
-        let _grads_count = train.grads.len();
+        let grads_count = train.grads.len();
         self.model = self
             .optim
             .step(self.params.get_learning_rate(), self.model, train.grads);
+
+        if counter % 1000 == 0 {
+            let elapsed = start.elapsed().unwrap();
+            // let emb = self.model.get_embeddings().unwrap();
+            let loss_data = train
+                .item
+                .to_data()
+                .convert::<f64>()
+                .to_vec()
+                .unwrap_or(vec![0.0]);
+
+            let avg = Iterator::sum::<f64>(loss_data.iter()) / loss_data.len() as f64;
+
+            println!(
+                "Training loss ({} gradients) = {} (took {} microseconds)",
+                grads_count,
+                avg,
+                elapsed.as_micros(),
+                // &emb[0..128],
+            );
+        }
 
         self
     }
@@ -284,6 +303,13 @@ fn get_positive_indices<R: Rng, W: Ord>(
     num_positive_samples: usize,
     rng: &mut R,
 ) -> Vec<usize> {
+    if doc_words.len() <= num_positive_samples {
+        return doc_words
+            .iter()
+            .map(|w| *wordset.get(w).unwrap() as usize)
+            .collect::<Vec<usize>>();
+    }
+
     let mut positive_samples = HashSet::new();
     while positive_samples.len() < num_positive_samples {
         let word = doc_words
