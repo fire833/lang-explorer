@@ -18,7 +18,6 @@
 
 use burn::{
     config::Config,
-    prelude::Backend,
     tensor::{backend::AutodiffBackend, Device, Tensor},
 };
 

@@ -16,7 +16,12 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::BTreeMap, marker::PhantomData};
+use std::{
+    collections::{BTreeMap, HashSet},
+    hash::Hash,
+    marker::PhantomData,
+    mem,
+};
 
 use burn::{
     config::Config,
@@ -26,7 +31,7 @@ use burn::{
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep},
 };
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
@@ -109,17 +114,23 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         }
     }
 
-    fn fit(self, documents: &[(Self::Document, Vec<Self::Word>)]) -> Result<Self, LangExplorerError>
+    fn fit(
+        mut self,
+        documents: &[(Self::Document, Vec<Self::Word>)],
+    ) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
         let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
+        // I hate this
+        let mut wordvec: BTreeMap<u32, Self::Word> = BTreeMap::new();
 
         let mut counter: u32 = 0;
         documents.iter().for_each(|doc| {
             doc.1.iter().for_each(|word| {
                 if !wordset.contains_key(word) {
                     wordset.insert(*word, counter);
+                    wordvec.insert(counter, *word);
                     counter += 1;
                 }
             })
@@ -127,12 +138,64 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
         let batcher = ProgramBatcher::new();
 
-        todo!()
+        for num in 0..self.params.get_num_epochs() {
+            println!(
+                "Running epoch {} of {}",
+                num + 1,
+                self.params.get_num_epochs()
+            );
+            let mut items = vec![];
+
+            // Adaptive learning rate
+            self.params.gen_params.learning_rate *= 0.6;
+            if self.params.get_learning_rate() < 0.000001 {
+                self.params.gen_params.learning_rate = 0.000001;
+            }
+
+            let mut counter = 0;
+            for (docidx, (_, words)) in documents.iter().enumerate() {
+                let set = HashSet::from_iter(words.iter().cloned());
+                for (_, _) in words.iter().enumerate() {
+                    counter += 1;
+                    let positive_indices = get_positive_indices(
+                        &wordset,
+                        words,
+                        self.params.n_neg_samples,
+                        &mut self.rng,
+                    );
+
+                    let negative_indices = get_negative_indices(
+                        &wordvec,
+                        &set,
+                        self.params.n_neg_samples,
+                        &mut self.rng,
+                    );
+
+                    let train_item =
+                        ProgramTrainingItem::new(docidx, positive_indices, negative_indices);
+                    items.push(train_item);
+
+                    if items.len() >= self.params.get_batch_size() {
+                        let moved = mem::take(&mut items);
+                        let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
+                        self = self.train_batch(batch, counter);
+                    }
+                }
+            }
+
+            // Extra items need to be trained on too.
+            if !items.is_empty() {
+                let batch: ProgramBatch<B> = batcher.batch(items, &self.device);
+                self = self.train_batch(batch, counter);
+            }
+        }
+
+        Ok(self)
     }
 
     fn embed(
         &mut self,
-        document: (Self::Document, Vec<Self::Word>),
+        _document: (Self::Document, Vec<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }
@@ -143,9 +206,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, B> {
-    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
+    fn train_batch(mut self, batch: ProgramBatch<B>, _counter: usize) -> Self {
         let train = self.step(batch);
-        let grads_count = train.grads.len();
+        let _grads_count = train.grads.len();
         self.model = self
             .optim
             .step(self.params.get_learning_rate(), self.model, train.grads);
@@ -213,4 +276,44 @@ impl<B: Backend> Batcher<B, ProgramTrainingItem, ProgramBatch<B>> for ProgramBat
             true_words: Tensor::stack::<2>(true_word_indices, 0),
         }
     }
+}
+
+fn get_positive_indices<R: Rng, W: Ord>(
+    wordset: &BTreeMap<W, u32>,
+    doc_words: &Vec<W>,
+    num_positive_samples: usize,
+    rng: &mut R,
+) -> Vec<usize> {
+    let mut positive_samples = HashSet::new();
+    while positive_samples.len() < num_positive_samples {
+        let word = doc_words
+            .get(rng.random::<u32>() as usize % doc_words.len())
+            .unwrap();
+        if let Some(idx) = wordset.get(word) {
+            let idx = *idx as usize;
+            if !positive_samples.contains(&idx) {
+                positive_samples.insert(idx);
+            }
+        }
+    }
+
+    positive_samples.into_iter().collect()
+}
+
+fn get_negative_indices<R: Rng, W: Ord + Hash>(
+    wordset: &BTreeMap<u32, W>,
+    doc_words: &HashSet<W>,
+    num_negative_samples: usize,
+    rng: &mut R,
+) -> Vec<usize> {
+    let mut negative_samples = HashSet::new();
+    while negative_samples.len() < num_negative_samples {
+        let idx = rng.random::<u32>() % wordset.len() as u32;
+        let word = wordset.get(&idx).unwrap();
+        if !doc_words.contains(word) && !negative_samples.contains(&(idx as usize)) {
+            negative_samples.insert(idx as usize);
+        }
+    }
+
+    negative_samples.into_iter().collect()
 }
