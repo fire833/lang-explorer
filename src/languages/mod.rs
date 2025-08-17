@@ -228,6 +228,8 @@ impl GenerateParams {
         language: LanguageWrapper,
         expander: ExpanderWrapper,
     ) -> Result<GenerateResultsV2, LangExplorerError> {
+        let config = format!("{:?}", self.params);
+
         let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
             LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
@@ -376,9 +378,9 @@ impl GenerateParams {
                 );
 
                 println!(
-                    "training embeddings, there are {} documents being learned and {} total words being used.",
+                    "training embeddings, there are {} documents being learned and {} total words being used, config: \n{}.",
                     documents.len(),
-                    set.len()
+                    set.len(), config,
                 );
 
                 let start = SystemTime::now();
