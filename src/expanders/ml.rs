@@ -17,7 +17,7 @@
  */
 
 use core::{f64, panic};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 use burn::{
     optim::AdamWConfig,
@@ -102,7 +102,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
     fn forward(
         &mut self,
         doc: ProgramInstance<T, I>,
-        words: HashSet<Feature>,
+        words: BTreeSet<Feature>,
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         match self {
             EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed((doc.to_string(), words)),
