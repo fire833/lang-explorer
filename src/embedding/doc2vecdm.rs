@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
+    collections::{BTreeMap, HashSet},
     marker::PhantomData,
     mem,
     time::SystemTime,
@@ -130,7 +130,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn fit(
         mut self,
-        documents: &[(Self::Document, BTreeSet<Self::Word>)],
+        documents: &[(Self::Document, HashSet<Self::Word>)],
     ) -> Result<Self, LangExplorerError> {
         let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
 
@@ -203,7 +203,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn embed(
         &mut self,
-        _document: (Self::Document, BTreeSet<Self::Word>),
+        _document: (Self::Document, HashSet<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }

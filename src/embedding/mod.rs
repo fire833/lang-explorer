@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 
 use burn::{
     config::Config,
@@ -46,7 +46,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Trains the embedder on the provided corpus.
     fn fit(
         self,
-        documents: &[(Self::Document, BTreeSet<Self::Word>)],
+        documents: &[(Self::Document, HashSet<Self::Word>)],
     ) -> Result<Self, LangExplorerError>
     where
         Self: Sized;
@@ -55,7 +55,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// document and it's corresponding words.
     fn embed(
         &mut self,
-        document: (Self::Document, BTreeSet<Self::Word>),
+        document: (Self::Document, HashSet<Self::Word>),
     ) -> Result<Tensor<B, 1>, LangExplorerError>;
 
     /// Returns the embeddings of the documents that were trained on.
