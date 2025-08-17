@@ -20,7 +20,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
-use burn::backend::{Autodiff, Cuda};
+use burn::backend::{Autodiff, Cuda, NdArray};
 use burn::data::dataset::Dataset;
 use burn::grad_clipping::GradientClippingConfig;
 use burn::optim::AdamWConfig;
@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
-use crate::embedding::doc2vecdm::{Doc2VecDMEmbedderParams, Doc2VecEmbedderDM};
+use crate::embedding::doc2vecdbow::{Doc2VecDBOWEmbedderParams, Doc2VecEmbedderDBOW};
 use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
@@ -441,7 +441,7 @@ impl GenerateParams {
                     }
                 }
 
-                let params = Doc2VecDMEmbedderParams::new(
+                let params = Doc2VecDBOWEmbedderParams::new(
                     AdamWConfig::new().with_grad_clipping(Some(GradientClippingConfig::Norm(0.5))),
                     set.len(),
                     results.programs.len(),
@@ -459,8 +459,8 @@ impl GenerateParams {
 
                 let start = SystemTime::now();
 
-                let model: Doc2VecEmbedderDM<StringValue, StringValue, Autodiff<Cuda>> =
-                    Doc2VecEmbedderDM::<StringValue, StringValue, Autodiff<Cuda>>::new(
+                let model: Doc2VecEmbedderDBOW<StringValue, StringValue, Autodiff<NdArray>> =
+                    Doc2VecEmbedderDBOW::<StringValue, StringValue, Autodiff<NdArray>>::new(
                         &grammar,
                         params,
                         Default::default(),
