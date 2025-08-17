@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashMap, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
     sync::Arc,
@@ -114,7 +114,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         &self,
         degree: u32,
         ordering: WLKernelHashingOrder,
-    ) -> HashSet<Feature> {
+    ) -> Vec<Feature> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
         let mut node_features_old: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
@@ -131,7 +131,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             node_features_old.insert(node, hash);
         });
 
-        let mut found_features: HashSet<Feature> = node_features_old.values().copied().collect();
+        let mut found_features: Vec<Feature> = node_features_old.values().copied().collect();
 
         for _ in 0..degree {
             for node in nodes.iter() {
@@ -188,9 +188,9 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
                 node_features_new.insert(node, new_label);
             }
 
-            node_features_new.values().for_each(|v| {
-                found_features.insert(*v);
-            });
+            node_features_new
+                .values()
+                .for_each(|v| found_features.push(*v));
 
             // Swap out old and new vectors now for the next iteration.
             let cp = node_features_new;

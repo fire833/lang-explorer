@@ -17,7 +17,7 @@
  */
 
 use core::{f64, panic};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use burn::{
     optim::AdamWConfig,
@@ -102,7 +102,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
     fn forward(
         &mut self,
         doc: ProgramInstance<T, I>,
-        words: HashSet<Feature>,
+        words: Vec<Feature>,
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         match self {
             EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed((doc.to_string(), words)),
@@ -159,7 +159,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         let doc = context.clone();
         let words = doc.extract_words_wl_kernel(5, WLKernelHashingOrder::ParentSelfChildrenOrdered);
 
-        let embedding = match self.embedder.forward(doc, words.into_iter().collect()) {
+        let embedding = match self.embedder.forward(doc, words) {
             Ok(e) => e,
             Err(err) => panic!("{}", err),
         };
