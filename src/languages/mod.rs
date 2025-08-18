@@ -24,6 +24,7 @@ use std::{fmt::Display, str::FromStr, time::SystemTime};
 use burn::backend::{Autodiff, Cuda, NdArray};
 use burn::data::dataset::Dataset;
 use burn::optim::AdamWConfig;
+use burn::prelude::Backend;
 use clap::ValueEnum;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
@@ -221,7 +222,7 @@ fn default_return_partials() -> bool {
 }
 
 impl GenerateParams {
-    pub async fn execute(
+    pub async fn execute<B: Backend>(
         self,
         language: LanguageWrapper,
         expander: ExpanderWrapper,
@@ -382,8 +383,8 @@ impl GenerateParams {
 
                 let start = SystemTime::now();
 
-                let model: Doc2VecEmbedderDBOW<StringValue, StringValue, Autodiff<NdArray>> =
-                    Doc2VecEmbedderDBOW::<StringValue, StringValue, Autodiff<NdArray>>::new(
+                let model: Doc2VecEmbedderDBOW<StringValue, StringValue, Autodiff<B>> =
+                    Doc2VecEmbedderDBOW::<StringValue, StringValue, Autodiff<B>>::new(
                         &grammar,
                         params,
                         Default::default(),

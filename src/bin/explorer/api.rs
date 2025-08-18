@@ -22,6 +22,7 @@ use std::{
     str::FromStr,
 };
 
+use burn::prelude::Backend;
 use lang_explorer::languages::{GenerateResults, GenerateResultsV2};
 use lang_explorer::{
     expanders::ExpanderWrapper,
@@ -53,7 +54,7 @@ struct ExplorerAPIDocs;
 
 impl OpenApiExtensions for ExplorerAPIDocs {}
 
-pub(super) async fn start_server(addr: &str, port: u16) {
+pub(super) async fn start_server<B: Backend>(addr: &str, port: u16) {
     #[allow(deprecated)]
     let generate1 = warp::post()
         .and(warp::path!(
@@ -69,7 +70,7 @@ pub(super) async fn start_server(addr: &str, port: u16) {
         ))
         .and(warp::path::end())
         .and(warp::body::bytes())
-        .and_then(generate);
+        .and_then(generate::<B>);
 
     let health = warp::get()
         .and(warp::path!("readyz"))
@@ -152,7 +153,7 @@ async fn generate_legacy(
         ("expander" = ExpanderWrapper, Path, description = "The expander to utilize."),
     )
 )]
-async fn generate(
+async fn generate<B: Backend>(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
     body: Bytes,
@@ -162,7 +163,7 @@ async fn generate(
         Err(e) => return Ok(invalid_request(e.to_string())),
     };
 
-    match params.execute(language, expander).await {
+    match params.execute::<B>(language, expander).await {
         Ok(resp) => Ok(warp::reply::with_status(
             warp::reply::json(&resp),
             StatusCode::OK,

@@ -16,6 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
     errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
 };
@@ -44,8 +45,16 @@ impl LangExplorerArgs {
                     expander: _,
                     count: _,
                 } => Ok(()),
-                Subcommand::Serve { address, port } => {
-                    let _ = api::start_server(address.as_str(), *port).await;
+                Subcommand::Serve {
+                    address,
+                    port,
+                    cuda,
+                } => {
+                    if *cuda {
+                        let _ = api::start_server::<Cuda>(address.as_str(), *port).await;
+                    } else {
+                        let _ = api::start_server::<NdArray>(address.as_str(), *port).await;
+                    }
                     Ok(())
                 }
             },
@@ -101,6 +110,10 @@ enum Subcommand {
         /// Specify the port to listen on for the server.
         #[arg(short, long, default_value_t = default_port())]
         port: u16,
+
+        /// Toggle CUDA backend.
+        #[arg(short, long, default_value_t = false)]
+        cuda: bool,
     },
 }
 
