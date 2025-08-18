@@ -230,7 +230,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, 
 
             let mut absdiff: f32 = 0.0;
             for (idx, val) in self.old_embeddings.iter().enumerate() {
-                absdiff += f32::abs(*val) + f32::abs(*emb.get(idx).unwrap());
+                absdiff += f32::abs(*val - *emb.get(idx).unwrap());
             }
 
             self.old_embeddings = emb;
