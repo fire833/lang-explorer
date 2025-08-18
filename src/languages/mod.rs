@@ -594,7 +594,7 @@ pub(crate) struct ProgramResult {
 
     /// If enabled, returns the embedding of the program.
     #[serde(alias = "embedding")]
-    embedding: Option<Vec<f64>>,
+    embedding: Option<Vec<f32>>,
 
     /// If enabled, returns the program graph in edge-list format.
     #[serde(alias = "edge_list")]
@@ -633,7 +633,7 @@ impl ProgramResult {
         self.edge_list = Some(edge_list);
     }
 
-    pub(crate) fn set_embedding(&mut self, embedding: Vec<f64>) {
+    pub(crate) fn set_embedding(&mut self, embedding: Vec<f32>) {
         self.embedding = Some(embedding);
     }
 }

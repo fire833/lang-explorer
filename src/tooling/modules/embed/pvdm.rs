@@ -104,8 +104,8 @@ impl<B: Backend> Doc2VecDM<B> {
 
     /// Returns a vector of the embedding tensor. It should be structured in
     /// such a way that each n_dim elements correspond to a single embedding.
-    pub fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
-        let vec: Vec<f64> = self.documents.weight.to_data().convert::<f64>().to_vec()?;
+    pub fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError> {
+        let vec: Vec<f32> = self.documents.weight.to_data().convert::<f32>().to_vec()?;
         Ok(vec)
     }
 

@@ -62,6 +62,8 @@ pub struct Doc2VecEmbedderDBOW<T: Terminal, I: NonTerminal, B: AutodiffBackend> 
     optim: OptimizerAdaptor<AdamW, Doc2VecDBOW<B>, B>,
 
     params: GeneralEmbeddingTrainingParams,
+
+    old_embeddings: Vec<f32>,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
@@ -112,6 +114,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             optim: params.ada_config.init(),
             rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
             params: params.gen_params,
+            old_embeddings: vec![],
         }
     }
 
@@ -196,7 +199,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         todo!()
     }
 
-    fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
+    fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError> {
         self.model.get_embeddings()
     }
 }
@@ -217,17 +220,27 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, 
             let loss_data = train
                 .item
                 .to_data()
-                .convert::<f64>()
+                .convert::<f32>()
                 .to_vec()
                 .unwrap_or(vec![0.0]);
 
             let avg = Iterator::sum::<f64>(loss_data.iter()) / loss_data.len() as f64;
 
+            let emb = self.get_embeddings().unwrap();
+
+            let mut absdiff: f32 = 0.0;
+            for (idx, val) in self.old_embeddings.iter().enumerate() {
+                absdiff += f32::abs(*val) + f32::abs(*emb.get(idx).unwrap());
+            }
+
+            self.old_embeddings = emb;
+
             println!(
-                "Training loss ({} gradients) = {} (took {} microseconds)",
+                "Training loss ({} gradients) = {} (took {} microseconds) absolute difference: {}",
                 grads_count,
                 avg,
                 elapsed.as_micros(),
+                absdiff,
                 // &emb[0..128],
             );
         }

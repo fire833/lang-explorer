@@ -58,7 +58,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     ) -> Result<Tensor<B, 1>, LangExplorerError>;
 
     /// Returns the embeddings of the documents that were trained on.
-    fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError>;
+    fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError>;
 }
 
 #[derive(Config, Debug, ToSchema)]

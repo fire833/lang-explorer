@@ -208,7 +208,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         todo!()
     }
 
-    fn get_embeddings(&self) -> Result<Vec<f64>, LangExplorerError> {
+    fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError> {
         self.model.get_embeddings()
     }
 }
