@@ -220,7 +220,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, 
             let loss_data = train
                 .item
                 .to_data()
-                .convert::<f32>()
+                .convert::<f64>()
                 .to_vec()
                 .unwrap_or(vec![0.0]);
 
