@@ -35,8 +35,6 @@ use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
-use crate::tooling::modules::embed::AggregationMethod;
-use crate::tooling::training::TrainingParams;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -367,14 +365,13 @@ impl GenerateParams {
                     }
                 }
 
+                let dim = self.params.d_model;
+                let epochs = self.params.get_num_epochs();
                 let params = Doc2VecDBOWEmbedderParams::new(
                     AdamWConfig::new(),
                     set.len(),
                     results.programs.len(),
-                    GeneralEmbeddingTrainingParams::new(
-                        AggregationMethod::Average,
-                        TrainingParams::new(),
-                    ),
+                    self.params,
                 );
 
                 println!(
@@ -399,14 +396,11 @@ impl GenerateParams {
                     "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
                     documents.len(),
                     set.len(),
-                    self.params.get_num_epochs(),
+                    epochs,
                     end.as_secs()
                 );
 
                 let mut embeddings = model.get_embeddings()?;
-
-                let dim = self.params.d_model;
-
                 for prog in results.programs.iter_mut() {
                     prog.set_embedding(embeddings.drain(0..dim as usize).collect());
                 }

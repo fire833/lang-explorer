@@ -56,7 +56,7 @@ pub struct Doc2VecEmbedderDBOW<T: Terminal, I: NonTerminal, B: AutodiffBackend> 
 
     device: Device<B>,
 
-    /// RNG stuff.
+    // RNG stuff.
     rng: ChaCha8Rng,
 
     optim: OptimizerAdaptor<AdamW, Doc2VecDBOW<B>, B>,
