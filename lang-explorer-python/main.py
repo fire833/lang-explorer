@@ -28,7 +28,7 @@ def main():
 	embed.add_argument("--wl-count", type=int, default=3, help="Specify the number of WL kernel iterations to run.")
 	embed.add_argument("--num-neg-samples", type=int, default=64, help="Specify number of negative samples to update.")
 	embed.add_argument("--batch-size", type=int, default=128, help="Specify the batch size to train on.")
-	embed.add_argument("--grad-clip", type=int, default=1.0, help="Specify the gradient clipping.")
+	embed.add_argument("--grad-clip", type=int, default=5.0, help="Specify the gradient clipping.")
 	embed.add_argument("--seed", type=int, default=50, help="Specify a seed when generating and training data.")
 	embed.set_defaults(func=generate_embeddings)
 
