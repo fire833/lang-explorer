@@ -7,6 +7,7 @@ from src.commands.viz import data_viz
 from src.commands.embeddings import generate_embeddings
 from src.commands.interact import interactive_tsne
 from src.commands.nearest import nearest_neighbors
+from src.commands.tsne_animation import animate
 import matplotlib
 
 # %matplotlib qt
@@ -46,6 +47,11 @@ def main():
 	neighbors.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
 	neighbors.add_argument("--count", type=int, default=10, help="Number of nearest neighbors to retrieve.")
 	neighbors.set_defaults(func=nearest_neighbors)
+
+	anim = sub.add_parser("tsneanim", help="Animate tSNE over time.")
+	anim.add_argument("--input", default="results/temporal/vectors_*.csv", help="Specify the embeddings to use for visualization.")
+	anim.add_argument("--output", default="images/tsneanim.mp4", help="Images path.")
+	anim.set_defaults(func=animate)
 
 	args = parser.parse_args(sys.argv[1:])
 	args.func(args)

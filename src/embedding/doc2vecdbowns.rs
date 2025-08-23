@@ -58,6 +58,8 @@ pub struct Doc2VecEmbedderDBOWNS<T: Terminal, I: NonTerminal, B: AutodiffBackend
 
     params: GeneralEmbeddingTrainingParams,
 
+    display_count: usize,
+
     old_embeddings: Vec<f32>,
 }
 
@@ -107,6 +109,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
             params: params.gen_params,
             old_embeddings: vec![],
+            display_count: 0,
         }
     }
 
@@ -226,10 +229,15 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I
                 absdiff += f32::abs(*val - *emb.get(idx).unwrap());
             }
 
+            self.display_count += 1;
+
             let _ = super::save_embeddings_as_csv(
                 &emb,
                 self.params.d_model,
-                format!("lang-explorer-python/results/temporal/vectors_{counter}.csv"),
+                format!(
+                    "lang-explorer-python/results/temporal/vectors_{:04}.csv",
+                    self.display_count
+                ),
             );
 
             self.old_embeddings = emb;
