@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
-use crate::embedding::doc2vecdbow::{Doc2VecDBOWEmbedderParams, Doc2VecEmbedderDBOW};
+use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
 use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
@@ -368,7 +368,7 @@ impl GenerateParams {
 
                 let dim = self.params.d_model;
                 let epochs = self.params.get_num_epochs();
-                let params = Doc2VecDBOWEmbedderParams::new(
+                let params = Doc2VecDBOWNSEmbedderParams::new(
                     AdamWConfig::new(),
                     set.len(),
                     results.programs.len(),
@@ -383,8 +383,8 @@ impl GenerateParams {
 
                 let start = SystemTime::now();
 
-                let model: Doc2VecEmbedderDBOW<StringValue, StringValue, Autodiff<B>> =
-                    Doc2VecEmbedderDBOW::<StringValue, StringValue, Autodiff<B>>::new(
+                let model: Doc2VecEmbedderDBOWNS<StringValue, StringValue, Autodiff<B>> =
+                    Doc2VecEmbedderDBOWNS::<StringValue, StringValue, Autodiff<B>>::new(
                         &grammar,
                         params,
                         Default::default(),

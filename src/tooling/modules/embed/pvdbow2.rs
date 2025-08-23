@@ -95,9 +95,7 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
             .sum_dim(2)
             .add(bias_positive);
 
-        println!("positives: {positives}");
         let positive_loss = positives.sum();
-        println!("positive_loss: {positive_loss}");
 
         let negatives = docs
             .repeat_dim(1, num_negative_words)

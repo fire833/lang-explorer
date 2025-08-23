@@ -29,6 +29,7 @@ use crate::{
 };
 
 pub mod doc2vecdbow;
+pub mod doc2vecdbowns;
 pub mod doc2vecdm;
 
 /// Main trait for creating embeddings of programs.
