@@ -35,6 +35,7 @@ pub enum LangExplorerError {
     RecorderError(RecorderError),
     SendError(String),
     DataError(DataError),
+    CSVError(csv::Error),
 }
 
 impl Display for LangExplorerError {
@@ -47,6 +48,7 @@ impl Display for LangExplorerError {
             Self::RecorderError(e) => write!(f, "recorder: {}", e),
             Self::SendError(e) => write!(f, "sender: {}", e),
             Self::DataError(e) => write!(f, "data: {:?}", e),
+            Self::CSVError(e) => write!(f, "csv: {}", e),
         }
     }
 }
@@ -102,5 +104,11 @@ impl From<SendError<ProgramResult>> for LangExplorerError {
 impl From<DataError> for LangExplorerError {
     fn from(value: DataError) -> Self {
         Self::DataError(value)
+    }
+}
+
+impl From<csv::Error> for LangExplorerError {
+    fn from(value: csv::Error) -> Self {
+        Self::CSVError(value)
     }
 }

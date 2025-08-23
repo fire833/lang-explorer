@@ -18,6 +18,7 @@
 
 use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
+use std::path::Path;
 
 use burn::{
     config::Config,
@@ -197,4 +198,21 @@ fn test_negative_indices() {
 
     let indices = get_negative_indices(&set, &hash, 10, &mut rng);
     println!("indices: {indices:?}");
+}
+
+pub(super) fn save_embeddings_as_csv<P: AsRef<Path>>(
+    embeddings: &Vec<f32>,
+    dim: usize,
+    path: P,
+) -> Result<(), LangExplorerError> {
+    let num = embeddings.len() / dim;
+    let mut writer = csv::Writer::from_path(path)?;
+    let emb = embeddings.as_slice();
+
+    for n in 0..num {
+        let slice = &emb[n * dim..(n + 1) * dim];
+        writer.serialize(slice)?;
+    }
+
+    Ok(())
 }

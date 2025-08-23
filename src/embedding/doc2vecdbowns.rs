@@ -134,6 +134,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
         let batcher = ProgramBatcher::new();
 
+        let mut counter = 0;
         for num in 0..self.params.get_num_epochs() {
             println!(
                 "Running epoch {} of {}",
@@ -148,7 +149,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 self.params.gen_params.learning_rate = 0.000001;
             }
 
-            let mut counter = 0;
             for (docidx, (_, words)) in documents.iter().enumerate() {
                 let set = HashSet::from_iter(words.iter().cloned());
                 for (_, _) in words.iter().enumerate() {
@@ -225,6 +225,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I
             for (idx, val) in self.old_embeddings.iter().enumerate() {
                 absdiff += f32::abs(*val - *emb.get(idx).unwrap());
             }
+
+            let _ = super::save_embeddings_as_csv(
+                &emb,
+                self.params.d_model,
+                format!("lang-explorer-python/results/temporal/vectors_{counter}.csv"),
+            );
 
             self.old_embeddings = emb;
 

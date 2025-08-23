@@ -3287,6 +3287,7 @@ dependencies = [
  "burn",
  "cc",
  "clap",
+ "csv",
  "dashmap",
  "fasthash",
  "hex",
