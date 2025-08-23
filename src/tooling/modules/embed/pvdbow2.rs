@@ -81,18 +81,34 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
         positive_words: Tensor<B, 2, Int>,
         negative_words: Tensor<B, 2, Int>,
     ) -> Tensor<B, 1, Float> {
-        let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(0));
-        println!("docs: {docs}");
+        let num_positive_words = positive_words.shape().dims[1];
+        let num_negative_words = negative_words.shape().dims[1];
+        let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(1));
         let hidden_positive = self.hidden.forward(positive_words.clone());
-        println!("hidden_positive: {hidden_positive}");
-        let bias_positive = self.biases.forward(positive_words);
-        println!("bias_positive: {bias_positive}");
         let hidden_negative = self.hidden.forward(negative_words.clone());
-        println!("hidden_negative: {hidden_negative}");
+        let bias_positive = self.biases.forward(positive_words);
         let bias_negative = self.hidden.forward(negative_words);
-        println!("bias_negative: {bias_negative}");
-        let positives = docs.mul(hidden_positive).sum_dim(2);
-        Tensor::from([0.0])
+        let positives = docs
+            .clone()
+            .repeat_dim(1, num_positive_words)
+            .mul(hidden_positive)
+            .sum_dim(2)
+            .add(bias_positive);
+
+        println!("positives: {positives}");
+        let positive_loss = positives.sum();
+        println!("positive_loss: {positive_loss}");
+
+        let negatives = docs
+            .repeat_dim(1, num_negative_words)
+            .mul(hidden_negative)
+            .sum_dim(2)
+            .add(bias_negative)
+            .mul_scalar(-1);
+
+        let negative_loss = negatives.sum();
+
+        -positive_loss - negative_loss
     }
 
     /// Returns a vector of the embedding tensor. It should be structured in
@@ -124,9 +140,9 @@ fn test_forward() {
     let model = Doc2VecDBOWNSConfig::new(10, 5, 3).init::<NdArray>(&dev);
 
     let out = model.forward(
-        Tensor::from_data([0], &dev),
-        Tensor::from_data([[6, 7, 8]], &dev),
-        Tensor::from_data([[1, 2, 3]], &dev),
+        Tensor::from_data([0, 1, 2], &dev),
+        Tensor::from_data([[6, 7, 8, 9], [3, 4, 5, 6], [4, 5, 6, 7]], &dev),
+        Tensor::from_data([[1], [2], [5]], &dev),
     );
     println!("{out}");
 }
