@@ -22,6 +22,7 @@ use utoipa::ToSchema;
 pub mod code2vec;
 pub mod loss;
 pub mod pvdbow;
+pub mod pvdbow2;
 pub mod pvdm;
 pub mod wvcbow;
 pub mod wvsg;
