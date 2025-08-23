@@ -62,10 +62,15 @@ impl<B: Backend> NegativeSampling<B> {
         input: Tensor<B, 2, Float>,
     ) -> Tensor<B, 1, Float> {
         // TODO: this clone will be VERY expensive, need to figure out a way to get rid of this.
-        let negatives = sigmoid(-input.clone().gather(1, negative_word_indices))
-            .log()
-            .sum_dim(1)
-            .squeeze(1);
+        let negatives = sigmoid(
+            input
+                .clone()
+                .gather(1, negative_word_indices)
+                .mul_scalar(-1),
+        )
+        .log()
+        .sum_dim(1)
+        .squeeze(1);
         let positive = sigmoid(input.gather(1, true_word_indices))
             .log()
             .sum_dim(1)
