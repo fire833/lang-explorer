@@ -85,7 +85,7 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
         let num_negative_words = negative_words.shape().dims[1];
         let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(1));
         let hidden_positive = self.hidden.forward(positive_words.clone());
-        let hidden_negative = self.hidden.forward(negative_words.clone());
+        let hidden_negative = -self.hidden.forward(negative_words.clone());
         let bias_positive = self.biases.forward(positive_words);
         let bias_negative = self.hidden.forward(negative_words);
         let positives = docs
@@ -101,8 +101,7 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
             .repeat_dim(1, num_negative_words)
             .mul(hidden_negative)
             .sum_dim(2)
-            .add(bias_negative)
-            .mul_scalar(-1);
+            .add(bias_negative);
 
         let negative_loss = negatives.sum();
 
