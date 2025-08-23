@@ -18,7 +18,6 @@
 
 use std::{
     collections::{BTreeMap, HashSet},
-    hash::Hash,
     marker::PhantomData,
     mem,
     time::SystemTime,
@@ -32,7 +31,7 @@ use burn::{
     tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
     train::{TrainOutput, TrainStep},
 };
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
 use crate::{
@@ -161,9 +160,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 let set = HashSet::from_iter(words.iter().cloned());
                 for (_, _) in words.iter().enumerate() {
                     counter += 1;
-                    let positive_indices = get_positive_indices(&wordset, words, 1, &mut self.rng);
+                    let positive_indices =
+                        super::get_positive_indices(&wordset, words, 1, &mut self.rng);
 
-                    let negative_indices = get_negative_indices(
+                    let negative_indices = super::get_negative_indices(
                         &wordvec,
                         &set,
                         self.params.num_neg_samples,
@@ -308,90 +308,4 @@ impl<B: Backend> Batcher<B, ProgramTrainingItem, ProgramBatch<B>> for ProgramBat
             true_words: Tensor::stack::<2>(true_word_indices, 0),
         }
     }
-}
-
-fn get_positive_indices<R: Rng, W: Ord>(
-    wordset: &BTreeMap<W, u32>,
-    doc_words: &Vec<W>,
-    num_positive_samples: usize,
-    rng: &mut R,
-) -> Vec<usize> {
-    if doc_words.len() <= num_positive_samples {
-        return doc_words
-            .iter()
-            .map(|w| *wordset.get(w).unwrap() as usize)
-            .collect::<Vec<usize>>();
-    }
-
-    let mut positive_samples = HashSet::new();
-    while positive_samples.len() < num_positive_samples {
-        let word = doc_words
-            .get(rng.random::<u32>() as usize % doc_words.len())
-            .unwrap();
-        if let Some(idx) = wordset.get(word) {
-            let idx = *idx as usize;
-            if !positive_samples.contains(&idx) {
-                positive_samples.insert(idx);
-            }
-        }
-    }
-
-    positive_samples.into_iter().collect()
-}
-
-#[test]
-fn test_positive_indices() {
-    use rand_chacha::ChaCha8Rng;
-
-    let mut set: BTreeMap<usize, u32> = BTreeMap::new();
-    for i in 0..1000 {
-        set.insert(i, i as u32);
-    }
-
-    let mut rng = ChaCha8Rng::seed_from_u64(10);
-
-    let indices = get_positive_indices(
-        &set,
-        &vec![10, 50, 555, 556, 557, 668, 537, 23, 234, 343, 129],
-        1,
-        &mut rng,
-    );
-    println!("indices: {indices:?}");
-}
-
-fn get_negative_indices<R: Rng, W: Ord + Hash>(
-    wordset: &BTreeMap<u32, W>,
-    doc_words: &HashSet<W>,
-    num_negative_samples: usize,
-    rng: &mut R,
-) -> Vec<usize> {
-    let mut negative_samples = HashSet::new();
-    while negative_samples.len() < num_negative_samples {
-        let idx = rng.random::<u32>() % wordset.len() as u32;
-        let word = wordset.get(&idx).unwrap();
-        if !doc_words.contains(word) && !negative_samples.contains(&(idx as usize)) {
-            negative_samples.insert(idx as usize);
-        }
-    }
-
-    negative_samples.into_iter().collect()
-}
-
-#[test]
-fn test_negative_indices() {
-    use rand_chacha::ChaCha8Rng;
-
-    let mut set: BTreeMap<u32, usize> = BTreeMap::new();
-    for i in 0..1000 {
-        set.insert(i as u32, i);
-    }
-
-    let mut rng = ChaCha8Rng::seed_from_u64(10);
-
-    let hash: HashSet<usize> = vec![10, 50, 555, 556, 557, 668, 537, 23, 234, 343, 129]
-        .into_iter()
-        .collect();
-
-    let indices = get_negative_indices(&set, &hash, 10, &mut rng);
-    println!("indices: {indices:?}");
 }
