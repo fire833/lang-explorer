@@ -28,7 +28,7 @@ use burn::{
     nn::{Embedding, EmbeddingConfig},
     prelude::Backend,
     record::FileRecorder,
-    tensor::{Float, Int, Tensor},
+    tensor::{activation::sigmoid, Float, Int, Tensor},
 };
 
 use crate::errors::LangExplorerError;
@@ -48,7 +48,7 @@ impl Doc2VecDBOWNSConfig {
         Doc2VecDBOWNS {
             documents: EmbeddingConfig::new(self.n_docs, self.d_model).init(device),
             hidden: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
-            biases: EmbeddingConfig::new(self.n_words, 1).init(device),
+            // biases: EmbeddingConfig::new(self.n_words, 1).init(device),
         }
     }
 }
@@ -58,7 +58,7 @@ pub struct Doc2VecDBOWNS<B: Backend> {
     /// Embeddings of all documents within the corpus.
     documents: Embedding<B>,
     hidden: Embedding<B>,
-    biases: Embedding<B>,
+    // biases: Embedding<B>,
 }
 
 impl<B: Backend> Doc2VecDBOWNS<B> {
@@ -88,20 +88,22 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
 
         let hidden_positive = self.hidden.forward(positive_words.clone());
         let hidden_negative = -self.hidden.forward(negative_words.clone());
-        let bias_positive = self.biases.forward(positive_words);
-        let bias_negative = self.hidden.forward(negative_words);
+        // let bias_positive = self.biases.forward(positive_words);
+        // let bias_negative = self.hidden.forward(negative_words);
 
         let positives = docs.clone().repeat_dim(1, num_positive_words);
         let positives = positives.mul(hidden_positive);
         let positives = positives.sum_dim(2);
-        let positives = positives.add(bias_positive);
+        let positives = sigmoid(positives).log();
+        // let positives = positives.add(bias_positive);
 
         let positive_loss = positives.sum();
 
         let negatives = docs.repeat_dim(1, num_negative_words);
         let negatives = negatives.mul(hidden_negative);
         let negatives = negatives.sum_dim(2);
-        let negatives = negatives.add(bias_negative);
+        let negatives = sigmoid(-negatives).log();
+        // let negatives = negatives.add(bias_negative);
 
         let negative_loss = negatives.sum();
 
