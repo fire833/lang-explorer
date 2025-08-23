@@ -83,25 +83,25 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
     ) -> Tensor<B, 1, Float> {
         let num_positive_words = positive_words.shape().dims[1];
         let num_negative_words = negative_words.shape().dims[1];
+
         let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(1));
+
         let hidden_positive = self.hidden.forward(positive_words.clone());
         let hidden_negative = -self.hidden.forward(negative_words.clone());
         let bias_positive = self.biases.forward(positive_words);
         let bias_negative = self.hidden.forward(negative_words);
-        let positives = docs
-            .clone()
-            .repeat_dim(1, num_positive_words)
-            .mul(hidden_positive)
-            .sum_dim(2)
-            .add(bias_positive);
+
+        let positives = docs.clone().repeat_dim(1, num_positive_words);
+        let positives = positives.mul(hidden_positive);
+        let positives = positives.sum_dim(2);
+        let positives = positives.add(bias_positive);
 
         let positive_loss = positives.sum();
 
-        let negatives = docs
-            .repeat_dim(1, num_negative_words)
-            .mul(hidden_negative)
-            .sum_dim(2)
-            .add(bias_negative);
+        let negatives = docs.repeat_dim(1, num_negative_words);
+        let negatives = negatives.mul(hidden_negative);
+        let negatives = negatives.sum_dim(2);
+        let negatives = negatives.add(bias_negative);
 
         let negative_loss = negatives.sum();
 
