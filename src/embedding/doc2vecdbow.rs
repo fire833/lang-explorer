@@ -214,7 +214,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOW<T, I, 
             .optim
             .step(self.params.get_learning_rate(), self.model, train.grads);
 
-        if counter % 1000 == 0 {
+        if counter % self.params.get_display_frequency() == 0 {
             let elapsed = start.elapsed().unwrap();
             // let emb = self.model.get_embeddings().unwrap();
             let loss_data = train

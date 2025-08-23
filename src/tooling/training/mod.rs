@@ -36,4 +36,8 @@ pub struct TrainingParams {
     /// The seed.
     #[config(default = 10)]
     pub seed: u64,
+    /// The frequency with which to write out loss and other
+    /// training metrics.
+    #[config(default = 100)]
+    pub display_frequency: usize,
 }

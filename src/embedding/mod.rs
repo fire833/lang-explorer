@@ -107,6 +107,10 @@ impl GeneralEmbeddingTrainingParams {
     pub fn get_seed(&self) -> u64 {
         self.gen_params.seed
     }
+
+    pub fn get_display_frequency(&self) -> usize {
+        self.gen_params.display_frequency
+    }
 }
 
 pub(super) fn get_positive_indices<R: Rng, W: Ord>(

@@ -39,6 +39,7 @@ class GeneralTrainingParameters:
 	learning_rate: float
 	learning_rate_drop: float
 	seed: int
+	display_frequency: int
 
 @dataclass
 class GenerateParams:
