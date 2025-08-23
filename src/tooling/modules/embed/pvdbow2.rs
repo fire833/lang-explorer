@@ -47,8 +47,8 @@ impl Doc2VecDBOWNSConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Doc2VecDBOWNS<B> {
         Doc2VecDBOWNS {
             documents: EmbeddingConfig::new(self.n_docs, self.d_model).init(device),
-            hidden: EmbeddingConfig::new(self.n_docs, self.d_model).init(device),
-            biases: EmbeddingConfig::new(self.n_docs, 1).init(device),
+            hidden: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
+            biases: EmbeddingConfig::new(self.n_words, 1).init(device),
         }
     }
 }
@@ -82,10 +82,15 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
         negative_words: Tensor<B, 2, Int>,
     ) -> Tensor<B, 1, Float> {
         let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(0));
+        println!("docs: {docs}");
         let hidden_positive = self.hidden.forward(positive_words.clone());
+        println!("hidden_positive: {hidden_positive}");
         let bias_positive = self.biases.forward(positive_words);
+        println!("bias_positive: {bias_positive}");
         let hidden_negative = self.hidden.forward(negative_words.clone());
+        println!("hidden_negative: {hidden_negative}");
         let bias_negative = self.hidden.forward(negative_words);
+        println!("bias_negative: {bias_negative}");
         let positives = docs.mul(hidden_positive).sum_dim(2);
         Tensor::from([0.0])
     }
@@ -119,7 +124,7 @@ fn test_forward() {
     let model = Doc2VecDBOWNSConfig::new(10, 5, 3).init::<NdArray>(&dev);
 
     let out = model.forward(
-        Tensor::from_data([0, 1, 2, 3, 4], &dev),
+        Tensor::from_data([0], &dev),
         Tensor::from_data([[6, 7, 8]], &dev),
         Tensor::from_data([[1, 2, 3]], &dev),
     );
