@@ -339,6 +339,26 @@ fn get_positive_indices<R: Rng, W: Ord>(
     positive_samples.into_iter().collect()
 }
 
+#[test]
+fn test_positive_indices() {
+    use rand_chacha::ChaCha8Rng;
+
+    let mut set: BTreeMap<usize, u32> = BTreeMap::new();
+    for i in 0..1000 {
+        set.insert(i, i as u32);
+    }
+
+    let mut rng = ChaCha8Rng::seed_from_u64(10);
+
+    let indices = get_positive_indices(
+        &set,
+        &vec![10, 50, 555, 556, 557, 668, 537, 23, 234, 343, 129],
+        1,
+        &mut rng,
+    );
+    println!("indices: {indices:?}");
+}
+
 fn get_negative_indices<R: Rng, W: Ord + Hash>(
     wordset: &BTreeMap<u32, W>,
     doc_words: &HashSet<W>,
@@ -355,4 +375,23 @@ fn get_negative_indices<R: Rng, W: Ord + Hash>(
     }
 
     negative_samples.into_iter().collect()
+}
+
+#[test]
+fn test_negative_indices() {
+    use rand_chacha::ChaCha8Rng;
+
+    let mut set: BTreeMap<u32, usize> = BTreeMap::new();
+    for i in 0..1000 {
+        set.insert(i as u32, i);
+    }
+
+    let mut rng = ChaCha8Rng::seed_from_u64(10);
+
+    let hash: HashSet<usize> = vec![10, 50, 555, 556, 557, 668, 537, 23, 234, 343, 129]
+        .into_iter()
+        .collect();
+
+    let indices = get_negative_indices(&set, &hash, 10, &mut rng);
+    println!("indices: {indices:?}");
 }
