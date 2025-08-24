@@ -125,6 +125,7 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
             .hidden
             .forward(positive_words.clone().unsqueeze_dim(0))
             .squeeze::<2>(0);
+        println!("hidden_positive {hidden_positive}");
         let hidden_negative = self
             .hidden
             .forward(negative_words.clone().unsqueeze_dim(0))
@@ -133,26 +134,24 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
         let positives = doc_vec
             .clone()
             .unsqueeze_dim(0)
-            .repeat_dim(1, num_positive_words);
+            .repeat_dim(0, num_positive_words);
         let positives = positives.mul(hidden_positive);
-        let positives = positives.sum_dim(2);
+        let positives = positives.sum_dim(1);
         let positives = sigmoid(positives).log();
 
-        let positive_loss = positives.squeeze::<2>(2);
-        let positive_loss = positive_loss.sum_dim(1);
-        let positive_loss = positive_loss.squeeze(1);
+        let positive_loss = positives.squeeze::<1>(1);
+        let positive_loss = positive_loss.sum_dim(0);
 
         let negatives = doc_vec
             .clone()
             .unsqueeze_dim(0)
-            .repeat_dim(1, num_negative_words);
+            .repeat_dim(0, num_negative_words);
         let negatives = negatives.mul(hidden_negative);
-        let negatives = negatives.sum_dim(2);
+        let negatives = negatives.sum_dim(1);
         let negatives = sigmoid(-negatives).log();
 
-        let negative_loss = negatives.squeeze::<2>(2);
-        let negative_loss = negative_loss.sum_dim(1);
-        let negative_loss = negative_loss.squeeze(1);
+        let negative_loss = negatives.squeeze::<1>(1);
+        let negative_loss = negative_loss.sum_dim(0);
 
         (doc_vec, -positive_loss - negative_loss)
     }
