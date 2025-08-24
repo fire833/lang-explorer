@@ -28,7 +28,7 @@ use burn::{
     data::dataloader::batcher::Batcher,
     optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig, Optimizer},
     prelude::Backend,
-    tensor::{backend::AutodiffBackend, Device, Float, Int, Tensor},
+    tensor::{backend::AutodiffBackend, Device, Distribution, Float, Int, Tensor},
     train::{TrainOutput, TrainStep},
 };
 use rand::SeedableRng;
@@ -39,7 +39,7 @@ use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
-    tooling::modules::embed::pvdbow2::{Doc2VecDBOWNS, Doc2VecDBOWNSConfig},
+    tooling::modules::embed::pvdbow::{Doc2VecDBOWNS, Doc2VecDBOWNSConfig},
 };
 
 pub struct Doc2VecEmbedderDBOWNS<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
@@ -191,8 +191,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     fn embed(
         &mut self,
         _document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, 1>, LangExplorerError> {
-        todo!()
+    ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
+        let vec: Tensor<B, 1, Float> = Tensor::random(
+            [self.params.d_model],
+            Distribution::Uniform(0.0, 1.0),
+            &self.device,
+        );
+
+        Ok(vec)
     }
 
     fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError> {
@@ -212,7 +218,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I
 
         if counter % self.params.get_display_frequency() == 0 {
             let elapsed = start.elapsed().unwrap();
-            // let emb = self.model.get_embeddings().unwrap();
             let loss_data = train
                 .item
                 .to_data()
@@ -278,7 +283,8 @@ impl ProgramTrainingItem {
     }
 }
 
-/// A batch of document/word context items that are already in their correct tensor form.
+/// A batch of document/word context items that are already
+/// in their correct tensor form.
 struct ProgramBatch<B: Backend> {
     documents: Tensor<B, 1, Int>,
     negative_words: Tensor<B, 2, Int>,

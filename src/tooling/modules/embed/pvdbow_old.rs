@@ -25,16 +25,16 @@ use std::path::PathBuf;
 use burn::{
     config::Config,
     module::Module,
-    nn::{Embedding, EmbeddingConfig},
+    nn::{Embedding, EmbeddingConfig, Linear, LinearConfig},
     prelude::Backend,
     record::FileRecorder,
-    tensor::{activation::sigmoid, Float, Int, Tensor},
+    tensor::{Float, Int, Tensor},
 };
 
 use crate::errors::LangExplorerError;
 
 #[derive(Debug, Config)]
-pub struct Doc2VecDBOWNSConfig {
+pub struct Doc2VecDBOWConfig {
     /// The number of word vectors.
     pub n_words: usize,
     /// The number of document vectors.
@@ -43,25 +43,26 @@ pub struct Doc2VecDBOWNSConfig {
     pub d_model: usize,
 }
 
-impl Doc2VecDBOWNSConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> Doc2VecDBOWNS<B> {
-        Doc2VecDBOWNS {
+impl Doc2VecDBOWConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> Doc2VecDBOW<B> {
+        Doc2VecDBOW {
             documents: EmbeddingConfig::new(self.n_docs, self.d_model).init(device),
-            hidden: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
-            // biases: EmbeddingConfig::new(self.n_words, 1).init(device),
+            hidden: LinearConfig::new(self.d_model, self.n_words)
+                .with_bias(false)
+                .init(device),
         }
     }
 }
 
 #[derive(Debug, Module)]
-pub struct Doc2VecDBOWNS<B: Backend> {
+pub struct Doc2VecDBOW<B: Backend> {
     /// Embeddings of all documents within the corpus.
     documents: Embedding<B>,
-    hidden: Embedding<B>,
-    // biases: Embedding<B>,
+    /// The hidden layer to compute output logits.
+    hidden: Linear<B>,
 }
 
-impl<B: Backend> Doc2VecDBOWNS<B> {
+impl<B: Backend> Doc2VecDBOW<B> {
     /// Applies the forward pass to the input tensor.
     ///
     /// More specifically, takes a list of document vectors indices.
@@ -72,46 +73,11 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
     /// # Shapes
     ///
     /// - doc_inputs: `[batch_size]`
-    /// - positive_words: `[batch_size, k]`
-    /// - negative_words: `[batch_size, j]`
     /// - output: `[batch_size, n_words]`
-    pub fn forward(
-        &self,
-        doc_inputs: Tensor<B, 1, Int>,
-        positive_words: Tensor<B, 2, Int>,
-        negative_words: Tensor<B, 2, Int>,
-    ) -> Tensor<B, 1, Float> {
-        let num_positive_words = positive_words.shape().dims[1];
-        let num_negative_words = negative_words.shape().dims[1];
-
-        let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(1));
-
-        let hidden_positive = self.hidden.forward(positive_words.clone());
-        let hidden_negative = self.hidden.forward(negative_words.clone());
-        // let bias_positive = self.biases.forward(positive_words);
-        // let bias_negative = self.hidden.forward(negative_words);
-
-        let positives = docs.clone().repeat_dim(1, num_positive_words);
-        let positives = positives.mul(hidden_positive);
-        let positives = positives.sum_dim(2);
-        let positives = sigmoid(positives).log();
-        // let positives = positives.add(bias_positive);
-
-        let positive_loss = positives.squeeze::<2>(2);
-        let positive_loss = positive_loss.sum_dim(1);
-        let positive_loss = positive_loss.squeeze(1);
-
-        let negatives = docs.repeat_dim(1, num_negative_words);
-        let negatives = negatives.mul(hidden_negative);
-        let negatives = negatives.sum_dim(2);
-        let negatives = sigmoid(-negatives).log();
-        // let negatives = negatives.add(bias_negative);
-
-        let negative_loss = negatives.squeeze::<2>(2);
-        let negative_loss = negative_loss.sum_dim(1);
-        let negative_loss = negative_loss.squeeze(1);
-
-        -positive_loss - negative_loss
+    pub fn forward(&self, doc_inputs: Tensor<B, 1, Int>) -> Tensor<B, 2, Float> {
+        let docs = self.documents.forward(doc_inputs.unsqueeze_dim::<2>(0));
+        let out = self.hidden.forward(docs);
+        out.squeeze::<2>(0)
     }
 
     /// Returns a vector of the embedding tensor. It should be structured in
@@ -140,12 +106,8 @@ fn test_forward() {
     use burn::backend::NdArray;
 
     let dev = Default::default();
-    let model = Doc2VecDBOWNSConfig::new(10, 5, 3).init::<NdArray>(&dev);
+    let model = Doc2VecDBOWConfig::new(10, 5, 3).init::<NdArray>(&dev);
 
-    let out = model.forward(
-        Tensor::from_data([0, 1, 2], &dev),
-        Tensor::from_data([[6, 7, 8, 9], [3, 4, 5, 6], [4, 5, 6, 7]], &dev),
-        Tensor::from_data([[1], [2], [5]], &dev),
-    );
+    let out = model.forward(Tensor::from_data([0, 1, 2, 3, 4], &dev));
     println!("{out}");
 }

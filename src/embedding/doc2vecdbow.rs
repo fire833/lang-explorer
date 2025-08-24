@@ -40,7 +40,7 @@ use crate::{
     grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::Feature,
     tooling::modules::{
-        embed::pvdbow::{Doc2VecDBOW, Doc2VecDBOWConfig},
+        embed::pvdbow_old::{Doc2VecDBOW, Doc2VecDBOWConfig},
         loss::nsampling::{NegativeSampling, NegativeSamplingConfig},
     },
 };
