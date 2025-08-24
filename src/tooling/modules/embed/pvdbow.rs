@@ -49,6 +49,7 @@ impl Doc2VecDBOWNSConfig {
             documents: EmbeddingConfig::new(self.n_docs, self.d_model).init(device),
             hidden: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
             // biases: EmbeddingConfig::new(self.n_words, 1).init(device),
+            new_vec: None,
         }
     }
 }
@@ -59,6 +60,7 @@ pub struct Doc2VecDBOWNS<B: Backend> {
     documents: Embedding<B>,
     hidden: Embedding<B>,
     // biases: Embedding<B>,
+    new_vec: Option<Tensor<B, 1, Float>>,
 }
 
 impl<B: Backend> Doc2VecDBOWNS<B> {
@@ -88,14 +90,11 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
 
         let hidden_positive = self.hidden.forward(positive_words.clone());
         let hidden_negative = self.hidden.forward(negative_words.clone());
-        // let bias_positive = self.biases.forward(positive_words);
-        // let bias_negative = self.hidden.forward(negative_words);
 
         let positives = docs.clone().repeat_dim(1, num_positive_words);
         let positives = positives.mul(hidden_positive);
         let positives = positives.sum_dim(2);
         let positives = sigmoid(positives).log();
-        // let positives = positives.add(bias_positive);
 
         let positive_loss = positives.squeeze::<2>(2);
         let positive_loss = positive_loss.sum_dim(1);
@@ -105,13 +104,57 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
         let negatives = negatives.mul(hidden_negative);
         let negatives = negatives.sum_dim(2);
         let negatives = sigmoid(-negatives).log();
-        // let negatives = negatives.add(bias_negative);
 
         let negative_loss = negatives.squeeze::<2>(2);
         let negative_loss = negative_loss.sum_dim(1);
         let negative_loss = negative_loss.squeeze(1);
 
         -positive_loss - negative_loss
+    }
+
+    pub fn forward_new_doc(
+        &self,
+        doc_vec: Tensor<B, 1, Float>,
+        positive_words: Tensor<B, 1, Int>,
+        negative_words: Tensor<B, 1, Int>,
+    ) -> (Tensor<B, 1, Float>, Tensor<B, 1, Float>) {
+        let num_positive_words = positive_words.shape().dims[0];
+        let num_negative_words = negative_words.shape().dims[0];
+
+        let hidden_positive = self
+            .hidden
+            .forward(positive_words.clone().unsqueeze_dim(0))
+            .squeeze::<2>(0);
+        let hidden_negative = self
+            .hidden
+            .forward(negative_words.clone().unsqueeze_dim(0))
+            .squeeze::<2>(0);
+
+        let positives = doc_vec
+            .clone()
+            .unsqueeze_dim(0)
+            .repeat_dim(1, num_positive_words);
+        let positives = positives.mul(hidden_positive);
+        let positives = positives.sum_dim(2);
+        let positives = sigmoid(positives).log();
+
+        let positive_loss = positives.squeeze::<2>(2);
+        let positive_loss = positive_loss.sum_dim(1);
+        let positive_loss = positive_loss.squeeze(1);
+
+        let negatives = doc_vec
+            .clone()
+            .unsqueeze_dim(0)
+            .repeat_dim(1, num_negative_words);
+        let negatives = negatives.mul(hidden_negative);
+        let negatives = negatives.sum_dim(2);
+        let negatives = sigmoid(-negatives).log();
+
+        let negative_loss = negatives.squeeze::<2>(2);
+        let negative_loss = negative_loss.sum_dim(1);
+        let negative_loss = negative_loss.squeeze(1);
+
+        (doc_vec, -positive_loss - negative_loss)
     }
 
     /// Returns a vector of the embedding tensor. It should be structured in
@@ -147,5 +190,22 @@ fn test_forward() {
         Tensor::from_data([[6, 7, 8, 9], [3, 4, 5, 6], [4, 5, 6, 7]], &dev),
         Tensor::from_data([[1], [2], [5]], &dev),
     );
-    println!("{out}");
+    println!("out: {out}");
+}
+
+#[test]
+fn test_forward_new_doc() {
+    use burn::backend::NdArray;
+
+    let dev = Default::default();
+    let model = Doc2VecDBOWNSConfig::new(10, 5, 3).init::<NdArray>(&dev);
+
+    let new_vec = Tensor::from_data([1.0, 2.0, 3.0], &dev);
+
+    let out = model.forward_new_doc(
+        new_vec,
+        Tensor::from_data([6, 7, 8, 9], &dev),
+        Tensor::from_data([1], &dev),
+    );
+    println!("vec: {}\nloss: {}", out.0, out.1);
 }
