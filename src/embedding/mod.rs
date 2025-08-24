@@ -35,7 +35,6 @@ use crate::{
     tooling::{modules::embed::AggregationMethod, training::TrainingParams},
 };
 
-pub mod doc2vecdbow;
 pub mod doc2vecdbowns;
 pub mod doc2vecdm;
 

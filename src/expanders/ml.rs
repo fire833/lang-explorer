@@ -28,7 +28,7 @@ use burn::{
 
 use crate::{
     embedding::{
-        doc2vecdbow::{Doc2VecDBOWEmbedderParams, Doc2VecEmbedderDBOW},
+        doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS},
         GeneralEmbeddingTrainingParams, LanguageEmbedder,
     },
     errors::LangExplorerError,
@@ -95,7 +95,7 @@ enum ModuleWrapper<B: Backend> {
 
 /// Another hack to allow us to use multiple embedders.
 enum EmbedderWrapper<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    Doc2Vec(Doc2VecEmbedderDBOW<T, I, B>),
+    Doc2Vec(Doc2VecEmbedderDBOWNS<T, I, B>),
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
@@ -128,9 +128,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             map.insert(production.clone(), module);
         }
 
-        let d2v = Doc2VecEmbedderDBOW::new(
+        let d2v = Doc2VecEmbedderDBOWNS::new(
             grammar,
-            Doc2VecDBOWEmbedderParams::new(
+            Doc2VecDBOWNSEmbedderParams::new(
                 AdamWConfig::new(),
                 1000,
                 1000,
