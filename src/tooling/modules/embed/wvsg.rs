@@ -36,6 +36,7 @@ use burn::{
 use crate::errors::LangExplorerError;
 
 #[derive(Debug, Config)]
+#[allow(unused)]
 pub struct Word2VecSGConfig {
     /// The number of embedding vectors.
     pub n_words: usize,
@@ -44,6 +45,7 @@ pub struct Word2VecSGConfig {
 }
 
 impl Word2VecSGConfig {
+    #[allow(unused)]
     pub fn init<B: Backend>(&self, device: &B::Device) -> Word2VecSG<B> {
         Word2VecSG {
             embed: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
@@ -74,6 +76,7 @@ impl<B: Backend> Word2VecSG<B> {
     ///
     /// - input: `[batch_size]`
     /// - output: `[batch_size, n_words]`
+    #[allow(unused)]
     pub fn forward(&self, input: Tensor<B, 1, Int>) -> Tensor<B, 2, Float> {
         let vecs = self.embed.forward(input.unsqueeze_dim::<2>(0));
         let out = self.hidden.forward(vecs);
@@ -81,6 +84,7 @@ impl<B: Backend> Word2VecSG<B> {
     }
 
     /// Save the current embeddings to a separate file.
+    #[allow(unused)]
     pub fn save_embeddings<FR: FileRecorder<B>, PB: Into<PathBuf>>(
         &self,
         file_path: PB,

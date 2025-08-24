@@ -25,6 +25,7 @@ use burn::{
 };
 
 #[derive(Debug, Config)]
+#[allow(unused)]
 pub struct Code2VecConfig {
     /// The number of terminals.
     pub n_terminals: usize,
@@ -42,6 +43,7 @@ pub struct Code2VecConfig {
 }
 
 impl Code2VecConfig {
+    #[allow(unused)]
     pub fn init<B: Backend>(&self, device: &B::Device) -> Code2Vec<B> {
         Code2Vec {
             terminals: EmbeddingConfig::new(self.n_terminals, self.d_terminal).init(device),
@@ -69,6 +71,7 @@ pub struct Code2Vec<B: Backend> {
 }
 
 impl<B: Backend> Code2Vec<B> {
+    #[allow(unused)]
     pub fn forward(&self) -> Tensor<B, 2, Float> {
         todo!()
     }

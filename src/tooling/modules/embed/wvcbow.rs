@@ -36,6 +36,7 @@ use burn::{
 use crate::{errors::LangExplorerError, tooling::modules::embed::AggregationMethod};
 
 #[derive(Debug, Config)]
+#[allow(unused)]
 pub struct Word2VecCBOWConfig {
     /// The number of embedding vectors.
     pub n_words: usize,
@@ -44,6 +45,7 @@ pub struct Word2VecCBOWConfig {
 }
 
 impl Word2VecCBOWConfig {
+    #[allow(unused)]
     pub fn init<B: Backend>(&self, device: &B::Device) -> Word2VecCBOW<B> {
         Word2VecCBOW {
             embed: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
@@ -75,6 +77,7 @@ impl<B: Backend> Word2VecCBOW<B> {
     ///
     /// - input: `[batch_size, word_context_size]`
     /// - output: `[batch_size, n_words]`
+    #[allow(unused)]
     pub fn forward(&self, input: Tensor<B, 2, Int>, agg: AggregationMethod) -> Tensor<B, 2, Float> {
         let vecs = self.embed.forward(input);
         let int = match agg {
@@ -86,6 +89,7 @@ impl<B: Backend> Word2VecCBOW<B> {
     }
 
     /// Save the current embeddings to a separate file.
+    #[allow(unused)]
     pub fn save_embeddings<FR: FileRecorder<B>, PB: Into<PathBuf>>(
         &self,
         file_path: PB,
