@@ -145,6 +145,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         });
 
         let batcher = ProgramBatcher::new();
+
+        let mut lr: f64 = self.params.get_learning_rate();
+
         for num in 0..self.params.get_num_epochs() {
             println!(
                 "Running epoch {} of {}",
@@ -154,9 +157,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             let mut items = vec![];
 
             // Adaptive learning rate
-            self.params.gen_params.learning_rate *= self.params.gen_params.learning_rate_drop;
-            if self.params.get_learning_rate() < 0.000001 {
-                self.params.gen_params.learning_rate = 0.000001;
+            lr *= self.params.gen_params.learning_rate_drop;
+            if lr < 0.000001 {
+                lr = 0.000001;
             }
 
             let mut counter = 0;
@@ -186,7 +189,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     if items.len() >= self.params.get_batch_size() {
                         let moved = mem::take(&mut items);
                         let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
-                        self = self.train_batch(batch, counter);
+                        self = self.train_batch(batch, counter, lr);
                     }
                 }
             }
@@ -194,7 +197,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             // Extra items need to be trained on too.
             if !items.is_empty() {
                 let batch: ProgramBatch<B> = batcher.batch(items, &self.device);
-                self = self.train_batch(batch, counter);
+                self = self.train_batch(batch, counter, lr);
             }
         }
 
@@ -214,14 +217,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDM<T, I, B> {
-    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize) -> Self {
+    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize, learning_rate: f64) -> Self {
         let start = SystemTime::now();
 
         let train = self.step(batch);
         let grads_count = train.grads.len();
-        self.model = self
-            .optim
-            .step(self.params.get_learning_rate(), self.model, train.grads);
+        self.model = self.optim.step(learning_rate, self.model, train.grads);
 
         if counter % self.params.get_display_frequency() == 0 {
             let elapsed = start.elapsed().unwrap();
