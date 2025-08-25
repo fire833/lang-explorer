@@ -61,6 +61,9 @@ pub struct Doc2VecEmbedderDBOWNS<T: Terminal, I: NonTerminal, B: AutodiffBackend
     display_count: usize,
 
     old_embeddings: Vec<f32>,
+
+    word2idx: BTreeMap<Feature, u32>,
+    idx2word: BTreeMap<u32, Feature>,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
@@ -110,6 +113,8 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             params: params.gen_params,
             old_embeddings: vec![],
             display_count: 0,
+            word2idx: BTreeMap::new(),
+            idx2word: BTreeMap::new(),
         }
     }
 
@@ -120,26 +125,21 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     where
         Self: Sized,
     {
-        let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
-        // I hate this
-        let mut wordvec: BTreeMap<u32, Self::Word> = BTreeMap::new();
-
         let mut counter: u32 = 0;
         documents.iter().for_each(|doc| {
             doc.1.iter().for_each(|word| {
-                if !wordset.contains_key(word) {
-                    wordset.insert(*word, counter);
-                    wordvec.insert(counter, *word);
+                if !self.word2idx.contains_key(word) {
+                    self.word2idx.insert(*word, counter);
+                    self.idx2word.insert(counter, *word);
                     counter += 1;
                 }
             })
         });
 
         let batcher = ProgramBatcher::new();
-
         let mut lr: f64 = self.params.get_learning_rate();
-
         let mut counter = 0;
+
         for num in 0..self.params.get_num_epochs() {
             println!(
                 "Running epoch {} of {}",
@@ -155,14 +155,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             }
 
             for (docidx, (_, words)) in documents.iter().enumerate() {
-                let set = HashSet::from_iter(words.iter().cloned());
+                let set = words.iter().cloned().collect::<HashSet<Feature>>();
                 for (_, _) in words.iter().enumerate() {
                     counter += 1;
                     let positive_indices =
-                        super::get_positive_indices(&wordset, words, 1, &mut self.rng);
+                        super::get_positive_indices(&self.word2idx, words, 1, &mut self.rng);
 
                     let negative_indices = super::get_negative_indices(
-                        &wordvec,
+                        &self.idx2word,
                         &set,
                         self.params.num_neg_samples,
                         &mut self.rng,
@@ -192,13 +192,56 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn embed(
         &mut self,
-        _document: (Self::Document, Vec<Self::Word>),
+        document: (Self::Document, Vec<Self::Word>),
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         let vec: Tensor<B, 1, Float> = Tensor::random(
             [self.params.d_model],
             Distribution::Uniform(0.0, 1.0),
             &self.device,
         );
+
+        let batcher = ProgramBatcher::new();
+        let mut lr: f64 = self.params.get_learning_rate();
+        let mut counter = 0;
+        let set = document.1.iter().cloned().collect::<HashSet<Feature>>();
+
+        for num in 0..5 {
+            let mut items = vec![];
+
+            // Adaptive learning rate
+            lr *= self.params.gen_params.learning_rate_drop;
+            if lr < 0.000001 {
+                lr = 0.000001;
+            }
+
+            for (_, _) in document.1.iter().enumerate() {
+                counter += 1;
+                let positive_indices =
+                    super::get_positive_indices(&self.word2idx, &document.1, 1, &mut self.rng);
+
+                let negative_indices = super::get_negative_indices(
+                    &self.idx2word,
+                    &set,
+                    self.params.num_neg_samples,
+                    &mut self.rng,
+                );
+
+                let train_item = ProgramTrainingItem::new(0, positive_indices, negative_indices);
+                items.push(train_item);
+
+                if items.len() >= self.params.get_batch_size() {
+                    let moved = mem::take(&mut items);
+                    let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
+                    // self = &mut self.train_batch(batch, counter, lr);
+                }
+            }
+
+            // Extra items need to be trained on too.
+            if !items.is_empty() {
+                let batch: ProgramBatch<B> = batcher.batch(items, &self.device);
+                // self = &mut self.train_batch(batch, counter, lr);
+            }
+        }
 
         Ok(vec)
     }
