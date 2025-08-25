@@ -5,9 +5,11 @@ import os
 import pandas as pd
 
 def generate_embeddings(args):
+	new_embeddings = False
+
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc",
-		GenerateParams(args.count, False, True, True, False, True, True, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50),
+		GenerateParams(args.count, False, True, True, False, True, new_embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50),
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
 	        "#20b01c",
@@ -62,9 +64,11 @@ def generate_embeddings(args):
 	# print(f"{model.running_training_loss}, {model.cum_table}, {model.compute_loss}")
 
 	output1 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}.csv"
-	output2 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}_new.csv"
 	save_embedding(output1, model, res.programs, args.dimensions)
-	save_embedding_new(output2, res.programs, args.dimensions)
+
+	if new_embeddings:
+		output2 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}_new.csv"
+		save_embedding_new(output2, res.programs, args.dimensions)
 
 def save_embedding_new(output_path, programs, dimensions):
 	"""
