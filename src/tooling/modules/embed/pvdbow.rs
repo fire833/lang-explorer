@@ -125,7 +125,6 @@ impl<B: Backend> Doc2VecDBOWNS<B> {
             .hidden
             .forward(positive_words.clone().unsqueeze_dim(0))
             .squeeze::<2>(0);
-        println!("hidden_positive {hidden_positive}");
         let hidden_negative = self
             .hidden
             .forward(negative_words.clone().unsqueeze_dim(0))
