@@ -46,6 +46,7 @@ def main():
 	neighbors.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	neighbors.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
 	neighbors.add_argument("--count", type=int, default=10, help="Number of nearest neighbors to retrieve.")
+	neighbors.add_argument("--output", type=str, default="foo", help="Specify the name of the output.")
 	neighbors.set_defaults(func=nearest_neighbors)
 
 	anim = sub.add_parser("tsneanim", help="Animate tSNE over time.")

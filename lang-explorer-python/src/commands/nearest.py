@@ -33,7 +33,10 @@ def nearest_neighbors(args):
 	graphs = data.iloc[indices, 1]
 
 	plt.title("Nearest neighbors examples")
-	fig, axes = plt.subplots(len(indices), args.count + 1, figsize=(7, 7))
+	fig, axes = plt.subplots(len(indices), args.count + 1)
+
+	fig.tight_layout(pad=0.05)
+	fig.subplots_adjust(top=0.99, bottom=0.01, left=0.01, right=0.99, hspace=0.001, wspace=0.001)
 
 	for i, prog in enumerate(programs):
 		path = Source(graphs[indices[i]]).render(f"/tmp/{i}_root", format="png", cleanup=True)
@@ -54,4 +57,4 @@ def nearest_neighbors(args):
 			axes[i, j].axis('off')
 			axes[i, j].set_title(f"{j}th NN")
 
-	plt.savefig(f"images/nn_{plain}.jpeg", dpi=1500)
+	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
