@@ -18,6 +18,7 @@
 
 use std::{
     collections::{BTreeMap, HashSet},
+    fs,
     marker::PhantomData,
     mem,
     time::SystemTime,
@@ -57,7 +58,7 @@ pub struct Doc2VecEmbedderDBOWNS<T: Terminal, I: NonTerminal, B: AutodiffBackend
 
     optim: OptimizerAdaptor<AdamW, Doc2VecDBOWNS<B>, B>,
 
-    params: GeneralEmbeddingTrainingParams,
+    params: Doc2VecDBOWNSEmbedderParams,
 
     display_count: usize,
 
@@ -108,18 +109,29 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             grammar.generate_location()
         );
 
-        let model =
+        let mbase =
             Doc2VecDBOWNSConfig::new(params.n_words + 2, params.n_docs, params.gen_params.d_model)
                 .init(&device);
 
-        let model = match Doc2VecDBOWNS::load_file(
-            model,
-            model_location,
-            &params.gen_params.get_model_recorder(),
-            &device,
+        let model = match (
+            fs::metadata(&model_location),
+            params.gen_params.get_create_new_model(),
         ) {
-            Ok(m) => m,
-            Err(e) => panic!("{}", e),
+            (Ok(_), true) => mbase,
+            (Ok(m), false) if m.is_file() => match Doc2VecDBOWNS::load_file(
+                mbase,
+                model_location,
+                &params.gen_params.get_model_recorder(),
+                &device,
+            ) {
+                Ok(m) => m,
+                Err(e) => panic!("{}", e),
+            },
+            (Ok(_), false) => {
+                println!("model is not a regular file, reverting to starting from scratch");
+                mbase
+            }
+            (Err(_), _) => mbase,
         };
 
         Self {
@@ -129,7 +141,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             device: device,
             optim: params.ada_config.init(),
             rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
-            params: params.gen_params,
+            params,
             old_embeddings: vec![],
             display_count: 0,
             word2idx: BTreeMap::new(),
@@ -156,19 +168,19 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         });
 
         let batcher = ProgramBatcher::new();
-        let mut lr: f64 = self.params.get_learning_rate();
+        let mut lr: f64 = self.params.gen_params.get_learning_rate();
         let mut counter = 0;
 
-        for num in 0..self.params.get_num_epochs() {
+        for num in 0..self.params.gen_params.get_num_epochs() {
             println!(
                 "Running epoch {} of {}",
                 num + 1,
-                self.params.get_num_epochs()
+                self.params.gen_params.get_num_epochs()
             );
             let mut items = vec![];
 
             // Adaptive learning rate
-            lr *= self.params.gen_params.learning_rate_drop;
+            lr *= self.params.gen_params.gen_params.learning_rate_drop;
             if lr < 0.000001 {
                 lr = 0.000001;
             }
@@ -183,7 +195,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     let negative_indices = super::get_negative_indices(
                         &self.idx2word,
                         &set,
-                        self.params.num_neg_samples,
+                        self.params.gen_params.num_neg_samples,
                         &mut self.rng,
                     );
 
@@ -191,7 +203,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                         ProgramTrainingItem::new(docidx, positive_indices, negative_indices);
                     items.push(train_item);
 
-                    if items.len() >= self.params.get_batch_size() {
+                    if items.len() >= self.params.gen_params.get_batch_size() {
                         let moved = mem::take(&mut items);
                         let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
                         self = self.train_batch(batch, counter, lr);
@@ -206,6 +218,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             }
         }
 
+        if self.params.gen_params.get_save_model() {
+            let recorder = self.params.gen_params.get_model_recorder();
+            self.model
+                .clone()
+                .save_file(&self.params.model_dir, &recorder)?;
+        }
+
         Ok(self)
     }
 
@@ -214,13 +233,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         document: (Self::Document, Vec<Self::Word>),
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         let vec: Tensor<B, 1, Float> = Tensor::random(
-            [self.params.d_model],
+            [self.params.gen_params.d_model],
             Distribution::Uniform(0.0, 1.0),
             &self.device,
         );
 
         let batcher = ProgramBatcher::new();
-        let mut lr: f64 = self.params.get_learning_rate();
+        let mut lr: f64 = self.params.gen_params.get_learning_rate();
         let mut counter = 0;
         let set = document.1.iter().cloned().collect::<HashSet<Feature>>();
 
@@ -228,7 +247,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             let mut items = vec![];
 
             // Adaptive learning rate
-            lr *= self.params.gen_params.learning_rate_drop;
+            lr *= self.params.gen_params.gen_params.learning_rate_drop;
             if lr < 0.000001 {
                 lr = 0.000001;
             }
@@ -241,14 +260,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 let negative_indices = super::get_negative_indices(
                     &self.idx2word,
                     &set,
-                    self.params.num_neg_samples,
+                    self.params.gen_params.num_neg_samples,
                     &mut self.rng,
                 );
 
                 let train_item = ProgramTrainingItem::new(0, positive_indices, negative_indices);
                 items.push(train_item);
 
-                if items.len() >= self.params.get_batch_size() {
+                if items.len() >= self.params.gen_params.get_batch_size() {
                     let moved = mem::take(&mut items);
                     let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
                     // self = &mut self.train_batch(batch, counter, lr);
@@ -278,7 +297,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I
         let grads_count = train.grads.len();
         self.model = self.optim.step(learning_rate, self.model, train.grads);
 
-        if counter % self.params.get_display_frequency() == 0 {
+        if counter % self.params.gen_params.get_display_frequency() == 0 {
             let elapsed = start.elapsed().unwrap();
             let loss_data = train
                 .item
@@ -300,7 +319,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I
 
             let _ = super::save_embeddings_as_csv(
                 &emb,
-                self.params.d_model,
+                self.params.gen_params.d_model,
                 format!(
                     "lang-explorer-python/results/temporal/vectors_{:04}.csv",
                     self.display_count

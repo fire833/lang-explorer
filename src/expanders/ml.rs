@@ -112,7 +112,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 {
     fn init(grammar: &Grammar<T, I>, _seed: u64) -> Result<Self, LangExplorerError> {
         let device = Default::default();
-        let recorder = BinGzFileRecorder::<FullPrecisionSettings>::new();
         let mut map = HashMap::new();
 
         for production in grammar.get_productions() {

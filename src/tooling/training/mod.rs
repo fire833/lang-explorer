@@ -45,7 +45,8 @@ pub struct TrainingParams {
     #[config(default = false)]
     pub create_new_model: bool,
     /// Toggle whether to save a model to disk.
-    ///  Depends on create_new_model.
+    /// If true, will override even if another model
+    /// exists on disk.
     #[config(default = true)]
     pub save_model: bool,
 }
