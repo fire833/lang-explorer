@@ -20,6 +20,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
 use std::path::Path;
 
+use burn::record::{HalfPrecisionSettings, PrettyJsonFileRecorder};
 use burn::{
     config::Config,
     tensor::{backend::AutodiffBackend, Device, Tensor},
@@ -110,6 +111,18 @@ impl GeneralEmbeddingTrainingParams {
 
     pub fn get_display_frequency(&self) -> usize {
         self.gen_params.display_frequency
+    }
+
+    pub fn get_save_model(&self) -> bool {
+        self.gen_params.save_model
+    }
+
+    pub fn get_create_new_model(&self) -> bool {
+        self.gen_params.create_new_model
+    }
+
+    pub fn get_model_recorder(&self) -> PrettyJsonFileRecorder<HalfPrecisionSettings> {
+        PrettyJsonFileRecorder::<HalfPrecisionSettings>::new()
     }
 }
 

@@ -226,6 +226,7 @@ impl GenerateParams {
         self,
         language: LanguageWrapper,
         expander: ExpanderWrapper,
+        models_dir: String,
     ) -> Result<GenerateResultsV2, LangExplorerError> {
         let config = format!("{:?}", self.params);
 
@@ -373,6 +374,7 @@ impl GenerateParams {
                     set.len(),
                     results.programs.len(),
                     self.params,
+                    models_dir,
                 );
 
                 println!(

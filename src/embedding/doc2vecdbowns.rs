@@ -26,6 +26,7 @@ use std::{
 use burn::{
     config::Config,
     data::dataloader::batcher::Batcher,
+    module::Module,
     optim::{adaptor::OptimizerAdaptor, AdamW, AdamWConfig, Optimizer},
     prelude::Backend,
     tensor::{backend::AutodiffBackend, Device, Distribution, Float, Int, Tensor},
@@ -87,6 +88,8 @@ pub struct Doc2VecDBOWNSEmbedderParams {
     pub n_docs: usize,
     /// General parameters shared among all embedder params.
     pub gen_params: GeneralEmbeddingTrainingParams,
+    /// Directory where the model directory is.
+    pub model_dir: String,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
@@ -96,12 +99,28 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     type Word = Feature;
     type Params = Doc2VecDBOWNSEmbedderParams;
 
-    fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
+    fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
         B::seed(params.gen_params.get_seed());
+
+        let model_location = format!(
+            "{}/embeddings/{}",
+            params.model_dir,
+            grammar.generate_location()
+        );
 
         let model =
             Doc2VecDBOWNSConfig::new(params.n_words + 2, params.n_docs, params.gen_params.d_model)
                 .init(&device);
+
+        let model = match Doc2VecDBOWNS::load_file(
+            model,
+            model_location,
+            &params.gen_params.get_model_recorder(),
+            &device,
+        ) {
+            Ok(m) => m,
+            Err(e) => panic!("{}", e),
+        };
 
         Self {
             d1: PhantomData,

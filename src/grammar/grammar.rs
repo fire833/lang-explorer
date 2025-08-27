@@ -73,7 +73,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     }
 
     pub fn get_name(&self) -> String {
-        format!("{}_{}", self.canonical_name, &self.generate_uuid()[0..16])
+        format!("{}_{}", self.canonical_name, &self.generate_hash()[0..16])
     }
 
     pub fn get_productions(&self) -> Vec<&Production<T, I>> {
@@ -262,7 +262,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     /// by deterministically hashing all productions. To do this without implementing orderings
     /// on stuff, I choose to simply traverse the entire tree in in-order traversal, adding every
     /// node to the hash as I go.
-    pub fn generate_uuid(&self) -> String {
+    fn generate_hash(&self) -> String {
         let mut hash = Sha256::new();
 
         self.productions.iter().for_each(|(k, v)| {
@@ -274,6 +274,10 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         });
 
         hex::encode(hash.finalize())
+    }
+
+    pub fn generate_location(&self) -> String {
+        format!("{}_{}.mod", self.canonical_name, self.generate_hash())
     }
 
     /// Experimental feature to create parsers efficiently

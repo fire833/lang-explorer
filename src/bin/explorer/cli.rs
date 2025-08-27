@@ -25,6 +25,11 @@ use crate::api;
 
 #[derive(clap::Parser)]
 pub(super) struct LangExplorerArgs {
+    /// Specify the location model files are stored.
+    #[arg(short, long, default_value_t = String::from("./models"))]
+    model_dir: String,
+
+    /// Specify the subcommand to be run.
     #[command(subcommand)]
     cmd: Option<Subcommand>,
 }
@@ -51,9 +56,19 @@ impl LangExplorerArgs {
                     cuda,
                 } => {
                     if *cuda {
-                        let _ = api::start_server::<Cuda>(address.as_str(), *port).await;
+                        let _ = api::start_server::<Cuda>(
+                            address.as_str(),
+                            *port,
+                            self.model_dir.clone(),
+                        )
+                        .await;
                     } else {
-                        let _ = api::start_server::<NdArray>(address.as_str(), *port).await;
+                        let _ = api::start_server::<NdArray>(
+                            address.as_str(),
+                            *port,
+                            self.model_dir.clone(),
+                        )
+                        .await;
                     }
                     Ok(())
                 }
@@ -107,6 +122,7 @@ enum Subcommand {
         /// Specify the address to bind to.
         #[arg(short, long, default_value_t = default_bind_addr())]
         address: String,
+
         /// Specify the port to listen on for the server.
         #[arg(short, long, default_value_t = default_port())]
         port: u16,

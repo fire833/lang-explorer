@@ -57,9 +57,6 @@ use crate::{
 };
 
 pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    /// Recorder to store/load models from disk.
-    _recorder: BinGzFileRecorder<FullPrecisionSettings>,
-
     /// The embedder to create embeddings for a
     /// new program or partial program.
     embedder: EmbedderWrapper<T, I, B>,
@@ -138,13 +135,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
                     AggregationMethod::Average,
                     TrainingParams::new(),
                 ),
+                "".to_string(),
             ),
             device,
         );
 
         Ok(Self {
             production_to_model: map,
-            _recorder: recorder,
             strategy: SamplingStrategy::HighestProb,
             embedder: EmbedderWrapper::Doc2Vec(d2v),
         })

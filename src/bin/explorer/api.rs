@@ -54,7 +54,9 @@ struct ExplorerAPIDocs;
 
 impl OpenApiExtensions for ExplorerAPIDocs {}
 
-pub(super) async fn start_server<B: Backend>(addr: &str, port: u16) {
+pub(super) async fn start_server<B: Backend>(addr: &str, port: u16, models_dir: String) {
+    let model_filter = warp::any().map(move || models_dir.clone());
+
     #[allow(deprecated)]
     let generate1 = warp::post()
         .and(warp::path!(
@@ -62,6 +64,7 @@ pub(super) async fn start_server<B: Backend>(addr: &str, port: u16) {
         ))
         .and(warp::path::end())
         .and(warp::body::bytes())
+        .and(model_filter.clone())
         .and_then(generate_legacy);
 
     let generate2 = warp::post()
@@ -70,6 +73,7 @@ pub(super) async fn start_server<B: Backend>(addr: &str, port: u16) {
         ))
         .and(warp::path::end())
         .and(warp::body::bytes())
+        .and(model_filter.clone())
         .and_then(generate::<B>);
 
     let health = warp::get()
@@ -125,6 +129,7 @@ async fn generate_legacy(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
     body: Bytes,
+    _models_dir: String,
 ) -> Result<impl warp::Reply, Infallible> {
     let params = match serde_json::from_slice::<GenerateParams>(&body) {
         Ok(p) => p,
@@ -157,13 +162,14 @@ async fn generate<B: Backend>(
     language: LanguageWrapper,
     expander: ExpanderWrapper,
     body: Bytes,
+    models_dir: String,
 ) -> Result<impl warp::Reply, Infallible> {
     let params = match serde_json::from_slice::<GenerateParams>(&body) {
         Ok(p) => p,
         Err(e) => return Ok(invalid_request(e.to_string())),
     };
 
-    match params.execute::<B>(language, expander).await {
+    match params.execute::<B>(language, expander, models_dir).await {
         Ok(resp) => Ok(warp::reply::with_status(
             warp::reply::json(&resp),
             StatusCode::OK,

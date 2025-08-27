@@ -25,7 +25,7 @@ use crate::{
     },
 };
 
-pub struct ExhaustiveExpander {}
+pub struct ExhaustiveExpander;
 
 impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     /// We may need to initialize the expander depending on the type of grammar

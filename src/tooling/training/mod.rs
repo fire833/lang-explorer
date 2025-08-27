@@ -36,8 +36,18 @@ pub struct TrainingParams {
     /// The seed.
     #[config(default = 10)]
     pub seed: u64,
-    /// The frequency with which to write out loss and other
-    /// training metrics.
+    /// The frequency with which to write out loss
+    /// and other training metrics.
     #[config(default = 100)]
     pub display_frequency: usize,
+    /// Toggle whether to force create a new model
+    /// even if another model file exists on disk.
+    #[config(default = false)]
+    pub create_new_model: bool,
+    /// Toggle whether to save a model to disk.
+    ///  Depends on create_new_model.
+    #[config(default = true)]
+    pub save_model: bool,
 }
+
+pub enum StorageFormat {}
