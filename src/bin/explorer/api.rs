@@ -41,7 +41,16 @@ use warp::{
 #[derive(OpenApi)]
 #[openapi(
     paths(generate, generate_legacy),
-    components(schemas(LanguageWrapper, ExpanderWrapper), responses()),
+    components(
+        schemas(
+            LanguageWrapper,
+            ExpanderWrapper,
+            GenerateResultsV2,
+            GenerateParams,
+            GenerateResults
+        ),
+        responses()
+    ),
     info(
         description = "OpenAPI specification for the Language Explorer API.",
         title = "Language Explorer API",

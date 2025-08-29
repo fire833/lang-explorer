@@ -26,9 +26,16 @@ pub(crate) struct EvaluatorArgs {
 
 impl EvaluatorArgs {
     pub async fn entry(&self) -> Result<(), LangExplorerError> {
-        Ok(())
+        match &self.cmd {
+            Some(cmd) => match cmd {
+                Subcommand::Serve => todo!(),
+            },
+            None => Ok(()),
+        }
     }
 }
 
 #[derive(clap::Subcommand)]
-enum Subcommand {}
+enum Subcommand {
+    Serve,
+}
