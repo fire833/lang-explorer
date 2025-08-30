@@ -63,11 +63,34 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Mapping of each production rule to its corresponding decision function.
     production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
 
+    /// When generating outputs, store output tensors here for backpropagation later.
+    prod_output_map: HashMap<Production<T, I>, Vec<Tensor<B, 1, Float>>>,
+
     strategy: SamplingStrategy,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionConfiguration {
+    sampling: SamplingStrategy,
+}
+
+impl ProductionConfiguration {
+    pub const fn new() -> Self {
+        Self {
+            sampling: SamplingStrategy::HighestProb,
+        }
+    }
+}
+
+impl Default for ProductionConfiguration {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// The different strategies for choosing the next expansion rule
 /// given the probability distribution from the model.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SamplingStrategy {
     /// Randomly sample from the distribution.
     Random,
@@ -140,6 +163,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
         Ok(Self {
             production_to_model: map,
+            prod_output_map: HashMap::new(),
             strategy: SamplingStrategy::HighestProb,
             embedder: EmbedderWrapper::Doc2Vec(d2v),
         })
@@ -163,7 +187,8 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             .production_to_model
             .get(production)
             .unwrap_or_else(|| panic!("could not find model for {:?}", production));
-        let distribution = match model {
+
+        let output = match model {
             ModuleWrapper::Linear2(linear) => {
                 log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0)
             }
@@ -173,11 +198,17 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             ModuleWrapper::Linear4(linear) => {
                 log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0)
             }
+        };
+
+        let output = output.squeeze::<1>(1);
+        let distribution = output.to_data().convert::<f32>().to_vec().unwrap();
+
+        if let Some(v) = self.prod_output_map.get_mut(production) {
+            v.push(output);
+        } else {
+            self.prod_output_map
+                .insert(production.clone(), vec![output]);
         }
-        .to_data()
-        .convert::<f32>()
-        .to_vec()
-        .unwrap();
 
         // Depending on our strategy, choose the next expansion.
         let index: usize = match self.strategy {
@@ -241,3 +272,5 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         todo!()
     }
 }
+
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LearnedExpander<T, I, B> {}

@@ -18,7 +18,7 @@
 
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Production<T: Terminal, I: NonTerminal> {
     /// Reference to the non-terminal that we are using here.
     pub non_terminal: ProductionLHS<T, I>,
@@ -26,20 +26,28 @@ pub struct Production<T: Terminal, I: NonTerminal> {
     /// The list of all production rules (ie vectors of vectors of symbols
     /// that can be expanded upon in the grammar expansion process).
     pub items: Vec<ProductionRule<T, I>>,
+
+    /// Configuration for LearnedExpander to build a model for predicting this
+    /// production.
+    pub ml_config: ProductionConfiguration,
 }
 
 use std::{
     fmt::{Debug, Display},
-    hash::Hash,
+    hash::{Hash, Hasher},
 };
 
-use crate::grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal};
+use crate::{
+    expanders::ml::ProductionConfiguration,
+    grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal},
+};
 
 impl<T: Terminal, I: NonTerminal> Production<T, I> {
     pub const fn new(non_terminal: ProductionLHS<T, I>, items: Vec<ProductionRule<T, I>>) -> Self {
         Self {
             items,
             non_terminal,
+            ml_config: ProductionConfiguration::new(),
         }
     }
 
@@ -97,6 +105,13 @@ impl<T: Terminal, I: NonTerminal> Debug for Production<T, I> {
         }
 
         Ok(())
+    }
+}
+
+impl<T: Terminal, I: NonTerminal> Hash for Production<T, I> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.non_terminal.hash(state);
+        self.items.hash(state);
     }
 }
 
