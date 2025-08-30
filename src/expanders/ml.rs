@@ -22,7 +22,6 @@ use std::collections::HashMap;
 use burn::{
     optim::AdamWConfig,
     prelude::Backend,
-    record::{BinGzFileRecorder, FullPrecisionSettings},
     tensor::{activation::log_softmax, backend::AutodiffBackend, Float, Tensor},
 };
 

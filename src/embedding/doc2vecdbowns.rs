@@ -206,7 +206,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                     if items.len() >= self.params.gen_params.get_batch_size() {
                         let moved = mem::take(&mut items);
                         let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
-                        self = self.train_batch(batch, counter, lr);
+                        self.train_batch(batch, counter, lr);
                     }
                 }
             }
@@ -214,7 +214,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             // Extra items need to be trained on too.
             if !items.is_empty() {
                 let batch: ProgramBatch<B> = batcher.batch(items, &self.device);
-                self = self.train_batch(batch, counter, lr);
+                self.train_batch(batch, counter, lr);
             }
         }
 
@@ -270,14 +270,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 if items.len() >= self.params.gen_params.get_batch_size() {
                     let moved = mem::take(&mut items);
                     let batch: ProgramBatch<B> = batcher.batch(moved, &self.device);
-                    // self = &mut self.train_batch(batch, counter, lr);
+                    self.train_batch(batch, counter, lr);
                 }
             }
 
             // Extra items need to be trained on too.
             if !items.is_empty() {
                 let batch: ProgramBatch<B> = batcher.batch(items, &self.device);
-                // self = &mut self.train_batch(batch, counter, lr);
+                self.train_batch(batch, counter, lr);
             }
         }
 
@@ -290,12 +290,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I, B> {
-    fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize, learning_rate: f64) -> Self {
+    fn train_batch(&mut self, batch: ProgramBatch<B>, counter: usize, learning_rate: f64) {
         let start = SystemTime::now();
 
         let train = self.step(batch);
         let grads_count = train.grads.len();
-        self.model = self.optim.step(learning_rate, self.model, train.grads);
+        self.model = self
+            .optim
+            .step(learning_rate, self.model.clone(), train.grads);
 
         if counter % self.params.gen_params.get_display_frequency() == 0 {
             let elapsed = start.elapsed().unwrap();
@@ -337,8 +339,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I
                 // &emb[0..128],
             );
         }
-
-        self
     }
 }
 
