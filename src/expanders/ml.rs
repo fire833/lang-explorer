@@ -46,8 +46,8 @@ use crate::{
             embed::AggregationMethod,
             expander::{
                 lin2::{Linear2Deep, Linear2DeepConfig},
-                lin3::Linear3Deep,
-                lin4::Linear4Deep,
+                lin3::{Linear3Deep, Linear3DeepConfig},
+                lin4::{Linear4Deep, Linear4DeepConfig},
                 Activation,
             },
         },
@@ -65,19 +65,28 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 
     /// When generating outputs, store output tensors here for backpropagation later.
     prod_output_map: HashMap<Production<T, I>, Vec<Tensor<B, 1, Float>>>,
+}
 
-    strategy: SamplingStrategy,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProductionModelType {
+    Linear2,
+    Linear3,
+    Linear4,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionConfiguration {
     sampling: SamplingStrategy,
+    model: ProductionModelType,
+    with_bias: bool,
 }
 
 impl ProductionConfiguration {
     pub const fn new() -> Self {
         Self {
             sampling: SamplingStrategy::HighestProb,
+            model: ProductionModelType::Linear2,
+            with_bias: true,
         }
     }
 }
@@ -107,9 +116,9 @@ pub enum SamplingStrategy {
 /// A bit of a hack to allow us to keep a mapping of models
 /// for each of the production rules in our grammar.
 enum ModuleWrapper<B: Backend> {
-    Linear2(Linear2Deep<B>),
-    Linear3(Linear3Deep<B>),
-    Linear4(Linear4Deep<B>),
+    Linear2(Linear2Deep<B>, SamplingStrategy),
+    Linear3(Linear3Deep<B>, SamplingStrategy),
+    Linear4(Linear4Deep<B>, SamplingStrategy),
 }
 
 /// Another hack to allow us to use multiple embedders.
@@ -137,11 +146,26 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         let mut map = HashMap::new();
 
         for production in grammar.get_productions() {
-            let module = ModuleWrapper::Linear2(
-                Linear2DeepConfig::new(production.len())
-                    .with_bias(true)
-                    .init(&device),
-            );
+            let module = match production.ml_config.model {
+                ProductionModelType::Linear2 => ModuleWrapper::Linear2(
+                    Linear2DeepConfig::new(production.len())
+                        .with_bias(production.ml_config.with_bias)
+                        .init::<B>(&device),
+                    production.ml_config.sampling.clone(),
+                ),
+                ProductionModelType::Linear3 => ModuleWrapper::Linear3(
+                    Linear3DeepConfig::new(production.len())
+                        .with_bias(production.ml_config.with_bias)
+                        .init::<B>(&device),
+                    production.ml_config.sampling.clone(),
+                ),
+                ProductionModelType::Linear4 => ModuleWrapper::Linear4(
+                    Linear4DeepConfig::new(production.len())
+                        .with_bias(production.ml_config.with_bias)
+                        .init::<B>(&device),
+                    production.ml_config.sampling.clone(),
+                ),
+            };
 
             map.insert(production.clone(), module);
         }
@@ -164,7 +188,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         Ok(Self {
             production_to_model: map,
             prod_output_map: HashMap::new(),
-            strategy: SamplingStrategy::HighestProb,
             embedder: EmbedderWrapper::Doc2Vec(d2v),
         })
     }
@@ -188,16 +211,19 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             .get(production)
             .unwrap_or_else(|| panic!("could not find model for {:?}", production));
 
-        let output = match model {
-            ModuleWrapper::Linear2(linear) => {
-                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0)
-            }
-            ModuleWrapper::Linear3(linear) => {
-                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0)
-            }
-            ModuleWrapper::Linear4(linear) => {
-                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0)
-            }
+        let (output, sampling) = match model {
+            ModuleWrapper::Linear2(linear, s) => (
+                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0),
+                s,
+            ),
+            ModuleWrapper::Linear3(linear, s) => (
+                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0),
+                s,
+            ),
+            ModuleWrapper::Linear4(linear, s) => (
+                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 0),
+                s,
+            ),
         };
 
         let output = output.squeeze::<1>(1);
@@ -211,7 +237,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         }
 
         // Depending on our strategy, choose the next expansion.
-        let index: usize = match self.strategy {
+        let index: usize = match *sampling {
             SamplingStrategy::Random => {
                 // Sample in [0, 1].
                 let sample = rand::random::<f32>() % 1.0;
