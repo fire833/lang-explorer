@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use burn::{
     optim::AdamWConfig,
     prelude::Backend,
-    tensor::{activation::log_softmax, backend::AutodiffBackend, Float, Tensor},
+    tensor::{activation::log_softmax, backend::AutodiffBackend, Float, Int, Tensor},
 };
 
 use crate::{
@@ -64,7 +64,7 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
 
     /// When generating outputs, store output tensors here for backpropagation later.
-    prod_output_map: HashMap<Production<T, I>, Vec<Tensor<B, 1, Float>>>,
+    prod_output_map: HashMap<Production<T, I>, Vec<Tensor<B, 1, Int>>>,
 
     /// Number of iterations to run to extract words.
     wl_kernel_iterations: u32,
@@ -109,9 +109,6 @@ impl Default for ProductionConfiguration {
 /// given the probability distribution from the model.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SamplingStrategy {
-    /// Randomly sample from the distribution.
-    Random,
-
     /// Choose the highest probability expansion.
     HighestProb,
 
@@ -221,72 +218,46 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
         let output = match model {
             ModuleWrapper::Linear2(linear) => {
-                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 1)
+                linear.forward(embedding.unsqueeze(), Activation::ReLU)
             }
             ModuleWrapper::Linear3(linear) => {
-                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 1)
+                linear.forward(embedding.unsqueeze(), Activation::ReLU)
             }
             ModuleWrapper::Linear4(linear) => {
-                log_softmax(linear.forward(embedding.unsqueeze(), Activation::ReLU), 1)
+                linear.forward(embedding.unsqueeze(), Activation::ReLU)
             }
         };
 
-        let output = output.squeeze::<1>(0);
-        let distribution = output.to_data().convert::<f32>().to_vec().unwrap();
-
-        if let Some(v) = self.prod_output_map.get_mut(production) {
-            v.push(output);
+        // Optionally scale by temperature.
+        let output = if production.ml_config.temperature != 1000 {
+            output.div_scalar(production.ml_config.temperature as f32 * 0.001)
         } else {
-            self.prod_output_map
-                .insert(production.clone(), vec![output]);
-        }
+            output
+        };
+
+        let output = log_softmax(output, 1);
+        let output = output.squeeze::<1>(0);
 
         // Depending on our strategy, choose the next expansion.
-        let index: usize = match production.ml_config.sampling {
-            SamplingStrategy::Random => {
-                // Sample in [0, 1].
-                let sample = rand::random::<f32>() % 1.0;
-                let mut idx = production.len() - 1;
-                let mut cumsum = 0.0;
-                for (i, prob) in distribution.iter().enumerate() {
-                    cumsum += prob;
-                    if sample <= cumsum {
-                        idx = i;
-                        break;
-                    }
-                }
-
-                idx
-            }
-            SamplingStrategy::HighestProb => {
-                let mut highest = 0.0;
-                let mut highest_idx = 0;
-
-                for (i, prob) in distribution.iter().enumerate() {
-                    if *prob > highest {
-                        highest = *prob;
-                        highest_idx = i;
-                    }
-                }
-
-                highest_idx
-            }
-            SamplingStrategy::LowestProb => {
-                let mut lowest = f32::MAX;
-                let mut lowest_idx = 0;
-
-                for (i, prob) in distribution.iter().enumerate() {
-                    if *prob < lowest {
-                        lowest = *prob;
-                        lowest_idx = i;
-                    }
-                }
-
-                lowest_idx
-            }
+        let loss = match production.ml_config.sampling {
+            SamplingStrategy::HighestProb => output.argmax(0),
+            SamplingStrategy::LowestProb => output.argmin(0),
         };
 
-        production.get(index).unwrap()
+        let index: usize = loss
+            .to_data()
+            .to_vec::<u32>()
+            .expect("unable to cast loss to vec")[0] as usize;
+
+        if let Some(v) = self.prod_output_map.get_mut(production) {
+            v.push(loss);
+        } else {
+            self.prod_output_map.insert(production.clone(), vec![loss]);
+        }
+
+        production
+            .get(index)
+            .expect("couldn't find the selected index")
     }
 
     /// For context sensitive grammars, we could be in a situation where we have
