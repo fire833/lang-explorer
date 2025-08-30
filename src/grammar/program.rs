@@ -50,6 +50,7 @@ pub struct ProgramInstance<T: Terminal, I: NonTerminal> {
     parent_id: Option<InstanceId>,
 }
 
+#[derive(Debug, Clone)]
 pub enum WLKernelHashingOrder {
     SelfChildrenParentOrdered,
     ParentSelfChildrenOrdered,
