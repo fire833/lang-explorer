@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use core::{f64, panic};
+use core::panic;
 use std::collections::HashMap;
 
 use burn::{
@@ -175,7 +175,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             }
         }
         .to_data()
-        .convert::<f64>()
+        .convert::<f32>()
         .to_vec()
         .unwrap();
 
@@ -183,7 +183,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         let index: usize = match self.strategy {
             SamplingStrategy::Random => {
                 // Sample in [0, 1].
-                let sample = rand::random::<f64>() % 1.0;
+                let sample = rand::random::<f32>() % 1.0;
                 let mut idx = production.len() - 1;
                 let mut cumsum = 0.0;
                 for (i, prob) in distribution.iter().enumerate() {
@@ -210,7 +210,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
                 highest_idx
             }
             SamplingStrategy::LowestProb => {
-                let mut lowest = f64::MAX;
+                let mut lowest = f32::MAX;
                 let mut lowest_idx = 0;
 
                 for (i, prob) in distribution.iter().enumerate() {
