@@ -82,8 +82,9 @@ pub enum ProductionModelType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProductionConfiguration {
     sampling: SamplingStrategy,
-    model: ProductionModelType,
+    activation: Activation,
     with_bias: bool,
+    model: ProductionModelType,
     // Temperature value that will be divided by 1000 to get actual temperature.
     temperature: u32,
 }
@@ -92,6 +93,7 @@ impl ProductionConfiguration {
     pub const fn new() -> Self {
         Self {
             sampling: SamplingStrategy::HighestProb,
+            activation: Activation::ReLU,
             model: ProductionModelType::Linear2,
             with_bias: true,
             temperature: 1000,
@@ -217,15 +219,18 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             .unwrap_or_else(|| panic!("could not find model for {:?}", production));
 
         let output = match model {
-            ModuleWrapper::Linear2(linear) => {
-                linear.forward(embedding.unsqueeze(), Activation::ReLU)
-            }
-            ModuleWrapper::Linear3(linear) => {
-                linear.forward(embedding.unsqueeze(), Activation::ReLU)
-            }
-            ModuleWrapper::Linear4(linear) => {
-                linear.forward(embedding.unsqueeze(), Activation::ReLU)
-            }
+            ModuleWrapper::Linear2(linear) => linear.forward(
+                embedding.unsqueeze(),
+                production.ml_config.activation.clone(),
+            ),
+            ModuleWrapper::Linear3(linear) => linear.forward(
+                embedding.unsqueeze(),
+                production.ml_config.activation.clone(),
+            ),
+            ModuleWrapper::Linear4(linear) => linear.forward(
+                embedding.unsqueeze(),
+                production.ml_config.activation.clone(),
+            ),
         };
 
         // Optionally scale by temperature.
@@ -235,8 +240,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             output
         };
 
-        let output = log_softmax(output, 1);
-        let output = output.squeeze::<1>(0);
+        let output = log_softmax(output, 1).squeeze::<1>(0);
 
         // Depending on our strategy, choose the next expansion.
         let loss = match production.ml_config.sampling {

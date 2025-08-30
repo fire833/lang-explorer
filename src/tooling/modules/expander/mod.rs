@@ -20,7 +20,10 @@ pub mod lin2;
 pub mod lin3;
 pub mod lin4;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Activation {
     Sigmoid,
     ReLU,
+    LeakyReLU,
+    TanH,
 }

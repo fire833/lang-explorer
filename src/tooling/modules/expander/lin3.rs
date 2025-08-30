@@ -22,7 +22,7 @@ use burn::{
     nn::{Linear, LinearConfig},
     prelude::Backend,
     tensor::{
-        activation::{relu, sigmoid},
+        activation::{leaky_relu, relu, sigmoid, tanh},
         Float, Tensor,
     },
 };
@@ -80,11 +80,15 @@ impl<B: Backend> Linear3Deep<B> {
         let x = match activation {
             Activation::Sigmoid => sigmoid(x),
             Activation::ReLU => relu(x),
+            Activation::LeakyReLU => leaky_relu(x, 0.01),
+            Activation::TanH => tanh(x),
         };
         let x = self.hidden.forward(x);
         let x = match activation {
             Activation::Sigmoid => sigmoid(x),
             Activation::ReLU => relu(x),
+            Activation::LeakyReLU => leaky_relu(x, 0.01),
+            Activation::TanH => tanh(x),
         };
 
         self.output.forward(x)
