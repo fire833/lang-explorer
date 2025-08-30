@@ -63,4 +63,10 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     ) -> (&'a ProductionLHS<T, I>, usize) {
         todo!()
     }
+
+    /// Whenever a program has finished being generated, this method will be called
+    /// to reset/update internal state in the expander. This is mostly going to be used
+    /// in the learned expander to run backprop and update the internal models for
+    /// generating the program in the first place.
+    fn cleanup(&mut self) {}
 }

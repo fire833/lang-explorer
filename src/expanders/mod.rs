@@ -72,6 +72,12 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
         context: &'a ProgramInstance<T, I>,
         lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize);
+
+    /// Whenever a program has finished being generated, this method will be called
+    /// to reset/update internal state in the expander. This is mostly going to be used
+    /// in the learned expander to run backprop and update the internal models for
+    /// generating the program in the first place.
+    fn cleanup(&mut self);
 }
 
 /// Enumeration of all supported expanders currently within lang-explorer.
