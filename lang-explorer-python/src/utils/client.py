@@ -40,6 +40,8 @@ class GeneralTrainingParameters:
 	learning_rate_drop: float
 	seed: int
 	display_frequency: int
+	create_new_model: bool
+	save_model: bool
 
 @dataclass
 class GenerateParams:

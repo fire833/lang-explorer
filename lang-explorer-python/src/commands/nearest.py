@@ -5,6 +5,7 @@ from src.utils.strlen import strlen
 from graphviz import Source
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
+import subprocess
 
 def nearest_neighbors(args):
 	plain = args.input.removeprefix("results/")
@@ -32,6 +33,8 @@ def nearest_neighbors(args):
 	programs = data.iloc[indices, 0]
 	graphs = data.iloc[indices, 1]
 
+	print(programs)
+
 	plt.title("Nearest neighbors examples")
 	fig, axes = plt.subplots(len(indices), args.count + 1)
 
@@ -58,3 +61,5 @@ def nearest_neighbors(args):
 			axes[i, j].set_title(f"{j}th NN")
 
 	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
+	subprocess.run(["magick", f"images/{args.output}.jpeg", "-crop", "100%x50%", "+repage", "+adjoin", f"images/{args.output}_%d.jpeg"])
+	subprocess.run(["mogrify", "-trim", f"images/{args.output}_*.jpeg"])
