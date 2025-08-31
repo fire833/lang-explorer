@@ -210,7 +210,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
                     context_free_production!(
                         NT_RULE,
                         // pos(index_variable, derived_index_var, tensor)
-                        production_rule!(POS_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
+                        // production_rule!(POS_OP, LPAREN, NT_INDEX_VARIABLE, COMMA, RPAREN),
                         // fuse(index_variable, index_variable, fused_index_variable)
                         production_rule!(
                             FUSE_OP,
@@ -265,7 +265,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
                             RPAREN
                         ),
                         // bound() // appears to be not yet supported in taco.
-                        production_rule!(BOUND_OP, LPAREN, RPAREN),
+                        // production_rule!(BOUND_OP, LPAREN, RPAREN),
                         // parallelize(index_variable, hardware, race_strategy)
                         production_rule!(
                             PARALLELIZE_OP,
@@ -276,9 +276,8 @@ impl GrammarBuilder for TacoScheduleLanguage {
                             COMMA,
                             NT_PARALLELIZE_RACES,
                             RPAREN
-                        ),
-                        // assemble()
-                        production_rule!(ASSEMBLE_OP, LPAREN, COMMA, NT_ASSEMBLE_STRATEGY, RPAREN)
+                        ) // assemble()
+                          // production_rule!(ASSEMBLE_OP, LPAREN, COMMA, NT_ASSEMBLE_STRATEGY, RPAREN)
                     ),
                     // Assemble Operation Rule.
                     Production::new(
