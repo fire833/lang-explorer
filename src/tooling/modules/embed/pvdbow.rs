@@ -25,10 +25,9 @@ use std::path::PathBuf;
 use burn::{
     config::Config,
     module::Module,
-    nn::{Embedding, EmbeddingConfig},
     prelude::Backend,
     record::FileRecorder,
-    tensor::{activation::sigmoid, Float, Int, Tensor},
+    tensor::{activation::sigmoid, Distribution, Float, Int, Tensor},
 };
 
 use crate::errors::LangExplorerError;
@@ -45,22 +44,36 @@ pub struct Doc2VecDBOWNSConfig {
 
 impl Doc2VecDBOWNSConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> Doc2VecDBOWNS<B> {
-        Doc2VecDBOWNS {
-            documents: EmbeddingConfig::new(self.n_docs, self.d_model).init(device),
-            hidden: EmbeddingConfig::new(self.n_words, self.d_model).init(device),
-            // biases: EmbeddingConfig::new(self.n_words, 1).init(device),
-            new_vec: None,
+        let mut documents = vec![];
+        let mut hidden = vec![];
+
+        for _ in 0..self.n_docs {
+            documents.push(Tensor::random(
+                [self.d_model],
+                Distribution::Uniform(-1.0, 1.0),
+                device,
+            ));
         }
+
+        for i in 0..self.n_words {
+            hidden.push(Tensor::random(
+                [self.d_model],
+                Distribution::Uniform(-1.0, 1.0),
+                device,
+            ));
+        }
+
+        Doc2VecDBOWNS { documents, hidden }
     }
 }
 
 #[derive(Debug, Module)]
 pub struct Doc2VecDBOWNS<B: Backend> {
     /// Embeddings of all documents within the corpus.
-    documents: Embedding<B>,
-    hidden: Embedding<B>,
-    // biases: Embedding<B>,
-    new_vec: Option<Tensor<B, 1, Float>>,
+    documents: Vec<Tensor<B, 1, Float>>,
+    // documents: Embedding<B>,
+    hidden: Vec<Tensor<B, 1, Float>>,
+    // hidden: Embedding<B>,
 }
 
 impl<B: Backend> Doc2VecDBOWNS<B> {
