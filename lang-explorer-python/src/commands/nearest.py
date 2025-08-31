@@ -33,8 +33,6 @@ def nearest_neighbors(args):
 	programs = data.iloc[indices, 0]
 	graphs = data.iloc[indices, 1]
 
-	print(programs)
-
 	plt.title("Nearest neighbors examples")
 	fig, axes = plt.subplots(len(indices), args.count + 1)
 
@@ -47,10 +45,17 @@ def nearest_neighbors(args):
 		axes[i, 0].imshow(mpimg.imread(path))
 		axes[i, 0].axis('off')
 		axes[i, 0].set_title(f"Graph {i}")
+		# axes[i, 0].text(0.5, 0.001, prog, fontsize=1)
+
+		print(f"Graph program: {prog}")
 
 		for j, neigh in enumerate(dist[i]):
 			if j == 0:
 				continue
+
+			neighprogram = data.iloc[neighind[i, j], 0]
+
+			print(f"neighbor {j}: {neighprogram}")
 
 			neighbor = data.iloc[neighind[i, j], 1]
 
@@ -59,6 +64,8 @@ def nearest_neighbors(args):
 			axes[i, j].imshow(mpimg.imread(img))
 			axes[i, j].axis('off')
 			axes[i, j].set_title(f"{j}th NN")
+			# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
+
 
 	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
 	subprocess.run(["magick", f"images/{args.output}.jpeg", "-crop", "100%x50%", "+repage", "+adjoin", f"images/{args.output}_%d.jpeg"])
