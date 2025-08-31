@@ -657,7 +657,9 @@ impl GrammarBuilder for CSSLanguage {
                         BORDER_BOTTOM,
                         COLON,
                         NT_SIZE,
+                        SPACE,
                         NT_BORDER_TYPE,
+                        SPACE,
                         NT_COLOR,
                         SEMICOLON
                     ),
@@ -678,7 +680,9 @@ impl GrammarBuilder for CSSLanguage {
                         BORDER_LEFT,
                         COLON,
                         NT_SIZE,
+                        SPACE,
                         NT_BORDER_TYPE,
+                        SPACE,
                         NT_COLOR,
                         SEMICOLON
                     ),
@@ -690,7 +694,9 @@ impl GrammarBuilder for CSSLanguage {
                         BORDER_RIGHT,
                         COLON,
                         NT_SIZE,
+                        SPACE,
                         NT_BORDER_TYPE,
+                        SPACE,
                         NT_COLOR,
                         SEMICOLON
                     ),
@@ -703,7 +709,9 @@ impl GrammarBuilder for CSSLanguage {
                         BORDER_TOP,
                         COLON,
                         NT_SIZE,
+                        SPACE,
                         NT_BORDER_TYPE,
+                        SPACE,
                         NT_COLOR,
                         SEMICOLON
                     ),
