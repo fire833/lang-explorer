@@ -44,7 +44,7 @@ def nearest_neighbors(args):
 
 		axes[i, 0].imshow(mpimg.imread(path))
 		axes[i, 0].axis('off')
-		axes[i, 0].set_title(f"Graph {i}")
+		axes[i, 0].set_title(f"Original Program")
 		# axes[i, 0].text(0.5, 0.001, prog, fontsize=1)
 
 		print(f"Graph program: {prog}")
