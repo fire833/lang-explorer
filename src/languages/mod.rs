@@ -33,7 +33,7 @@ use utoipa::ToSchema;
 
 use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
 use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
-use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
+use crate::grammar::program::InstanceId;
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
 use crate::tooling::ollama::get_embedding_ollama;
@@ -41,7 +41,7 @@ use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
     expanders::ExpanderWrapper,
-    grammar::{grammar::Grammar, BinarySerialize, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, NonTerminal, Terminal},
     languages::{
         css::{CSSLanguage, CSSLanguageParameters},
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
@@ -484,147 +484,6 @@ impl GenerateParams {
 
         Ok(results)
     }
-
-    #[deprecated()]
-    pub async fn execute_legacy(
-        self,
-        language: LanguageWrapper,
-        expander: ExpanderWrapper,
-    ) -> Result<GenerateResults, LangExplorerError> {
-        let grammar = match language {
-            LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
-            LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
-            LanguageWrapper::Spiral => SpiralLanguage::generate_grammar(self.spiral),
-            LanguageWrapper::TacoExpression => {
-                TacoExpressionLanguage::generate_grammar(self.taco_expr)
-            }
-            LanguageWrapper::TacoSchedule => {
-                TacoScheduleLanguage::generate_grammar(self.taco_sched)
-            }
-            LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
-            LanguageWrapper::Karel => KarelLanguage::generate_grammar(self.karel),
-        }?;
-
-        let mut programs = vec![];
-        let mut features = vec![];
-        let mut edge_lists = vec![];
-
-        let grammar_fmt = if self.return_grammar {
-            Some(format!("{}", &grammar))
-        } else {
-            None
-        };
-
-        if self.count > 0 {
-            let start = SystemTime::now();
-            let num_cpus = num_cpus::get() as u64;
-
-            let size = match self.count / num_cpus {
-                0 => 1,
-                o => o,
-            } as usize;
-
-            let (tx, mut rx): (Sender<ProgramResult>, Receiver<ProgramResult>) = channel(size);
-
-            for _ in 0..num_cpus {
-                let exp = expander.clone();
-                let gc = grammar.clone();
-                let txt = tx.clone();
-                let seed = self.params.get_seed();
-                tokio::spawn(async move {
-                    let mut expander = exp.get_expander(seed).unwrap();
-                    let count = self.count / num_cpus; // TODO fix
-
-                    for _ in 0..count {
-                        let mut res = ProgramResult::new();
-                        match Grammar::generate_program_instance(&gc, &mut expander) {
-                            Ok(prog) => {
-                                if self.return_features {
-                                    res.set_features(prog.extract_words_wl_kernel(
-                                        self.wl_degree,
-                                        WLKernelHashingOrder::SelfChildrenParentOrdered,
-                                    ));
-                                }
-
-                                if self.return_edge_lists {
-                                    res.set_edge_list(prog.get_edge_list());
-                                }
-
-                                match String::from_utf8(prog.serialize()) {
-                                    Ok(data) => res.set_program(data),
-                                    Err(e) => return Err(e.into()),
-                                }
-                            }
-                            Err(e) => return Err(e),
-                        }
-
-                        // Ship it off and keep going.
-                        txt.send(res).await.unwrap();
-                    }
-
-                    Ok(())
-                });
-            }
-
-            // Need to drop the original sender since we don't move it over to a task.
-            drop(tx);
-
-            while let Some(res) = rx.recv().await {
-                if let Some(prog) = res.program {
-                    programs.push(prog);
-                }
-
-                if let Some(feat) = res.features {
-                    features.push(feat);
-                }
-
-                if let Some(edges) = res.edge_list {
-                    edge_lists.push(edges);
-                }
-            }
-
-            let elapsed = start.elapsed().unwrap();
-
-            println!(
-                "generated {} programs and {} features for language {language} with expander {expander} in {} seconds",
-                programs.len(),
-                features.len(),
-                elapsed.as_secs()
-            );
-        }
-
-        Ok(GenerateResults {
-            grammar: grammar_fmt,
-            programs: programs,
-            features: features,
-            edge_lists: edge_lists,
-        })
-    }
-}
-
-/// The results generated by the program and resturned to the user.
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct GenerateResults {
-    /// If configured, returns the list of program strings that
-    /// were generated by the API.
-    #[serde(alias = "programs")]
-    programs: Vec<String>,
-
-    /// If enabled, returns a list of all features extracted from
-    /// each program. Every ith array in dimension 1 corresponds
-    /// to the ith program in the programs field.
-    #[serde(alias = "features")]
-    features: Vec<Vec<Feature>>,
-
-    /// If enabled, returns an edge list representation of every
-    /// program generated by the API.
-    #[serde(alias = "edge_lists")]
-    edge_lists: Vec<Vec<(InstanceId, InstanceId)>>,
-
-    /// If enabled, returns a BNF copy of the grammar that was used
-    /// to generate all programs within this batch.
-    #[serde(alias = "grammar")]
-    grammar: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
