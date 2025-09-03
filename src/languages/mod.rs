@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
@@ -36,6 +36,7 @@ use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::{InstanceId, WLKernelHashingOrder};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
+use crate::tooling::ollama::get_embedding_ollama;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -136,6 +137,127 @@ impl Display for LanguageWrapper {
     }
 }
 
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum EmbeddingModel {
+    Doc2VecDBOW,
+    MXBAILarge,
+    NomicEmbed,
+}
+
+impl Display for EmbeddingModel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Doc2VecDBOW => write!(f, "doc2vecdbow"),
+            Self::MXBAILarge => write!(f, "mxbai-embed-large"),
+            Self::NomicEmbed => write!(f, "nomic-embed-text"),
+        }
+    }
+}
+
+impl FromStr for EmbeddingModel {
+    type Err = LangExplorerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "doc2vec" | "d2vdbow" | "doc2vecdbow" | "doc2vecDBOW" => Ok(Self::Doc2VecDBOW),
+            "mxbai-large" | "mxbai-embed-large" => Ok(Self::MXBAILarge),
+            "nomic" | "nomic-embed-text" => Ok(Self::NomicEmbed),
+            _ => Err(LangExplorerError::General(
+                "invalid embedding model value provided".into(),
+            )),
+        }
+    }
+}
+
+impl EmbeddingModel {
+    async fn create_embeddings<B: Backend>(
+        &self,
+        grammar: &Grammar<StringValue, StringValue>,
+        params: GeneralEmbeddingTrainingParams,
+        models_dir: String,
+        ollama_host: String,
+        res: &mut GenerateResultsV2,
+    ) -> Result<(), LangExplorerError> {
+        let emb_name = self.to_string();
+
+        match &self {
+            Self::Doc2VecDBOW => {
+                // Hack for now, recompute the number of words, even
+                // though this is going to be done again.
+                let mut set = HashSet::new();
+                let mut documents = vec![];
+
+                for prog in res.programs.iter() {
+                    documents.push((
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    ));
+                    if let Some(words) = &prog.features {
+                        for word in words.iter() {
+                            set.insert(*word);
+                        }
+                    }
+                }
+
+                let dim = params.d_model;
+                let epochs = params.get_num_epochs();
+                let params = Doc2VecDBOWNSEmbedderParams::new(
+                    AdamWConfig::new(),
+                    set.len(),
+                    res.programs.len(),
+                    params,
+                    models_dir,
+                );
+
+                println!(
+                    "training embeddings, there are {} documents being learned and {} total words being used",
+                    documents.len(),
+                    set.len(),
+                );
+
+                let start = SystemTime::now();
+
+                let model: Doc2VecEmbedderDBOWNS<StringValue, StringValue, Autodiff<B>> =
+                    Doc2VecEmbedderDBOWNS::<StringValue, StringValue, Autodiff<B>>::new(
+                        grammar,
+                        params,
+                        Default::default(),
+                    )
+                    .fit(&documents)?;
+
+                let end = start.elapsed().unwrap();
+
+                println!(
+                    "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
+                    documents.len(),
+                    set.len(),
+                    epochs,
+                    end.as_secs()
+                );
+
+                let mut embeddings = model.get_embeddings()?;
+                for prog in res.programs.iter_mut() {
+                    prog.set_embedding(
+                        emb_name.clone(),
+                        embeddings.drain(0..dim as usize).collect(),
+                    );
+                }
+            }
+            Self::MXBAILarge | Self::NomicEmbed => {
+                for p in res.programs.iter_mut() {
+                    if let Some(s) = &p.program {
+                        let emb = get_embedding_ollama(&ollama_host, s, self.clone()).await?;
+                        p.set_embedding(emb_name.clone(), emb);
+                    }
+                }
+            }
+        };
+
+        Ok(())
+    }
+}
+
 /// Parameters supplied to the API for generating one or more programs with the provided
 /// language and expander to create said program.
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -149,9 +271,9 @@ pub struct GenerateParams {
     #[serde(alias = "return_edge_lists", default)]
     return_edge_lists: bool,
 
-    /// Toggle whether to return embeddings along with each program.
+    /// Toggle which embeddings to return for each instance.
     #[serde(alias = "return_embeddings", default)]
-    return_embeddings: bool,
+    return_embeddings: Vec<EmbeddingModel>,
 
     /// Toggle whether to return the grammar in BNF form that was
     /// used to generate programs.
@@ -228,8 +350,6 @@ impl GenerateParams {
         expander: ExpanderWrapper,
         models_dir: String,
     ) -> Result<GenerateResultsV2, LangExplorerError> {
-        let config = format!("{:?}", self.params);
-
         let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
             LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
@@ -349,64 +469,16 @@ impl GenerateParams {
                 elapsed.as_secs()
             );
 
-            if self.return_embeddings && self.return_features {
-                // Hack for now, recompute the number of words, even
-                // though this is going to be done again.
-                let mut set = HashSet::new();
-                let mut documents = vec![];
-
-                for prog in results.programs.iter() {
-                    documents.push((
-                        prog.program.clone().unwrap(),
-                        prog.features.clone().unwrap(),
-                    ));
-                    if let Some(words) = &prog.features {
-                        for word in words.iter() {
-                            set.insert(*word);
-                        }
-                    }
-                }
-
-                let dim = self.params.d_model;
-                let epochs = self.params.get_num_epochs();
-                let params = Doc2VecDBOWNSEmbedderParams::new(
-                    AdamWConfig::new(),
-                    set.len(),
-                    results.programs.len(),
-                    self.params,
-                    models_dir,
-                );
-
-                println!(
-                    "training embeddings, there are {} documents being learned and {} total words being used, config: \n{}.",
-                    documents.len(),
-                    set.len(), config,
-                );
-
-                let start = SystemTime::now();
-
-                let model: Doc2VecEmbedderDBOWNS<StringValue, StringValue, Autodiff<B>> =
-                    Doc2VecEmbedderDBOWNS::<StringValue, StringValue, Autodiff<B>>::new(
+            for embed in self.return_embeddings.iter() {
+                let _ = embed
+                    .create_embeddings::<B>(
                         &grammar,
-                        params,
-                        Default::default(),
+                        self.params.clone(),
+                        models_dir.clone(),
+                        "".into(),
+                        &mut results,
                     )
-                    .fit(&documents)?;
-
-                let end = start.elapsed().unwrap();
-
-                println!(
-                    "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
-                    documents.len(),
-                    set.len(),
-                    epochs,
-                    end.as_secs()
-                );
-
-                let mut embeddings = model.get_embeddings()?;
-                for prog in results.programs.iter_mut() {
-                    prog.set_embedding(embeddings.drain(0..dim as usize).collect());
-                }
+                    .await?;
             }
         }
 
@@ -596,7 +668,7 @@ pub(crate) struct ProgramResult {
 
     /// If enabled, returns the embedding of the program.
     #[serde(alias = "embedding")]
-    embedding: Option<Vec<f32>>,
+    embeddings: Option<HashMap<String, Vec<f32>>>,
 
     /// If enabled, returns the program graph in edge-list format.
     #[serde(alias = "edge_list")]
@@ -613,7 +685,7 @@ impl ProgramResult {
             program: None,
             graphviz: None,
             features: None,
-            embedding: None,
+            embeddings: None,
             edge_list: None,
             is_partial: false,
         }
@@ -635,7 +707,8 @@ impl ProgramResult {
         self.edge_list = Some(edge_list);
     }
 
-    pub(crate) fn set_embedding(&mut self, embedding: Vec<f32>) {
-        self.embedding = Some(embedding);
+    pub(crate) fn set_embedding(&mut self, name: String, embedding: Vec<f32>) {
+        let map = self.embeddings.get_or_insert(HashMap::new());
+        map.insert(name, embedding);
     }
 }

@@ -16,25 +16,9 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::Display;
-
 use serde::{Deserialize, Serialize};
 
-use crate::errors::LangExplorerError;
-
-pub(crate) enum EmbeddingModel {
-    MXBAILarge,
-    NomicEmbed,
-}
-
-impl Display for EmbeddingModel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::MXBAILarge => write!(f, "mxbai-embed-large"),
-            Self::NomicEmbed => write!(f, "nomic-embed-text"),
-        }
-    }
-}
+use crate::{errors::LangExplorerError, languages::EmbeddingModel};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EmbeddingResult {
@@ -42,8 +26,8 @@ struct EmbeddingResult {
 }
 
 pub(crate) async fn get_embedding_ollama(
-    host: String,
-    prompt: String,
+    host: &String,
+    prompt: &String,
     model: EmbeddingModel,
 ) -> Result<Vec<f32>, LangExplorerError> {
     let client = reqwest::Client::new();
