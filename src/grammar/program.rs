@@ -253,6 +253,14 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         nodes
     }
 
+    pub(crate) fn get_all_nodes_exclude_children(&self) -> Vec<&ProgramInstance<T, I>> {
+        let mut programs = vec![self];
+
+        for node in self.get_all_nodes() {}
+
+        programs
+    }
+
     /// Serialize the current program instance into a graphviz graph string.
     pub(crate) fn serialize_to_graphviz(&self) -> String {
         let mut s: String = "digraph { ".into();
