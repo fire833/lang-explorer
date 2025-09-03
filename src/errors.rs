@@ -36,6 +36,7 @@ pub enum LangExplorerError {
     SendError(String),
     DataError(DataError),
     CSVError(csv::Error),
+    ReqwestError(reqwest::Error),
 }
 
 impl Display for LangExplorerError {
@@ -49,6 +50,7 @@ impl Display for LangExplorerError {
             Self::SendError(e) => write!(f, "sender: {}", e),
             Self::DataError(e) => write!(f, "data: {:?}", e),
             Self::CSVError(e) => write!(f, "csv: {}", e),
+            Self::ReqwestError(e) => write!(f, "req: {}", e),
         }
     }
 }
@@ -110,5 +112,11 @@ impl From<DataError> for LangExplorerError {
 impl From<csv::Error> for LangExplorerError {
     fn from(value: csv::Error) -> Self {
         Self::CSVError(value)
+    }
+}
+
+impl From<reqwest::Error> for LangExplorerError {
+    fn from(value: reqwest::Error) -> Self {
+        Self::ReqwestError(value)
     }
 }
