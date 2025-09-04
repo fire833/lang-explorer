@@ -5,11 +5,11 @@ import os
 import pandas as pd
 
 def generate_embeddings(args):
-	new_embeddings = False
+	embeddings = ["mxbai-embed-large"]
 
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc",
-		GenerateParams(args.count, False, True, True, False, True, new_embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50, False, True),
+		GenerateParams(args.count, False, True, True, False, True, embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50, False, True),
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
 	        "#20b01c",
@@ -66,11 +66,11 @@ def generate_embeddings(args):
 	output1 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}.csv"
 	save_embedding(output1, model, res.programs, args.dimensions)
 
-	if new_embeddings:
-		output2 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}_new.csv"
-		save_embedding_new(output2, res.programs, args.dimensions)
+	for (name, _) in embeddings:
+		output = f"results/embeddings_{args.dimensions}_{args.count}_{args.language}_{name.replace("-", "_")}.csv"
+		save_embedding_new(output, res.programs, name, args.dimensions)
 
-def save_embedding_new(output_path, programs, dimensions):
+def save_embedding_new(output_path, programs, type, dimensions):
 	"""
 	Function to save the embedding.
 	:param output_path: Path to the embedding csv.
@@ -79,7 +79,7 @@ def save_embedding_new(output_path, programs, dimensions):
 	"""
 	out = []
 	for prog in programs:
-		out.append([prog["program"], prog["graphviz"]] + list(prog["embedding"]))
+		out.append([prog["program"], prog["graphviz"]] + list(prog["embeddings"][type]))
 	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dimensions)]
 	out = pd.DataFrame(out, columns=column_names)
 	out = out.sort_values(["type"])

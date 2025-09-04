@@ -51,7 +51,7 @@ class GenerateParams:
 	return_graphviz: bool
 	return_grammar: bool
 	return_partial_graphs: bool
-	return_embeddings: bool
+	return_embeddings: list[str]
 	wl_degree: int
 	num_neg_samples: int
 	d_model: int
@@ -70,7 +70,7 @@ class GenerateParams:
 class ProgramResult:
 	program: str
 	graphviz: str
-	embedding: list[float]
+	embedding: dict[str, list[float]]
 	features: list[int]
 	edge_lists: list[str]
 	is_partial: bool
