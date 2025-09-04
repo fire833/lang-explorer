@@ -29,6 +29,10 @@ pub(super) struct LangExplorerArgs {
     #[arg(short, long, default_value_t = String::from("./models"))]
     model_dir: String,
 
+    /// Specify the Ollama hostname for calling ollama crap.
+    #[arg(short, long, default_value_t = String::from("http://localhost:11434"))]
+    ollama_host: String,
+
     /// Specify the subcommand to be run.
     #[command(subcommand)]
     cmd: Option<Subcommand>,
@@ -60,6 +64,7 @@ impl LangExplorerArgs {
                             address.as_str(),
                             *port,
                             self.model_dir.clone(),
+                            self.ollama_host.clone(),
                         )
                         .await;
                     } else {
@@ -67,6 +72,7 @@ impl LangExplorerArgs {
                             address.as_str(),
                             *port,
                             self.model_dir.clone(),
+                            self.ollama_host.clone(),
                         )
                         .await;
                     }
