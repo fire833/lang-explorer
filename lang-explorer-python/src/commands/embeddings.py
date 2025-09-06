@@ -5,7 +5,7 @@ import os
 import pandas as pd
 
 def generate_embeddings(args):
-	embeddings = ["mxbai-embed-large"]
+	embeddings = ["mxbai-embed-large", "nomic-embed-text", "snowflake-arctic-embed2"]
 
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc",
