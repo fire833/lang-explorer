@@ -5,7 +5,7 @@ import os
 import pandas as pd
 
 def generate_embeddings(args):
-	embeddings = ["mxbailarge"]
+	embeddings = ["mxbai-embed-large"]
 
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc",
@@ -63,14 +63,14 @@ def generate_embeddings(args):
 
 	# print(f"{model.running_training_loss}, {model.cum_table}, {model.compute_loss}")
 
-	output1 = f"results/embeddings_{args.dimensions}_{args.epochs}_{args.count}_{args.language}.csv"
+	output1 = f"results/embeddings_{args.dimensions}_{args.count}_{args.language}_gensim.csv"
 	save_embedding(output1, model, res.programs, args.dimensions)
 
-	for (name, _) in embeddings:
+	for name in embeddings:
 		output = f"results/embeddings_{args.dimensions}_{args.count}_{args.language}_{name.replace("-", "_")}.csv"
 		save_embedding_new(output, res.programs, name, args.dimensions)
 
-def save_embedding_new(output_path, programs, type, dimensions):
+def save_embedding_new(output_path, programs, t, dimensions):
 	"""
 	Function to save the embedding.
 	:param output_path: Path to the embedding csv.
@@ -79,7 +79,7 @@ def save_embedding_new(output_path, programs, type, dimensions):
 	"""
 	out = []
 	for prog in programs:
-		out.append([prog["program"], prog["graphviz"]] + list(prog["embeddings"][type]))
+		out.append([prog["program"], prog["graphviz"]] + list(prog["embeddings"][t]))
 	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dimensions)]
 	out = pd.DataFrame(out, columns=column_names)
 	out = out.sort_values(["type"])

@@ -141,8 +141,11 @@ impl Display for LanguageWrapper {
 #[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum EmbeddingModel {
+    #[serde(alias = "doc2vecdbow")]
     Doc2VecDBOW,
+    #[serde(alias = "mxbai-embed-large")]
     MXBAILarge,
+    #[serde(alias = "nomic-embed-text")]
     NomicEmbed,
 }
 
@@ -162,7 +165,7 @@ impl FromStr for EmbeddingModel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "doc2vec" | "d2vdbow" | "doc2vecdbow" | "doc2vecDBOW" => Ok(Self::Doc2VecDBOW),
-            "mxbai-large" | "mxbai-embed-large" => Ok(Self::MXBAILarge),
+            "mxbailarge" | "mxbai-large" | "mxbai-embed-large" => Ok(Self::MXBAILarge),
             "nomic" | "nomic-embed-text" => Ok(Self::NomicEmbed),
             _ => Err(LangExplorerError::General(
                 "invalid embedding model value provided".into(),

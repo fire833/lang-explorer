@@ -70,7 +70,7 @@ class GenerateParams:
 class ProgramResult:
 	program: str
 	graphviz: str
-	embedding: dict[str, list[float]]
+	embeddings: dict
 	features: list[int]
 	edge_lists: list[str]
 	is_partial: bool
