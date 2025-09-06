@@ -27,7 +27,7 @@ use burn::optim::AdamWConfig;
 use burn::prelude::Backend;
 use clap::ValueEnum;
 use dashmap::DashMap;
-use reqwest::Client;
+use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
@@ -265,17 +265,32 @@ impl EmbeddingModel {
             | Self::SnowflakeArctic
             | Self::SnowflakeArctic2
             | Self::SnowflakeArctic137 => {
-                let client = Client::new();
+                let client = ClientBuilder::new()
+                    .pool_max_idle_per_host(10)
+                    .build()
+                    .unwrap();
+
+                let iter = 50;
 
                 for (idx, p) in res.programs.iter_mut().enumerate() {
-                    if idx % 500 == 0 {
+                    if idx % iter == 0 {
                         println!("generating embedding {}", idx);
                     }
+
+                    let start = SystemTime::now();
 
                     if let Some(s) = &p.program {
                         let emb =
                             get_embedding_ollama(&client, &ollama_host, s, self.clone()).await?;
                         p.set_embedding(emb_name.clone(), emb);
+                    }
+
+                    if idx % iter == 0 {
+                        let duration = start.elapsed().unwrap();
+                        println!(
+                            "generated an embedding in {} milliseconds",
+                            duration.as_millis()
+                        );
                     }
                 }
             }
