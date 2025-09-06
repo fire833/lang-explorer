@@ -27,6 +27,7 @@ use burn::optim::AdamWConfig;
 use burn::prelude::Backend;
 use clap::ValueEnum;
 use dashmap::DashMap;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
@@ -245,9 +246,16 @@ impl EmbeddingModel {
                 }
             }
             Self::MXBAILarge | Self::NomicEmbed => {
-                for p in res.programs.iter_mut() {
+                let client = Client::new();
+
+                for (idx, p) in res.programs.iter_mut().enumerate() {
+                    if idx % 500 == 0 {
+                        println!("generating embedding {}", idx);
+                    }
+
                     if let Some(s) = &p.program {
-                        let emb = get_embedding_ollama(&ollama_host, s, self.clone()).await?;
+                        let emb =
+                            get_embedding_ollama(&client, &ollama_host, s, self.clone()).await?;
                         p.set_embedding(emb_name.clone(), emb);
                     }
                 }
@@ -528,7 +536,7 @@ pub(crate) struct ProgramResult {
     features: Option<Vec<Feature>>,
 
     /// If enabled, returns the embedding of the program.
-    #[serde(alias = "embedding")]
+    #[serde(alias = "embeddings")]
     embeddings: Option<HashMap<String, Vec<f32>>>,
 
     /// If enabled, returns the program graph in edge-list format.

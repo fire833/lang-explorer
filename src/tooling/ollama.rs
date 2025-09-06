@@ -16,6 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::{errors::LangExplorerError, languages::EmbeddingModel};
@@ -26,12 +27,11 @@ struct EmbeddingResult {
 }
 
 pub(crate) async fn get_embedding_ollama(
+    client: &Client,
     host: &String,
     prompt: &String,
     model: EmbeddingModel,
 ) -> Result<Vec<f32>, LangExplorerError> {
-    let client = reqwest::Client::new();
-
     let res = client
         .post(format!("{host}/api/embeddings"))
         .body(format!(
