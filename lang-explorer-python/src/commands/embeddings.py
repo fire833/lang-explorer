@@ -68,9 +68,9 @@ def generate_embeddings(args):
 
 	for name in embeddings:
 		output = f"results/embeddings_{args.dimensions}_{args.count}_{args.language}_{name.replace("-", "_")}.csv"
-		save_embedding_new(output, res.programs, name, args.dimensions)
+		save_embedding_new(output, res.programs, name)
 
-def save_embedding_new(output_path, programs, t, dimensions):
+def save_embedding_new(output_path, programs, t):
 	"""
 	Function to save the embedding.
 	:param output_path: Path to the embedding csv.
@@ -78,9 +78,11 @@ def save_embedding_new(output_path, programs, t, dimensions):
 	:param dimensions: The embedding dimension parameter.
 	"""
 	out = []
+	dims = 0
 	for prog in programs:
+		dims = len(prog["embeddings"][t])
 		out.append([prog["program"], prog["graphviz"]] + list(prog["embeddings"][t]))
-	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dimensions)]
+	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dims)]
 	out = pd.DataFrame(out, columns=column_names)
 	out = out.sort_values(["type"])
 	out.to_csv(output_path, index=None)
