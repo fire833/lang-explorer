@@ -471,6 +471,7 @@ impl GenerateParams {
             );
 
             for embed in self.return_embeddings.iter() {
+                println!("creating embeddings with {} model", embed);
                 let _ = embed
                     .create_embeddings::<B>(
                         &grammar,
