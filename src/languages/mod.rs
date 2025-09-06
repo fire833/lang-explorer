@@ -147,6 +147,12 @@ pub enum EmbeddingModel {
     MXBAILarge,
     #[serde(alias = "nomic-embed-text")]
     NomicEmbed,
+    #[serde(alias = "snowflake-arctic-embed:137m")]
+    SnowflakeArctic137,
+    #[serde(alias = "snowflake-arctic-embed")]
+    SnowflakeArctic,
+    #[serde(alias = "snowflake-arctic-embed2")]
+    SnowflakeArctic2,
 }
 
 impl Display for EmbeddingModel {
@@ -155,6 +161,9 @@ impl Display for EmbeddingModel {
             Self::Doc2VecDBOW => write!(f, "doc2vecdbow"),
             Self::MXBAILarge => write!(f, "mxbai-embed-large"),
             Self::NomicEmbed => write!(f, "nomic-embed-text"),
+            Self::SnowflakeArctic137 => write!(f, "snowflake-arctic-embed:137m"),
+            Self::SnowflakeArctic => write!(f, "snowflake-arctic-embed"),
+            Self::SnowflakeArctic2 => write!(f, "snowflake-arctic-embed2"),
         }
     }
 }
@@ -167,6 +176,9 @@ impl FromStr for EmbeddingModel {
             "doc2vec" | "d2vdbow" | "doc2vecdbow" | "doc2vecDBOW" => Ok(Self::Doc2VecDBOW),
             "mxbailarge" | "mxbai-large" | "mxbai-embed-large" => Ok(Self::MXBAILarge),
             "nomic" | "nomic-embed-text" => Ok(Self::NomicEmbed),
+            "snowflake-arctic-embed" => Ok(Self::SnowflakeArctic),
+            "snowflake-arctic-embed2" => Ok(Self::SnowflakeArctic2),
+            "snowflake-arctic-embed137" => Ok(Self::SnowflakeArctic137),
             _ => Err(LangExplorerError::General(
                 "invalid embedding model value provided".into(),
             )),
@@ -215,10 +227,10 @@ impl EmbeddingModel {
                 );
 
                 println!(
-                    "training embeddings, there are {} documents being learned and {} total words being used",
-                    documents.len(),
-                    set.len(),
-                );
+                            "training embeddings, there are {} documents being learned and {} total words being used",
+                            documents.len(),
+                            set.len(),
+                        );
 
                 let start = SystemTime::now();
 
@@ -248,7 +260,11 @@ impl EmbeddingModel {
                     );
                 }
             }
-            Self::MXBAILarge | Self::NomicEmbed => {
+            Self::MXBAILarge
+            | Self::NomicEmbed
+            | Self::SnowflakeArctic
+            | Self::SnowflakeArctic2
+            | Self::SnowflakeArctic137 => {
                 let client = Client::new();
 
                 for (idx, p) in res.programs.iter_mut().enumerate() {
