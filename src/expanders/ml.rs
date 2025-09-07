@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use burn::{
     optim::AdamWConfig,
     prelude::Backend,
-    tensor::{activation::log_softmax, backend::AutodiffBackend, Float, Int, Tensor},
+    tensor::{activation::log_softmax, backend::AutodiffBackend, Int, Tensor},
 };
 
 use crate::{
@@ -31,7 +31,7 @@ use crate::{
         GeneralEmbeddingTrainingParams, LanguageEmbedder,
     },
     errors::LangExplorerError,
-    expanders::GrammarExpander,
+    expanders::{EmbedderWrapper, GrammarExpander},
     grammar::{
         grammar::Grammar,
         lhs::ProductionLHS,
@@ -40,7 +40,6 @@ use crate::{
         rule::ProductionRule,
         NonTerminal, Terminal,
     },
-    languages::Feature,
     tooling::{
         modules::{
             embed::AggregationMethod,
@@ -126,23 +125,6 @@ enum ModuleWrapper<B: Backend> {
     Linear2(Linear2Deep<B>),
     Linear3(Linear3Deep<B>),
     Linear4(Linear4Deep<B>),
-}
-
-/// Another hack to allow us to use multiple embedders.
-enum EmbedderWrapper<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    Doc2Vec(Doc2VecEmbedderDBOWNS<T, I, B>),
-}
-
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
-    fn forward(
-        &mut self,
-        doc: ProgramInstance<T, I>,
-        words: Vec<Feature>,
-    ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
-        match self {
-            EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed((doc.to_string(), words)),
-        }
-    }
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>

@@ -19,22 +19,26 @@
 use std::{fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
+use burn::tensor::{backend::AutodiffBackend, Float, Tensor};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::{
+    embedding::{doc2vecdbowns::Doc2VecEmbedderDBOWNS, LanguageEmbedder},
     errors::LangExplorerError,
     expanders::{mc::MonteCarloExpander, wmc::WeightedMonteCarloExpander},
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
         rule::ProductionRule, NonTerminal, Terminal,
     },
+    languages::Feature,
 };
 
 pub mod exhaustive;
 pub mod mc;
 pub mod ml;
+pub mod mlfixed;
 pub mod wmc;
 
 /// A grammar expander is an object that is able to take a
@@ -88,6 +92,7 @@ pub enum ExpanderWrapper {
     MonteCarlo,
     WeightedMonteCarlo,
     ML,
+    FixedML,
 }
 
 impl ExpanderWrapper {
@@ -103,6 +108,9 @@ impl ExpanderWrapper {
             ExpanderWrapper::ML => Err(LangExplorerError::General(
                 "ml method not implemented".into(),
             )),
+            ExpanderWrapper::FixedML => Err(LangExplorerError::General(
+                "fixed ml method not implemented".into(),
+            )),
         }
     }
 }
@@ -114,6 +122,7 @@ impl FromStr for ExpanderWrapper {
         match s {
             "mc" | "montecarlo" => Ok(Self::MonteCarlo),
             "ml" => Ok(Self::ML),
+            "fixedml" => Ok(Self::FixedML),
             "wmc" | "weightedmontecarlo" => Ok(Self::WeightedMonteCarlo),
             _ => Err(LangExplorerError::General("invalid expander string".into())),
         }
@@ -125,7 +134,25 @@ impl Display for ExpanderWrapper {
         match self {
             Self::MonteCarlo => write!(f, "montecarlo"),
             Self::ML => write!(f, "ml"),
+            Self::FixedML => write!(f, "fixedml"),
             Self::WeightedMonteCarlo => write!(f, "weightedmontecarlo"),
+        }
+    }
+}
+
+/// Another hack to allow us to use multiple embedders.
+enum EmbedderWrapper<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
+    Doc2Vec(Doc2VecEmbedderDBOWNS<T, I, B>),
+}
+
+impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
+    fn forward(
+        &mut self,
+        doc: ProgramInstance<T, I>,
+        words: Vec<Feature>,
+    ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
+        match self {
+            EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed((doc.to_string(), words)),
         }
     }
 }
