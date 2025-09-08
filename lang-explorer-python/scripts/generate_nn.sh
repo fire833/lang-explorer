@@ -1,10 +1,25 @@
 #!/bin/bash
 
-./main.py neigh --count 3 --indices 84,199 --input results/embeddings_128_10_15000_css.csv --output css_15000
-./main.py neigh --count 3 --indices 213,225 --input results/embeddings_128_10_15000_css.csv --output css2_15000
-./main.py neigh --count 3 --indices 108,2268 --input results/embeddings_128_10_15000_tacosched.csv --output tacosched_15000
-./main.py neigh --count 3 --indices 179,326 --input results/embeddings_128_10_15000_tacosched.csv --output tacosched2_15000
-./main.py neigh --count 3 --indices 30,1687 --input results/embeddings_128_10_15000_tacoexpr.csv --output tacoexpr_15000
-./main.py neigh --count 3 --indices 3678,3760 --input results/embeddings_128_10_15000_tacoexpr.csv --output tacoexpr2_15000
-./main.py neigh --count 3 --indices 702,703 --input results/embeddings_128_10_5000_karel.csv --output karel_5000
-./main.py neigh --count 3 --indices 1418,1419 --input results/embeddings_128_10_5000_karel.csv --output karel2_5000
+declare -a css_indices=("84" "199" "213" "225")
+for i in "${!css_indices[@]}"
+do
+    ./main.py neigh2 --indices ${css_indices[$i]} --input results/embeddings_128_10_15000_css_gensim.csv --output css${i}_15000
+done
+
+declare -a tacosched_indices=("108" "2268" "179" "326")
+for i in "${!tacosched_indices[@]}"
+do
+    ./main.py neigh2 --indices ${tacosched_indices[$i]} --input results/embeddings_128_10_15000_tacosched_gensim.csv --output tacosched${i}_15000
+done
+
+declare -a tacoexpr_indices=("30" "1687" "3638" "3760")
+for i in "${!tacoexpr_indices[@]}"
+do
+    ./main.py neigh2 --indices ${tacoexpr_indices[$i]} --input results/embeddings_128_10_15000_tacoexpr_gensim.csv --output tacoexpr${i}_15000
+done
+
+declare -a karel_indices=("702" "703" "1418" "1419")
+for i in "${!karel_indices[@]}"
+do
+    ./main.py neigh2 --indices ${karel_indices[$i]} --input results/embeddings_128_10_5000_karel_gensim.csv --output karel${i}_5000
+done
