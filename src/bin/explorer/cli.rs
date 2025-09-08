@@ -18,7 +18,9 @@
 
 use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
-    errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
+    errors::LangExplorerError,
+    expanders::ExpanderWrapper,
+    languages::{GenerateParams, LanguageWrapper},
 };
 
 use crate::api;
@@ -32,6 +34,10 @@ pub(super) struct LangExplorerArgs {
     /// Specify the Ollama hostname for calling ollama crap.
     #[arg(short, long, default_value_t = String::from("http://localhost:11434"))]
     ollama_host: String,
+
+    /// Specify the location for storing outputs.
+    #[arg(short, long, default_value_t = String::from("./lang-explorer-python/results"))]
+    output_dir: String,
 
     /// Specify the subcommand to be run.
     #[command(subcommand)]
@@ -65,6 +71,7 @@ impl LangExplorerArgs {
                             *port,
                             self.model_dir.clone(),
                             self.ollama_host.clone(),
+                            self.output_dir.clone(),
                         )
                         .await;
                     } else {
@@ -73,6 +80,7 @@ impl LangExplorerArgs {
                             *port,
                             self.model_dir.clone(),
                             self.ollama_host.clone(),
+                            self.output_dir.clone(),
                         )
                         .await;
                     }

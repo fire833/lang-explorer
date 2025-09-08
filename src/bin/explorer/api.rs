@@ -62,9 +62,11 @@ pub(super) async fn start_server<B: Backend>(
     port: u16,
     models_dir: String,
     ollama_host: String,
+    output_dir: String,
 ) {
     let model_filter = warp::any().map(move || models_dir.clone());
     let ollama_filter = warp::any().map(move || ollama_host.clone());
+    let output_filter = warp::any().map(move || output_dir.clone());
 
     let generate2 = warp::post()
         .and(warp::path!(
@@ -74,6 +76,7 @@ pub(super) async fn start_server<B: Backend>(
         .and(warp::body::bytes())
         .and(model_filter.clone())
         .and(ollama_filter.clone())
+        .and(output_filter.clone())
         .and_then(generate::<B>);
 
     let health = warp::get()
@@ -125,6 +128,7 @@ async fn generate<B: Backend>(
     body: Bytes,
     models_dir: String,
     ollama_host: String,
+    output_dir: String,
 ) -> Result<impl warp::Reply, Infallible> {
     let params = match serde_json::from_slice::<GenerateParams>(&body) {
         Ok(p) => p,
@@ -132,7 +136,7 @@ async fn generate<B: Backend>(
     };
 
     match params
-        .execute::<B>(language, expander, models_dir, ollama_host)
+        .execute::<B>(language, expander, models_dir, ollama_host, output_dir)
         .await
     {
         Ok(resp) => Ok(warp::reply::with_status(
