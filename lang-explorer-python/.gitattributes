@@ -31,3 +31,17 @@ archive/embeddings_128_10_100_tacosched_new.csv filter=lfs diff=lfs merge=lfs -t
 archive/embeddings_64_10_25000_tacosched.csv filter=lfs diff=lfs merge=lfs -text
 archive/embeddings_128_10_100_tacosched.csv filter=lfs diff=lfs merge=lfs -text
 archive/embeddings_128_10_5000_karel.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_5000_tacosched_nomic_embed_text.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_1000_tacosched_mxbai_embed_large.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_1000_tacosched_snowflake_arctic_embed2.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10_tacosched_mxbai_embed_large.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_15000_tacoexpr_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_15000_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_5000_karel_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_5000_tacosched_snowflake_arctic_embed2.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_1000_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_1000_tacosched_nomic_embed_text.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_15000_css_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_5000_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_5000_tacosched_mxbai_embed_large.csv filter=lfs diff=lfs merge=lfs -text
