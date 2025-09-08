@@ -24,6 +24,8 @@ use std::{
 };
 
 use fasthash::{city, FastHasher};
+use rand::Rng;
+use rand_chacha::ChaCha8Rng;
 
 use crate::{
     errors::LangExplorerError,
@@ -251,6 +253,39 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         }
 
         nodes
+    }
+
+    /// Create a slightly perturbed program.
+    pub(crate) fn perturb_program(&self, rng: &mut ChaCha8Rng) -> ProgramInstance<T, I> {
+        let mut new = self.clone();
+        let mut curr = &mut new;
+        let mut all_t = false;
+        while !all_t {
+            all_t = true;
+
+            curr.children.iter().for_each(|child| {
+                if child.is_non_terminal() {
+                    all_t = false;
+                }
+            });
+
+            if all_t {
+                break;
+            }
+
+            let len = curr.children.len();
+            let n = curr
+                .children
+                .get_mut(rng.random::<u64>() as usize % len)
+                .unwrap();
+
+            curr = n;
+        }
+
+        curr.children
+            .remove(rng.random::<u64>() as usize % curr.children.len());
+
+        new
     }
 
     pub(crate) fn get_all_nodes_exclude_children(&self) -> Vec<&ProgramInstance<T, I>> {
