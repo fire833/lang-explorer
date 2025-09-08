@@ -44,26 +44,23 @@ def nearest_neighbors2(args):
 
 	path = Source(graphs[indices[0]]).render(f"/tmp/root", format="png", cleanup=True)
 
-	axes[1, 0].imshow(mpimg.imread(path))
-	axes[1, 0].axis('off')
-	axes[1, 0].set_title(f"Original Program")
+	axes[0, 0].imshow(mpimg.imread(path))
+	axes[0, 0].axis('off')
+	axes[0, 0].set_title(f"Original Program")
 
 	# axes[i, 0].text(0.5, 0.001, prog, fontsize=1)
 	print(f"Graph program: {programs}")
 
 	for j, neigh in enumerate(dist[0]):
-		if j == 0:
-			continue
-		
 		x = 0
 		y = 0
-		if j == 1:
+		if j == 0:
 			x = 0
 			y = 1
-		if j == 2:
+		if j == 1:
 			x = 1
 			y = 0
-		if j == 3:
+		if j == 2:
 			x = 1
 			y = 1
 
@@ -72,10 +69,9 @@ def nearest_neighbors2(args):
 		img = Source(neighbor).render(f"/tmp/{x}_{y}", format="png", cleanup=True)
 		axes[x, y].imshow(mpimg.imread(img))
 		axes[x, y].axis('off')
-		axes[x, y].set_title(f"{j}th NN")
+		axes[x, y].set_title(f"{j + 1}th NN")
 		# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
 
 
 	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
-	subprocess.run(["magick", f"images/{args.output}.jpeg", "-crop", "100%x50%", "+repage", "+adjoin", f"images/{args.output}_%d.jpeg"])
-	subprocess.run(["mogrify", "-trim", f"images/{args.output}_*.jpeg"])
+	subprocess.run(["mogrify", "-trim", f"images/{args.output}.jpeg"])
