@@ -21,13 +21,21 @@ use burn::{
     module::Module,
     nn::{Embedding, EmbeddingConfig},
     prelude::Backend,
-    tensor::{Float, Tensor},
+    tensor::{Float, Int, Tensor},
+};
+
+use crate::tooling::modules::expander::{
+    lin2::{Linear2Deep, Linear2DeepConfig},
+    Activation,
 };
 
 #[derive(Debug, Config)]
 pub struct ProductionDecisionConfig {
     /// The number of dimensions of embeddings.
     d_model: usize,
+
+    /// The dimension of input vectors.
+    d_embed: usize,
 
     /// The number of embeddings to store. This will typically
     /// correspond to the number of rules within the grammar, since
@@ -39,6 +47,10 @@ impl ProductionDecisionConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecision<B> {
         ProductionDecision {
             rule_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
+            linear: Linear2DeepConfig::new(self.d_model)
+                .with_bias(true)
+                .with_d_embed(self.d_embed)
+                .init(device),
         }
     }
 }
@@ -47,11 +59,25 @@ impl ProductionDecisionConfig {
 pub struct ProductionDecision<B: Backend> {
     /// Embeddings for each rule that we want to expand.
     rule_embeddings: Embedding<B>,
+    /// The linear decision function.
+    linear: Linear2Deep<B>,
 }
 
 impl<B: Backend> ProductionDecision<B> {
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
-        todo!()
+    pub fn forward(
+        &self,
+        embedding: Tensor<B, 2, Float>,
+        rules: Tensor<B, 2, Int>,
+    ) -> Tensor<B, 2, Float> {
+        let out = self.linear.forward(embedding, Activation::ReLU);
+        let rules = self.rule_embeddings.forward(rules);
+        let rule_count = rules.dims()[1];
+
+        let out = out.repeat_dim(1, rule_count);
+
+        // let rules = rules.mul(out);
+
+        out
     }
 }
 

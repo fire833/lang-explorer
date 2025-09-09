@@ -89,7 +89,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
         Ok(Self {
             embedder: EmbedderWrapper::Doc2Vec(d2v),
-            prod_decision: ProductionDecisionConfig::new(256, rules.len()).init(&device),
+            prod_decision: ProductionDecisionConfig::new(256, 128, rules.len()).init(&device),
             frontier_decision: FrontierDecisionConfig::new(256, symbols.len(), 16).init(&device),
         })
     }
