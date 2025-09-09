@@ -29,13 +29,28 @@ use crate::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
         rule::ProductionRule, NonTerminal, Terminal,
     },
-    tooling::{modules::embed::AggregationMethod, training::TrainingParams},
+    tooling::{
+        modules::{
+            embed::AggregationMethod,
+            expander::{
+                frontier_decision::{FrontierDecision, FrontierDecisionConfig},
+                prod_decision::{ProductionDecision, ProductionDecisionConfig},
+            },
+        },
+        training::TrainingParams,
+    },
 };
 
 pub struct FixedLearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// The embedder to create embeddings for a
     /// new program or partial program.
     embedder: EmbedderWrapper<T, I, B>,
+
+    /// Model for expansion decisions.
+    prod_decision: ProductionDecision<B>,
+
+    /// Model for frontier expansion decisions.
+    frontier_decision: FrontierDecision<B>,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
@@ -66,8 +81,16 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             device,
         );
 
+        // Hack
+        let device = Default::default();
+
+        let rules = grammar.get_all_rules();
+        let symbols = grammar.get_all_symbols();
+
         Ok(Self {
             embedder: EmbedderWrapper::Doc2Vec(d2v),
+            prod_decision: ProductionDecisionConfig::new(256, rules.len()).init(&device),
+            frontier_decision: FrontierDecisionConfig::new(256, symbols.len(), 16).init(&device),
         })
     }
 

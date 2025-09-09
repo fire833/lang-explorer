@@ -24,8 +24,6 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
-use crate::grammar::{NonTerminal, Terminal};
-
 #[derive(Debug, Config)]
 pub struct ProductionDecisionConfig {
     /// The number of dimensions of embeddings.
@@ -38,10 +36,7 @@ pub struct ProductionDecisionConfig {
 }
 
 impl ProductionDecisionConfig {
-    pub fn init<T: Terminal, I: NonTerminal, B: Backend>(
-        &self,
-        device: &B::Device,
-    ) -> ProductionDecision<B> {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecision<B> {
         ProductionDecision {
             rule_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
         }
