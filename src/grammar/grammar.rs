@@ -32,6 +32,7 @@ use crate::{
         lhs::ProductionLHS,
         prod::Production,
         program::{InstanceId, ProgramInstance},
+        rule::ProductionRule,
         NonTerminal, Terminal,
     },
 };
@@ -78,6 +79,42 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
     pub fn get_productions(&self) -> Vec<&Production<T, I>> {
         Vec::from_iter(self.productions.values())
+    }
+
+    pub fn get_all_symbols(&self) -> HashSet<GrammarElement<T, I>> {
+        let mut set = HashSet::new();
+
+        for prod in self.productions.iter() {
+            set.insert(GrammarElement::NonTerminal(prod.0.non_terminal.clone()));
+
+            for pfx in prod.0.prefix.iter() {
+                set.insert(pfx.clone());
+            }
+
+            for sfx in prod.0.suffix.iter() {
+                set.insert(sfx.clone());
+            }
+
+            for rule in prod.1.items.iter() {
+                for symbol in rule.items.iter() {
+                    set.insert(symbol.clone());
+                }
+            }
+        }
+
+        set
+    }
+
+    pub fn get_all_rules(&self) -> HashSet<ProductionRule<T, I>> {
+        let mut set = HashSet::new();
+
+        for prod in self.productions.iter() {
+            for rule in prod.1.items.iter() {
+                set.insert(rule.clone());
+            }
+        }
+
+        set
     }
 
     /// Main entrypoint for generating programs from a particular grammar.

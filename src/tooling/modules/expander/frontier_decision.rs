@@ -24,19 +24,28 @@ use burn::{
         Embedding, EmbeddingConfig,
     },
     prelude::Backend,
-    tensor::{Float, Tensor},
+    tensor::{Float, Int, Tensor},
 };
 
-use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
-
 #[derive(Debug, Config)]
-pub struct FrontierDecisionConfig {}
+pub struct FrontierDecisionConfig {
+    /// The number of dimensions of embeddings.
+    d_model: usize,
+
+    /// The number of embedding vectors to store. This will typically
+    /// correspond to the total number of symbols within a grammar,
+    /// since we want to perform attention between symbols in the frontier.
+    n_embed: usize,
+
+    /// The number of attention heads to have.
+    n_heads: usize,
+}
 
 impl FrontierDecisionConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> FrontierDecision<B> {
         FrontierDecision {
-            symbols_embeddings: EmbeddingConfig::new(0, 0).init(device),
-            decision: MultiHeadAttentionConfig::new(0, 5).init(device),
+            symbols_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
+            mha: MultiHeadAttentionConfig::new(self.d_model, self.n_heads).init(device),
         }
     }
 }
@@ -46,16 +55,16 @@ pub struct FrontierDecision<B: Backend> {
     /// Embeddings for all symbols in the grammar.
     /// More specifically, this is |V ∪ T ∪ λ|.
     symbols_embeddings: Embedding<B>,
+
     /// The decision attention head.
-    decision: MultiHeadAttention<B>,
+    mha: MultiHeadAttention<B>,
 }
 
 impl<B: Backend> FrontierDecision<B> {
-    pub fn forward<T: Terminal, I: NonTerminal>(
-        &self,
-        frontier: Vec<GrammarElement<T, I>>,
-    ) -> Tensor<B, 2, Float> {
-        // self.decision.forward(MhaInput::new(query, key, value))
+    pub fn forward(&self, frontier: Tensor<B, 2, Int>) -> Tensor<B, 2, Float> {
+        let qk = self.symbols_embeddings.forward(frontier);
+        let out = self.mha.forward(MhaInput::self_attn(qk));
+
         todo!()
     }
 }

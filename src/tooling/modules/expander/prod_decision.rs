@@ -24,13 +24,26 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
+use crate::grammar::{NonTerminal, Terminal};
+
 #[derive(Debug, Config)]
-pub struct ProductionDecisionConfig {}
+pub struct ProductionDecisionConfig {
+    /// The number of dimensions of embeddings.
+    d_model: usize,
+
+    /// The number of embeddings to store. This will typically
+    /// correspond to the number of rules within the grammar, since
+    /// we will want to score the best rule to expand.
+    n_embed: usize,
+}
 
 impl ProductionDecisionConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecision<B> {
+    pub fn init<T: Terminal, I: NonTerminal, B: Backend>(
+        &self,
+        device: &B::Device,
+    ) -> ProductionDecision<B> {
         ProductionDecision {
-            rule_embeddings: EmbeddingConfig::new(0, 0).init(device),
+            rule_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
         }
     }
 }
