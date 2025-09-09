@@ -16,17 +16,36 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-pub mod lin2;
-pub mod lin3;
-pub mod lin4;
+use burn::{
+    config::Config,
+    module::Module,
+    nn::{Embedding, EmbeddingConfig},
+    prelude::Backend,
+    tensor::{Float, Tensor},
+};
 
-pub mod frontier_decision;
-pub mod prod_decision;
+#[derive(Debug, Config)]
+pub struct ProductionDecisionConfig {}
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Activation {
-    Sigmoid,
-    ReLU,
-    LeakyReLU,
-    TanH,
+impl ProductionDecisionConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecision<B> {
+        ProductionDecision {
+            rule_embeddings: EmbeddingConfig::new(0, 0).init(device),
+        }
+    }
 }
+
+#[derive(Debug, Module)]
+pub struct ProductionDecision<B: Backend> {
+    /// Embeddings for each rule that we want to expand.
+    rule_embeddings: Embedding<B>,
+}
+
+impl<B: Backend> ProductionDecision<B> {
+    pub fn forward(&self) -> Tensor<B, 2, Float> {
+        todo!()
+    }
+}
+
+#[test]
+fn test_forward() {}
