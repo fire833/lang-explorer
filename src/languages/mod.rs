@@ -17,6 +17,7 @@
  */
 
 use std::collections::{HashMap, HashSet};
+use std::mem;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
@@ -37,7 +38,7 @@ use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::InstanceId;
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
-use crate::tooling::ollama::get_embedding_ollama;
+use crate::tooling::ollama::get_embeddings_bulk_ollama;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -270,28 +271,28 @@ impl EmbeddingModel {
                     .build()
                     .unwrap();
 
-                let iter = 50;
+                let blank = "".into();
 
-                for (idx, p) in res.programs.iter_mut().enumerate() {
-                    if idx % iter == 0 {
-                        println!("generating embedding {}", idx);
+                let prompts: Vec<&String> = res
+                    .programs
+                    .iter()
+                    .map(|item| match &item.program {
+                        Some(prompt) => prompt,
+                        None => &blank,
+                    })
+                    .collect();
+
+                match get_embeddings_bulk_ollama(&client, &ollama_host, prompts, self.clone(), 7)
+                    .await
+                {
+                    Ok(mut responses) => {
+                        for (idx, vec) in responses.iter_mut().enumerate() {
+                            let p = res.programs.get_mut(idx).unwrap();
+                            let new = mem::take(vec);
+                            p.set_embedding(emb_name.clone(), new);
+                        }
                     }
-
-                    let start = SystemTime::now();
-
-                    if let Some(s) = &p.program {
-                        let emb =
-                            get_embedding_ollama(&client, &ollama_host, s, self.clone()).await?;
-                        p.set_embedding(emb_name.clone(), emb);
-                    }
-
-                    if idx % iter == 0 {
-                        let duration = start.elapsed().unwrap();
-                        println!(
-                            "generated an embedding in {} milliseconds",
-                            duration.as_millis()
-                        );
-                    }
+                    Err(e) => return Err(e),
                 }
             }
         };
