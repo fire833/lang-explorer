@@ -101,10 +101,12 @@ impl From<String> for StringValue {
 /// This is useful for statically defining your terminals for easy reuse.
 macro_rules! terminal_str {
     ($v:vis, $i:ident, $s:literal) => {
+        #[allow(unused)]
         $v const $i: GrammarElement<StringValue, StringValue> =
             GrammarElement::Terminal(StringValue::from_static_str($s));
     };
     ($i:ident, $s:literal) => {
+        #[allow(unused)]
         const $i: GrammarElement<StringValue, StringValue> =
             GrammarElement::Terminal(StringValue::from_static_str($s));
     };
@@ -114,10 +116,12 @@ pub(crate) use terminal_str;
 
 macro_rules! nterminal_str {
     ($v:vis, $i:ident, $s:literal) => {
+        #[allow(unused)]
         $v fn $i: GrammarElement<StringValue, StringValue> =
             GrammarElement::NonTerminal(StringValue::from_static_str($s));
     };
     ($i:ident, $s:literal) => {
+        #[allow(unused)]
         const $i: GrammarElement<StringValue, StringValue> =
             GrammarElement::NonTerminal(StringValue::from_static_str($s));
     }
