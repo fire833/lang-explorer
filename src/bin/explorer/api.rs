@@ -82,16 +82,16 @@ pub(super) async fn start_server<B: Backend>(
         .and(warp::path!("readyz"))
         .or(warp::path!("livez"))
         .and(warp::path::end())
-        .map(|_| ready_ok());
+        .and_then(|_| ready_ok());
 
     let openapi = warp::get()
         .and(warp::path!("swagger.json"))
         .or(warp::path!("openapi.json"))
         .or(warp::path!("api-docs"))
         .and(warp::path::end())
-        .map(|_| ExplorerAPIDocs::api_docs_reply());
+        .and_then(|_| ExplorerAPIDocs::api_docs_reply());
 
-    let any_handler = warp::any().map(|| not_found());
+    let any_handler = warp::any().and_then(|| not_found());
 
     let cors = warp::cors()
         .allow_any_origin()
