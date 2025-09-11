@@ -86,7 +86,8 @@ pub(crate) async fn get_embeddings_bulk_ollama(
         }
 
         future::ready(())
-    });
+    })
+    .await;
 
     let mut results_final: Vec<Vec<f32>> = vec![vec![]; prompts.len()];
 

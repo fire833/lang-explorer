@@ -38,7 +38,7 @@ use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::InstanceId;
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
-use crate::tooling::ollama::get_embeddings_bulk_ollama;
+use crate::tooling::ollama::{get_embedding_ollama, get_embeddings_bulk_ollama};
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -271,29 +271,39 @@ impl EmbeddingModel {
                     .build()
                     .unwrap();
 
-                let blank = "".into();
+                let blank: String = "".into();
 
-                let prompts: Vec<&String> = res
+                let prompts: Vec<String> = res
                     .programs
                     .iter()
                     .map(|item| match &item.program {
-                        Some(prompt) => prompt,
-                        None => &blank,
+                        Some(prompt) => prompt.clone(),
+                        None => blank.clone(),
                     })
                     .collect();
 
-                match get_embeddings_bulk_ollama(&client, &ollama_host, prompts, self.clone(), 7)
-                    .await
-                {
-                    Ok(mut responses) => {
-                        for (idx, vec) in responses.iter_mut().enumerate() {
-                            let p = res.programs.get_mut(idx).unwrap();
-                            let new = mem::take(vec);
-                            p.set_embedding(emb_name.clone(), new);
+                for prompt in prompts.iter() {
+                    match get_embedding_ollama(&client, &ollama_host, prompt, self.clone()).await {
+                        Ok(vec) => {
+                            let p = res.programs.get_mut(0).unwrap();
+                            p.set_embedding(emb_name.clone(), vec);
                         }
+                        Err(e) => return Err(e),
                     }
-                    Err(e) => return Err(e),
                 }
+
+                // match get_embeddings_bulk_ollama(&client, &ollama_host, prompts, self.clone(), 7)
+                //     .await
+                // {
+                //     Ok(mut responses) => {
+                //         for (idx, vec) in responses.iter_mut().enumerate() {
+                //             let p = res.programs.get_mut(idx).unwrap();
+                //             let new = mem::take(vec);
+                //             p.set_embedding(emb_name.clone(), new);
+                //         }
+                //     }
+                //     Err(e) => return Err(e),
+                // }
             }
         };
 
