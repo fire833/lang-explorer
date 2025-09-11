@@ -16,8 +16,11 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use futures::StreamExt;
-use reqwest::Client;
+use std::{mem, sync::Arc};
+
+use dashmap::DashMap;
+use futures::{future, StreamExt};
+use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
@@ -55,47 +58,48 @@ pub(crate) async fn get_embeddings_bulk_ollama(
     model: EmbeddingModel,
     num_parallel_requests: usize,
 ) -> Result<Vec<Vec<f32>>, LangExplorerError> {
-    let mut results: Vec<Vec<f32>> = vec![vec![]; prompts.len()];
+    let mut results: Arc<DashMap<usize, Vec<f32>>> = Arc::new(DashMap::new());
 
     let req_stream = futures::stream::iter(prompts.iter().enumerate().map(
-        async |(idx, prompt)| -> Result<(usize, EmbeddingResult), LangExplorerError> {
+        async |(idx, prompt)| -> Result<(usize, Response), LangExplorerError> {
             let res = client
                 .post(format!("{host}/api/embeddings"))
                 .body(format!(
                     "{{\"model\": \"{model}\", \"prompt\": \"{prompt}\"}}"
                 ))
                 .send()
-                .await?
-                .json::<EmbeddingResult>()
                 .await?;
 
             Ok((idx, res))
         },
-    ));
-
-    let (tx, mut rx) = mpsc::channel::<Result<(usize, EmbeddingResult), LangExplorerError>>(
-        num_parallel_requests * 2,
-    );
-
-    let _ = req_stream
-        .buffer_unordered(num_parallel_requests)
-        .for_each(|res| {
-            let txt = tx.clone();
-            async move {
-                txt.send(res).await.unwrap();
+    ))
+    .buffer_unordered(num_parallel_requests)
+    .map(
+        async |result| -> Result<(usize, EmbeddingResult), LangExplorerError> {
+            match result {
+                Ok((idx, res)) => Ok((idx, res.json::<EmbeddingResult>().await?)),
+                Err(e) => Err(e),
             }
-        });
-
-    drop(tx);
-
-    while let Some(res) = rx.recv().await {
-        match res {
+        },
+    )
+    .buffer_unordered(num_parallel_requests)
+    .for_each(|result| {
+        match result {
             Ok(res) => {
-                results[res.0] = res.1.embedding;
+                let data = results.clone();
+                data.insert(res.0, res.1.embedding);
             }
-            Err(e) => return Err(e),
+            Err(_) => {}
         }
-    }
 
-    Ok(results)
+        future::ready(())
+    });
+
+    let mut results_final: Vec<Vec<f32>> = vec![vec![]; prompts.len()];
+
+    let _ = results
+        .iter_mut()
+        .map(|kv| results_final[*kv.key()] = kv.value().clone());
+
+    Ok(results_final)
 }
