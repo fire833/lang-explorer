@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use futures::{future, StreamExt};
-use reqwest::{Client, Response};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::{errors::LangExplorerError, languages::EmbeddingModel};
@@ -60,27 +60,21 @@ pub(crate) async fn get_embeddings_bulk_ollama(
     let results: Arc<DashMap<usize, Vec<f32>>> = Arc::new(DashMap::new());
 
     let _ = futures::stream::iter(prompts.iter().enumerate().map(
-        async |(idx, prompt)| -> Result<(usize, Response), LangExplorerError> {
+        async |(idx, prompt)| -> Result<(usize, EmbeddingResult), LangExplorerError> {
             let res = client
                 .post(format!("{host}/api/embeddings"))
-                .body(format!(
-                    "{{\"model\": \"{model}\", \"prompt\": \"{prompt}\"}}"
-                ))
+                .json(&serde_json::json!({
+                    "model": model,
+                    "prompt": prompt,
+                }))
                 .send()
+                .await?
+                .json::<EmbeddingResult>()
                 .await?;
 
             Ok((idx, res))
         },
     ))
-    .buffer_unordered(num_parallel_requests)
-    .map(
-        async |result| -> Result<(usize, EmbeddingResult), LangExplorerError> {
-            match result {
-                Ok((idx, res)) => Ok((idx, res.json::<EmbeddingResult>().await?)),
-                Err(e) => Err(e),
-            }
-        },
-    )
     .buffer_unordered(num_parallel_requests)
     .for_each(|result| {
         match result {
