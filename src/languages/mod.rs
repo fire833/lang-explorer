@@ -17,7 +17,6 @@
  */
 
 use std::collections::{HashMap, HashSet};
-use std::mem;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
@@ -38,7 +37,7 @@ use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::program::InstanceId;
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
-use crate::tooling::ollama::{get_embedding_ollama, get_embeddings_bulk_ollama};
+use crate::tooling::ollama::get_embedding_ollama;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -282,13 +281,21 @@ impl EmbeddingModel {
                     })
                     .collect();
 
-                for prompt in prompts.iter() {
+                for (idx, prompt) in prompts.iter().enumerate() {
                     match get_embedding_ollama(&client, &ollama_host, prompt, self.clone()).await {
                         Ok(vec) => {
                             let p = res.programs.get_mut(0).unwrap();
                             p.set_embedding(emb_name.clone(), vec);
                         }
                         Err(e) => return Err(e),
+                    }
+
+                    if idx % 100 == 0 {
+                        println!(
+                            "processed {} / {} prompts for embeddings",
+                            idx,
+                            prompts.len()
+                        );
                     }
                 }
 
