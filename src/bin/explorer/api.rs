@@ -23,6 +23,7 @@ use std::{
 };
 
 use burn::prelude::Backend;
+use bytes::Bytes;
 use lang_explorer::languages::GenerateResultsV2;
 use lang_explorer::{
     expanders::ExpanderWrapper,
@@ -32,10 +33,8 @@ use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 use warp::{
     http::StatusCode,
-    hyper::body::Bytes,
-    reject::Rejection,
     reply::{Json, WithStatus},
-    Filter,
+    Filter, Rejection,
 };
 
 #[derive(OpenApi)]
@@ -98,6 +97,7 @@ pub(super) async fn start_server<B: Backend>(
         .allow_any_origin()
         .allow_header("Content-Type")
         .allow_header("Accept")
+        .allow_header("User-Agent")
         .allow_methods(vec!["POST", "GET"]);
 
     let routes = generate2.or(health).or(openapi).or(any_handler).with(cors);
@@ -129,21 +129,21 @@ async fn generate<B: Backend>(
     models_dir: String,
     ollama_host: String,
     output_dir: String,
-) -> Result<impl warp::Reply, Infallible> {
+) -> Result<WithStatus<Json>, Rejection> {
     let params = match serde_json::from_slice::<GenerateParams>(&body) {
         Ok(p) => p,
-        Err(e) => return Ok(invalid_request(e.to_string())),
+        Err(e) => return invalid_request(e.to_string()).await,
     };
 
     match params
         .execute::<B>(language, expander, models_dir, ollama_host, output_dir)
         .await
     {
-        Ok(resp) => Ok(warp::reply::with_status(
-            warp::reply::json(&resp),
-            StatusCode::OK,
-        )),
-        Err(e) => Ok(invalid_request(e.to_string())),
+        Ok(resp) => {
+            let code = StatusCode::OK;
+            return Ok(warp::reply::with_status(warp::reply::json(&resp), code));
+        }
+        Err(e) => return invalid_request(e.to_string()).await,
     }
 }
 
@@ -168,36 +168,36 @@ impl ErrorMessage {
 }
 
 #[allow(unused)]
-fn not_found() -> WithStatus<Json> {
+async fn not_found() -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::NOT_FOUND;
-    warp::reply::with_status(
+    Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new(code.into(), "resource not found")),
         code,
-    )
+    ))
 }
 
-fn ready_ok() -> WithStatus<Json> {
+async fn ready_ok() -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::OK;
-    warp::reply::with_status(
+    Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new(code.into(), "application is ready")),
         code,
-    )
+    ))
 }
 
 #[allow(unused)]
-fn invalid_authorization() -> WithStatus<Json> {
+async fn invalid_authorization() -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::UNAUTHORIZED;
-    warp::reply::with_status(
+    Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new(
             code.into(),
             "invalid authorization credentials provided",
         )),
         code,
-    )
+    ))
 }
 
 #[allow(unused)]
-async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, Infallible> {
+async fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json>, Infallible> {
     let code = StatusCode::BAD_REQUEST;
     println!("invalid request made: {:?}", rej);
     Ok(warp::reply::with_status(
@@ -209,33 +209,36 @@ async fn invalid_request_rejection(rej: Rejection) -> Result<impl warp::Reply, I
     ))
 }
 
-fn invalid_request(err: String) -> WithStatus<Json> {
+async fn invalid_request(err: String) -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::BAD_REQUEST;
     println!("invalid request made: {}", err);
-    warp::reply::with_status(
+    Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
             format!("invalid request: {}", err),
         )),
         code,
-    )
+    ))
 }
 
 #[allow(unused)]
-fn internal_error(err: String) -> WithStatus<Json> {
+async fn internal_error(err: String) -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::INTERNAL_SERVER_ERROR;
-    warp::reply::with_status(
+    Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
             format!("unable to execute request: {}", err),
         )),
         code,
-    )
+    ))
 }
 
 pub trait OpenApiExtensions: OpenApi {
-    fn api_docs_reply() -> WithStatus<Json> {
-        warp::reply::with_status(warp::reply::json(&Self::openapi()), StatusCode::OK)
+    async fn api_docs_reply() -> Result<WithStatus<Json>, Rejection> {
+        Ok(warp::reply::with_status(
+            warp::reply::json(&Self::openapi()),
+            StatusCode::OK,
+        ))
     }
 
     #[allow(unused)]

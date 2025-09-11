@@ -393,7 +393,7 @@ impl GenerateParams {
         expander: ExpanderWrapper,
         models_dir: String,
         ollama_host: String,
-        output_dir: String,
+        _output_dir: String,
     ) -> Result<GenerateResultsV2, LangExplorerError> {
         let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
