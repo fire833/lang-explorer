@@ -62,6 +62,7 @@ impl<B: Backend> NegativeSampling<B> {
         input: Tensor<B, 2, Float>,
     ) -> Tensor<B, 1, Float> {
         // TODO: this clone will be VERY expensive, need to figure out a way to get rid of this.
+        // Update: it doesn't seem like this is actually a big deal.
         let negatives = sigmoid(
             input
                 .clone()
