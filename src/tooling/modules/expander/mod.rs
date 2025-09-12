@@ -22,6 +22,7 @@ pub mod lin4;
 
 pub mod frontier_decision;
 pub mod prod_decision;
+pub mod prod_decision2;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Activation {
