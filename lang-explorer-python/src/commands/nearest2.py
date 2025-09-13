@@ -75,6 +75,5 @@ def nearest_neighbors2(args):
 		axes[x, y].set_title(f"{j}th NN")
 		# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
 
-
-	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
-	subprocess.run(["mogrify", "-trim", f"images/{args.output}.jpeg"])
+	plt.savefig(f"images/{args.output}.png", dpi=1500)
+	subprocess.run(["mogrify", "-trim", f"images/{args.output}.png"])
