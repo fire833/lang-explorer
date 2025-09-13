@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::{optim::AdamWConfig, prelude::Backend, tensor::backend::AutodiffBackend};
+use burn::{optim::AdamWConfig, tensor::backend::AutodiffBackend};
 
 use crate::{
     embedding::{
@@ -24,7 +24,9 @@ use crate::{
         GeneralEmbeddingTrainingParams, LanguageEmbedder,
     },
     errors::LangExplorerError,
-    expanders::{EmbedderWrapper, GrammarExpander},
+    expanders::{
+        EmbedderWrapper, FrontierDecisionWrapper, GrammarExpander, ProductionDecisionWrapper,
+    },
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
         rule::ProductionRule, NonTerminal, Terminal,
@@ -33,9 +35,8 @@ use crate::{
         modules::{
             embed::AggregationMethod,
             expander::{
-                frontier_decision::{FrontierDecision, FrontierDecisionConfig},
-                prod_decision::{ProductionDecision, ProductionDecisionConfig},
-                prod_decision2::ProductionDecisionAttention,
+                frontier_decision::FrontierDecisionAttentionConfig,
+                prod_decision_fixed::ProductionDecisionFixedConfig,
             },
         },
         training::TrainingParams,
@@ -52,15 +53,6 @@ pub struct FixedLearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend>
 
     /// Model for frontier expansion decisions.
     frontier_decision: FrontierDecisionWrapper<B>,
-}
-
-enum ProductionDecisionWrapper<B: Backend> {
-    ProdDecisionV1(ProductionDecision<B>),
-    ProdDecisionAttentionOnly(ProductionDecisionAttention<B>),
-}
-
-enum FrontierDecisionWrapper<B: Backend> {
-    FrontierDecisionV1(FrontierDecision<B>),
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
@@ -97,12 +89,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         let rules = grammar.get_all_rules();
         let symbols = grammar.get_all_symbols();
 
-        let prod_decision = ProductionDecisionWrapper::ProdDecisionV1(
-            ProductionDecisionConfig::new(256, rules.len(), 16).init(&device),
+        let prod_decision = ProductionDecisionWrapper::ProdDecisionFixed(
+            ProductionDecisionFixedConfig::new(256, rules.len(), 16).init(&device),
         );
 
         let frontier_decision = FrontierDecisionWrapper::FrontierDecisionV1(
-            FrontierDecisionConfig::new(256, symbols.len(), 16).init(&device),
+            FrontierDecisionAttentionConfig::new(256, symbols.len(), 16).init(&device),
         );
 
         Ok(Self {

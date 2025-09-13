@@ -30,7 +30,7 @@ use crate::tooling::modules::expander::{
 };
 
 #[derive(Debug, Config)]
-pub struct ProductionDecisionConfig {
+pub struct ProductionDecisionFixedConfig {
     /// The number of dimensions of embeddings.
     d_model: usize,
 
@@ -43,9 +43,9 @@ pub struct ProductionDecisionConfig {
     n_embed: usize,
 }
 
-impl ProductionDecisionConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecision<B> {
-        ProductionDecision {
+impl ProductionDecisionFixedConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecisionFixed<B> {
+        ProductionDecisionFixed {
             rule_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
             linear: Linear2DeepConfig::new(self.d_model)
                 .with_bias(true)
@@ -56,14 +56,14 @@ impl ProductionDecisionConfig {
 }
 
 #[derive(Debug, Module)]
-pub struct ProductionDecision<B: Backend> {
+pub struct ProductionDecisionFixed<B: Backend> {
     /// Embeddings for each rule that we want to expand.
     rule_embeddings: Embedding<B>,
     /// The linear decision function.
     linear: Linear2Deep<B>,
 }
 
-impl<B: Backend> ProductionDecision<B> {
+impl<B: Backend> ProductionDecisionFixed<B> {
     pub fn forward(
         &self,
         embedding: Tensor<B, 2, Float>,

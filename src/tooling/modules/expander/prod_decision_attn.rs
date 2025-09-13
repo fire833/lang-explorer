@@ -25,7 +25,7 @@ use burn::{
 };
 
 #[derive(Debug, Config)]
-pub struct ProductionDecision2Config {
+pub struct ProductionDecisionAttentionConfig {
     /// The number of dimensions of embeddings.
     d_model: usize,
 
@@ -35,7 +35,7 @@ pub struct ProductionDecision2Config {
     n_embed: usize,
 }
 
-impl ProductionDecision2Config {
+impl ProductionDecisionAttentionConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecisionAttention<B> {
         ProductionDecisionAttention {
             symbols_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),

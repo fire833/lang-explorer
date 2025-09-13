@@ -19,7 +19,10 @@
 use std::{fmt::Display, str::FromStr};
 
 use async_trait::async_trait;
-use burn::tensor::{backend::AutodiffBackend, Float, Tensor};
+use burn::{
+    prelude::Backend,
+    tensor::{backend::AutodiffBackend, Float, Int, Tensor},
+};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -33,6 +36,11 @@ use crate::{
         rule::ProductionRule, NonTerminal, Terminal,
     },
     languages::Feature,
+    tooling::modules::expander::{
+        frontier_decision::FrontierDecisionAttention,
+        prod_decision_attn::ProductionDecisionAttention,
+        prod_decision_fixed::ProductionDecisionFixed, Activation,
+    },
 };
 
 pub mod exhaustive;
@@ -153,6 +161,39 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         match self {
             EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed((doc.to_string(), words)),
+        }
+    }
+}
+
+enum ProductionDecisionWrapper<B: Backend> {
+    ProdDecisionFixed(ProductionDecisionFixed<B>),
+    ProdDecisionAttentionOnly(ProductionDecisionAttention<B>),
+}
+
+impl<B: Backend> ProductionDecisionWrapper<B> {
+    fn forward(
+        &self,
+        embedding: Tensor<B, 2, Float>,
+        rules: Tensor<B, 2, Int>,
+        activation: Activation,
+    ) -> Tensor<B, 2, Float> {
+        match self {
+            ProductionDecisionWrapper::ProdDecisionFixed(model) => {
+                model.forward(embedding, rules, activation)
+            }
+            ProductionDecisionWrapper::ProdDecisionAttentionOnly(model) => model.forward(),
+        }
+    }
+}
+
+enum FrontierDecisionWrapper<B: Backend> {
+    FrontierDecisionV1(FrontierDecisionAttention<B>),
+}
+
+impl<B: Backend> FrontierDecisionWrapper<B> {
+    fn forward(&self, frontier: Tensor<B, 2, Int>) -> Tensor<B, 2, Float> {
+        match self {
+            FrontierDecisionWrapper::FrontierDecisionV1(model) => model.forward(frontier),
         }
     }
 }

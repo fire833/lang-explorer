@@ -28,7 +28,7 @@ use burn::{
 };
 
 #[derive(Debug, Config)]
-pub struct FrontierDecisionConfig {
+pub struct FrontierDecisionAttentionConfig {
     /// The number of dimensions of embeddings.
     d_model: usize,
 
@@ -41,9 +41,9 @@ pub struct FrontierDecisionConfig {
     n_heads: usize,
 }
 
-impl FrontierDecisionConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> FrontierDecision<B> {
-        FrontierDecision {
+impl FrontierDecisionAttentionConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> FrontierDecisionAttention<B> {
+        FrontierDecisionAttention {
             symbols_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
             mha: MultiHeadAttentionConfig::new(self.d_model, self.n_heads).init(device),
         }
@@ -51,7 +51,7 @@ impl FrontierDecisionConfig {
 }
 
 #[derive(Debug, Module)]
-pub struct FrontierDecision<B: Backend> {
+pub struct FrontierDecisionAttention<B: Backend> {
     /// Embeddings for all symbols in the grammar.
     /// More specifically, this is |V ∪ T ∪ λ|.
     symbols_embeddings: Embedding<B>,
@@ -60,7 +60,7 @@ pub struct FrontierDecision<B: Backend> {
     mha: MultiHeadAttention<B>,
 }
 
-impl<B: Backend> FrontierDecision<B> {
+impl<B: Backend> FrontierDecisionAttention<B> {
     pub fn forward(&self, frontier: Tensor<B, 2, Int>) -> Tensor<B, 2, Float> {
         let qk = self.symbols_embeddings.forward(frontier);
         let out = self.mha.forward(MhaInput::self_attn(qk));

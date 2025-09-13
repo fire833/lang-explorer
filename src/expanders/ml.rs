@@ -47,7 +47,7 @@ use crate::{
                 lin2::{Linear2Deep, Linear2DeepConfig},
                 lin3::{Linear3Deep, Linear3DeepConfig},
                 lin4::{Linear4Deep, Linear4DeepConfig},
-                Activation,
+                Activation, LinearModuleWrapper,
             },
         },
         training::TrainingParams,
@@ -60,7 +60,7 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     embedder: EmbedderWrapper<T, I, B>,
 
     /// Mapping of each production rule to its corresponding decision function.
-    production_to_model: HashMap<Production<T, I>, ModuleWrapper<B>>,
+    production_to_model: HashMap<Production<T, I>, LinearModuleWrapper<B>>,
 
     /// When generating outputs, store output tensors here for backpropagation later.
     prod_output_map: HashMap<Production<T, I>, Vec<Tensor<B, 1, Int>>>,
@@ -119,14 +119,6 @@ pub enum SamplingStrategy {
     LowestProb,
 }
 
-/// A bit of a hack to allow us to keep a mapping of models
-/// for each of the production rules in our grammar.
-enum ModuleWrapper<B: Backend> {
-    Linear2(Linear2Deep<B>),
-    Linear3(Linear3Deep<B>),
-    Linear4(Linear4Deep<B>),
-}
-
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
     for LearnedExpander<T, I, B>
 {
@@ -136,17 +128,17 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
         for production in grammar.get_productions() {
             let module = match production.ml_config.model {
-                ProductionModelType::Linear2 => ModuleWrapper::Linear2(
+                ProductionModelType::Linear2 => LinearModuleWrapper::Linear2(
                     Linear2DeepConfig::new(production.len())
                         .with_bias(production.ml_config.with_bias)
                         .init::<B>(&device),
                 ),
-                ProductionModelType::Linear3 => ModuleWrapper::Linear3(
+                ProductionModelType::Linear3 => LinearModuleWrapper::Linear3(
                     Linear3DeepConfig::new(production.len())
                         .with_bias(production.ml_config.with_bias)
                         .init::<B>(&device),
                 ),
-                ProductionModelType::Linear4 => ModuleWrapper::Linear4(
+                ProductionModelType::Linear4 => LinearModuleWrapper::Linear4(
                     Linear4DeepConfig::new(production.len())
                         .with_bias(production.ml_config.with_bias)
                         .init::<B>(&device),
@@ -201,15 +193,15 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             .unwrap_or_else(|| panic!("could not find model for {:?}", production));
 
         let output = match model {
-            ModuleWrapper::Linear2(linear) => linear.forward(
+            LinearModuleWrapper::Linear2(linear) => linear.forward(
                 embedding.unsqueeze(),
                 production.ml_config.activation.clone(),
             ),
-            ModuleWrapper::Linear3(linear) => linear.forward(
+            LinearModuleWrapper::Linear3(linear) => linear.forward(
                 embedding.unsqueeze(),
                 production.ml_config.activation.clone(),
             ),
-            ModuleWrapper::Linear4(linear) => linear.forward(
+            LinearModuleWrapper::Linear4(linear) => linear.forward(
                 embedding.unsqueeze(),
                 production.ml_config.activation.clone(),
             ),
