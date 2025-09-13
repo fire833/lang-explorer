@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::{optim::AdamWConfig, tensor::backend::AutodiffBackend};
+use burn::{optim::AdamWConfig, prelude::Backend, tensor::backend::AutodiffBackend};
 
 use crate::{
     embedding::{
@@ -35,6 +35,7 @@ use crate::{
             expander::{
                 frontier_decision::{FrontierDecision, FrontierDecisionConfig},
                 prod_decision::{ProductionDecision, ProductionDecisionConfig},
+                prod_decision2::ProductionDecisionAttention,
             },
         },
         training::TrainingParams,
@@ -47,10 +48,19 @@ pub struct FixedLearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend>
     embedder: EmbedderWrapper<T, I, B>,
 
     /// Model for expansion decisions.
-    prod_decision: ProductionDecision<B>,
+    prod_decision: ProductionDecisionWrapper<B>,
 
     /// Model for frontier expansion decisions.
-    frontier_decision: FrontierDecision<B>,
+    frontier_decision: FrontierDecisionWrapper<B>,
+}
+
+enum ProductionDecisionWrapper<B: Backend> {
+    ProdDecisionV1(ProductionDecision<B>),
+    ProdDecisionAttentionOnly(ProductionDecisionAttention<B>),
+}
+
+enum FrontierDecisionWrapper<B: Backend> {
+    FrontierDecisionV1(FrontierDecision<B>),
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
@@ -87,10 +97,18 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         let rules = grammar.get_all_rules();
         let symbols = grammar.get_all_symbols();
 
+        let prod_decision = ProductionDecisionWrapper::ProdDecisionV1(
+            ProductionDecisionConfig::new(256, rules.len(), 16).init(&device),
+        );
+
+        let frontier_decision = FrontierDecisionWrapper::FrontierDecisionV1(
+            FrontierDecisionConfig::new(256, symbols.len(), 16).init(&device),
+        );
+
         Ok(Self {
             embedder: EmbedderWrapper::Doc2Vec(d2v),
-            prod_decision: ProductionDecisionConfig::new(256, 128, rules.len()).init(&device),
-            frontier_decision: FrontierDecisionConfig::new(256, symbols.len(), 16).init(&device),
+            prod_decision,
+            frontier_decision,
         })
     }
 

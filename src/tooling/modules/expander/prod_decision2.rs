@@ -36,21 +36,21 @@ pub struct ProductionDecision2Config {
 }
 
 impl ProductionDecision2Config {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecision2<B> {
-        ProductionDecision2 {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecisionAttention<B> {
+        ProductionDecisionAttention {
             symbols_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
         }
     }
 }
 
 #[derive(Debug, Module)]
-pub struct ProductionDecision2<B: Backend> {
+pub struct ProductionDecisionAttention<B: Backend> {
     /// Embeddings for all symbols in the grammar.
     /// More specifically, this is |V ∪ T ∪ λ|.
     symbols_embeddings: Embedding<B>,
 }
 
-impl<B: Backend> ProductionDecision2<B> {
+impl<B: Backend> ProductionDecisionAttention<B> {
     pub fn forward(&self) -> Tensor<B, 2, Float> {
         todo!()
     }

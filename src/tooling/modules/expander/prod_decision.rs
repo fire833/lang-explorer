@@ -68,8 +68,9 @@ impl<B: Backend> ProductionDecision<B> {
         &self,
         embedding: Tensor<B, 2, Float>,
         rules: Tensor<B, 2, Int>,
+        activation: Activation,
     ) -> Tensor<B, 2, Float> {
-        let out = self.linear.forward(embedding, Activation::ReLU);
+        let out = self.linear.forward(embedding, activation);
         let rules = self.rule_embeddings.forward(rules);
         let rule_count = rules.dims()[1];
 
