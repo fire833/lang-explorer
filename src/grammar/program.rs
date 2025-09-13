@@ -285,6 +285,9 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         curr.children
             .remove(rng.random::<u64>() as usize % curr.children.len());
 
+        // Optionally replace with a new child node.
+        // if rng.random::<bool>() {}
+
         new
     }
 
