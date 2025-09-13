@@ -21,7 +21,7 @@ def nearest_neighbors2(args):
 
 	indices = [int(i) for i in args.indices.split(",")]
 
-	neigh = NearestNeighbors(n_neighbors=3, metric="euclidean")
+	neigh = NearestNeighbors(n_neighbors=4, metric="euclidean")
 	print("loading model...")
 	neigh.fit(data.iloc[:,2:-1])
 
@@ -52,15 +52,18 @@ def nearest_neighbors2(args):
 	print(f"Graph program: {programs}")
 
 	for j, neigh in enumerate(dist[0]):
+		if j == 0:
+			continue
+
 		x = 0
 		y = 0
-		if j == 0:
+		if j == 1:
 			x = 0
 			y = 1
-		if j == 1:
+		if j == 2:
 			x = 1
 			y = 0
-		if j == 2:
+		if j == 3:
 			x = 1
 			y = 1
 
@@ -69,7 +72,7 @@ def nearest_neighbors2(args):
 		img = Source(neighbor).render(f"/tmp/{x}_{y}", format="png", cleanup=True)
 		axes[x, y].imshow(mpimg.imread(img))
 		axes[x, y].axis('off')
-		axes[x, y].set_title(f"{j + 1}th NN")
+		axes[x, y].set_title(f"{j}th NN")
 		# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
 
 
