@@ -21,7 +21,7 @@ use burn::{
     module::Module,
     nn::{Embedding, EmbeddingConfig},
     prelude::Backend,
-    tensor::{Float, Int, Tensor},
+    tensor::{activation::softmax, Float, Int, Tensor},
 };
 
 use crate::tooling::modules::expander::{
@@ -64,25 +64,36 @@ pub struct ProductionDecisionFixed<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionFixed<B> {
+    /// Applies the forward pass to the input tensors.
     ///
+    /// More specifically, takes input embeddings for a context,
+    /// passes them through a linear layer, then compares the output
+    /// vector with vectors for all specified rules and returns a
+    /// probability distribution of rules that should be chosen.
+    ///
+    /// # Shapes
+    ///
+    /// - embedding: `[batch_size, d_embedding]`
+    /// - rules: `[batch_size, k]`
+    /// - output: `[batch_size, k]`
     pub fn forward(
         &self,
         embedding: Tensor<B, 2, Float>,
         rules: Tensor<B, 2, Int>,
         activation: Activation,
     ) -> Tensor<B, 2, Float> {
-        let out = self.linear.forward(embedding, activation);
+        let lout = self.linear.forward(embedding, activation);
         let rules = self.rule_embeddings.forward(rules);
         let rule_count = rules.dims()[1];
 
-        println!("rules: {rules}");
+        // Compute the repeated output tensor for comparing against every rule vector.
+        let out: Tensor<B, 3> = lout.unsqueeze_dim(1).repeat_dim(1, rule_count);
 
-        println!("out: {out}");
+        // Compare vectors.
+        let out = rules.mul(out).sum_dim(2);
 
-        let out = out.unsqueeze_dim(1);
-        let out = out.repeat_dim(0, rule_count);
-
-        // let out = rules.mul(out);
+        // Compute softmax
+        let out = softmax(out, 1).squeeze(2);
 
         out
     }
