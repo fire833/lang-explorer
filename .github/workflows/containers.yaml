@@ -44,4 +44,4 @@ jobs:
       APP_NAME: lang-explorer
       VERSION: v0.1.0
       DOCKERFILE_PATH: src/bin/explorer/Dockerfile
-      RUNNER: fire833-lang-explorer
+      # RUNNER: fire833-lang-explorer

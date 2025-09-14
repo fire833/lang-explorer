@@ -18,7 +18,6 @@
 FROM docker.io/rust:latest AS builder
 
 ADD src /usr/src/lang-explorer/src
-ADD rs_crates /usr/src/lang-explorer/rs_crates
 ADD Cargo.lock /usr/src/lang-explorer
 ADD Cargo.toml /usr/src/lang-explorer
 WORKDIR /usr/src/lang-explorer
