@@ -35,6 +35,6 @@ USER 1000:1000
 
 LABEL org.opencontainers.image.author="Kendall Tauser"
 LABEL org.opencontainers.image.title="Language Evaluator API."
-# LABEL org.opencontainers.image.source="https://github.com/fire833/lang-explorer"
+LABEL org.opencontainers.image.source="https://github.com/fire833/lang-explorer"
 
 ENTRYPOINT [ "dumb-init", "evaluator" ]

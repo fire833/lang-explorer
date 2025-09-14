@@ -37,6 +37,16 @@ permissions:
   packages: write
 
 jobs:
+  lang-explorer-python:
+    uses: fire833/cicd-templates/.github/workflows/containers_cd_v1.yaml@main
+    if: "inputs.ONLY == 'lang-explorer-python' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/lang-explorer-python/'))"
+    with:
+      APP_NAME: lang-explorer-python
+      VERSION: v0.1.0
+      DOCKERFILE_PATH: lang-explorer-python/Dockerfile
+      CONTEXT: lang-explorer-python/
+      # RUNNER: fire833-lang-explorer
+
   lang-explorer:
     uses: fire833/cicd-templates/.github/workflows/containers_cd_v1.yaml@main
     if: "inputs.ONLY == 'lang-explorer' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/lang-explorer/'))"
