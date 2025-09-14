@@ -18,7 +18,6 @@
 FROM docker.io/rust:latest AS builder
 
 ADD src /usr/src/lang-explorer/src
-ADD rs_crates /usr/src/lang-explorer/rs_crates
 ADD Cargo.lock /usr/src/lang-explorer
 ADD Cargo.toml /usr/src/lang-explorer
 WORKDIR /usr/src/lang-explorer
@@ -36,6 +35,6 @@ USER 1000:1000
 
 LABEL org.opencontainers.image.author="Kendall Tauser"
 LABEL org.opencontainers.image.title="Language Evaluator API."
-LABEL org.opencontainers.image.source="https://github.com/fire833/lang-explorer"
+# LABEL org.opencontainers.image.source="https://github.com/fire833/lang-explorer"
 
 ENTRYPOINT [ "dumb-init", "evaluator" ]

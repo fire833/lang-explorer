@@ -45,3 +45,12 @@ jobs:
       VERSION: v0.1.1
       DOCKERFILE_PATH: src/bin/explorer/Dockerfile
       # RUNNER: fire833-lang-explorer
+
+  lang-evaluator:
+    uses: fire833/cicd-templates/.github/workflows/containers_cd_v1.yaml@main
+    if: "inputs.ONLY == 'lang-evaluator' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/lang-evaluator/'))"
+    with:
+      APP_NAME: lang-evaluator
+      VERSION: v0.1.0
+      DOCKERFILE_PATH: src/bin/evaluator/Dockerfile
+      # RUNNER: fire833-lang-explorer
