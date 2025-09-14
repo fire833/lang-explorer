@@ -24,6 +24,6 @@ ENV PATH="$PATH:/root/.local/bin"
 
 RUN wget -O /usr/local/bin/dumb-init https://static.tauser.us/init/dumb-init-x86 && chmod +x /usr/local/bin/dumb-init
 
-RUN pip install pipx && pipx install poetry && poetry install
+RUN pip install pipx && pipx install poetry && poetry install --no-root
 
 ENTRYPOINT [ "dumb-init", "./main.py" ]
