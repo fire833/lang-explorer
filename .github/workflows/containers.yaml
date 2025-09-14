@@ -44,7 +44,7 @@ jobs:
       APP_NAME: lang-explorer-python
       VERSION: v0.1.0
       DOCKERFILE_PATH: lang-explorer-python/Dockerfile
-      CONTEXT: lang-explorer-python/
+      DOCKERFILE_CONTEXT: lang-explorer-python/
       # RUNNER: fire833-lang-explorer
 
   lang-explorer:
