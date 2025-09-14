@@ -19,7 +19,10 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Embedding, EmbeddingConfig},
+    nn::{
+        attention::{MultiHeadAttention, MultiHeadAttentionConfig},
+        Embedding, EmbeddingConfig,
+    },
     prelude::Backend,
     tensor::{Float, Tensor},
 };
@@ -33,12 +36,16 @@ pub struct ProductionDecisionAttentionConfig {
     /// correspond to the total number of symbols within a grammar,
     /// since we want to perform attention between symbols in the frontier.
     n_embed: usize,
+
+    /// The number of attention heads to have.
+    n_heads: usize,
 }
 
 impl ProductionDecisionAttentionConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecisionAttention<B> {
         ProductionDecisionAttention {
             symbols_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
+            attn: MultiHeadAttentionConfig::new(self.d_model, self.n_heads).init(device),
         }
     }
 }
@@ -48,6 +55,9 @@ pub struct ProductionDecisionAttention<B: Backend> {
     /// Embeddings for all symbols in the grammar.
     /// More specifically, this is |V ∪ T ∪ λ|.
     symbols_embeddings: Embedding<B>,
+
+    /// The decision attention head.
+    attn: MultiHeadAttention<B>,
 }
 
 impl<B: Backend> ProductionDecisionAttention<B> {

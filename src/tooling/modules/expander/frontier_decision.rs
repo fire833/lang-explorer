@@ -45,7 +45,7 @@ impl FrontierDecisionAttentionConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> FrontierDecisionAttention<B> {
         FrontierDecisionAttention {
             symbols_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
-            mha: MultiHeadAttentionConfig::new(self.d_model, self.n_heads).init(device),
+            attn: MultiHeadAttentionConfig::new(self.d_model, self.n_heads).init(device),
         }
     }
 }
@@ -57,13 +57,13 @@ pub struct FrontierDecisionAttention<B: Backend> {
     symbols_embeddings: Embedding<B>,
 
     /// The decision attention head.
-    mha: MultiHeadAttention<B>,
+    attn: MultiHeadAttention<B>,
 }
 
 impl<B: Backend> FrontierDecisionAttention<B> {
     pub fn forward(&self, frontier: Tensor<B, 2, Int>) -> Tensor<B, 2, Float> {
         let qk = self.symbols_embeddings.forward(frontier);
-        let out = self.mha.forward(MhaInput::self_attn(qk));
+        let out = self.attn.forward(MhaInput::self_attn(qk));
 
         todo!()
     }

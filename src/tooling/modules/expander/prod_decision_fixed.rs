@@ -64,6 +64,7 @@ pub struct ProductionDecisionFixed<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionFixed<B> {
+    ///
     pub fn forward(
         &self,
         embedding: Tensor<B, 2, Float>,
@@ -74,13 +75,33 @@ impl<B: Backend> ProductionDecisionFixed<B> {
         let rules = self.rule_embeddings.forward(rules);
         let rule_count = rules.dims()[1];
 
-        let out = out.repeat_dim(1, rule_count);
+        println!("rules: {rules}");
 
-        // let rules = rules.mul(out);
+        println!("out: {out}");
+
+        let out = out.unsqueeze_dim(1);
+        let out = out.repeat_dim(0, rule_count);
+
+        // let out = rules.mul(out);
 
         out
     }
 }
 
 #[test]
-fn test_forward() {}
+fn test_forward() {
+    use burn::backend::NdArray;
+
+    let dev = Default::default();
+    let model = ProductionDecisionFixedConfig::new(10, 5, 10).init::<NdArray>(&dev);
+
+    let out = model.forward(
+        Tensor::<NdArray, 2, Float>::from_data(
+            [[1.0, 2.0, 3.0, 4.0, 5.0], [4.0, 5.0, 4.5, 4.6, 4.7]],
+            &dev,
+        ),
+        Tensor::<NdArray, 2, Int>::from_data([[0, 1, 2], [3, 4, 5]], &dev),
+        Activation::ReLU,
+    );
+    println!("out: {out}");
+}
