@@ -18,4 +18,4 @@
 
 use utoipa::OpenApi;
 
-pub(super) async fn start_server() {}
+pub(super) async fn start_server(addr: &str, port: u16) {}

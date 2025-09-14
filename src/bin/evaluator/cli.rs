@@ -18,6 +18,8 @@
 
 use lang_explorer::errors::LangExplorerError;
 
+use crate::api::start_server;
+
 #[derive(clap::Parser)]
 pub(crate) struct EvaluatorArgs {
     #[command(subcommand)]
@@ -28,7 +30,7 @@ impl EvaluatorArgs {
     pub async fn entry(&self) -> Result<(), LangExplorerError> {
         match &self.cmd {
             Some(cmd) => match cmd {
-                Subcommand::Serve => todo!(),
+                Subcommand::Serve { address, port } => Ok(start_server(&address, *port).await),
             },
             None => Ok(()),
         }
@@ -37,5 +39,21 @@ impl EvaluatorArgs {
 
 #[derive(clap::Subcommand)]
 enum Subcommand {
-    Serve,
+    Serve {
+        /// Specify the address to bind to.
+        #[arg(short, long, default_value_t = default_bind_addr())]
+        address: String,
+
+        /// Specify the port to listen on for the server.
+        #[arg(short, long, default_value_t = default_port())]
+        port: u16,
+    },
+}
+
+fn default_bind_addr() -> String {
+    "0.0.0.0".into()
+}
+
+fn default_port() -> u16 {
+    8080
 }
