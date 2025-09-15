@@ -22,18 +22,18 @@ use std::{
 };
 
 use bytes::Bytes;
-use lang_explorer::tooling::api::{catchall_handler, ready_ok, ErrorMessage};
+use lang_explorer::tooling::api::{
+    catchall_handler, health_handler, openapi_handler, ready_ok, ErrorMessage, OpenApiExtensions,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 use warp::{
-    http::StatusCode,
     reply::{Json, WithStatus},
     Filter, Rejection,
 };
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct KarelEvaluationResult {
-    // TODO: Define the fields for Karel evaluation results
     pub success: bool,
     pub score: f64,
     pub execution_time_ms: u64,
@@ -43,9 +43,7 @@ pub struct KarelEvaluationResult {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TacoschedEvaluationResult {
-    // TODO: Define the fields for Tacosched evaluation results
     pub success: bool,
-    pub performance_metrics: Option<serde_json::Value>,
     pub validation_errors: Vec<String>,
     pub execution_time_ms: u64,
 }
@@ -89,21 +87,6 @@ pub async fn start_server(addr: &str, port: u16) {
         .and(warp::body::bytes())
         .and_then(evaluate_tacosched);
 
-    // Health endpoints
-    let health = warp::get()
-        .and(warp::path!("readyz"))
-        .or(warp::path!("livez"))
-        .and(warp::path::end())
-        .and_then(|_| ready_ok());
-
-    // // OpenAPI documentation endpoints
-    // let openapi = warp::get()
-    //     .and(warp::path!("swagger.json"))
-    //     .or(warp::path!("openapi.json"))
-    //     .or(warp::path!("api-docs"))
-    //     .and(warp::path::end())
-    //     .and_then(EvaluationAPIDocs::api_docs_reply);
-
     // CORS configuration
     let cors = warp::cors()
         .allow_any_origin()
@@ -115,8 +98,8 @@ pub async fn start_server(addr: &str, port: u16) {
     // Combine all routes
     let routes = karel_route
         .or(tacosched_route)
-        .or(health)
-        // .or(openapi)
+        .or(health_handler())
+        .or(openapi_handler::<EvaluationAPIDocs>())
         .or(catchall_handler())
         .with(cors);
 
@@ -138,7 +121,7 @@ pub async fn start_server(addr: &str, port: u16) {
         (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
     ),
 )]
-async fn evaluate_karel(body: Bytes) -> Result<WithStatus<Json>, Rejection> {
+async fn evaluate_karel(_body: Bytes) -> Result<WithStatus<Json>, Rejection> {
     // let program_instance = match serde_json::from_slice::<ProgramInstance>(&body) {
     //     Ok(p) => p,
     //     Err(e) => return invalid_request(e.to_string()).await,
@@ -153,7 +136,7 @@ async fn evaluate_karel(body: Bytes) -> Result<WithStatus<Json>, Rejection> {
     //     Err(e) => invalid_request(e.to_string()).await,
     // }
 
-    Ok(ready_ok().await?)
+    ready_ok()
 }
 
 #[utoipa::path(
@@ -165,7 +148,7 @@ async fn evaluate_karel(body: Bytes) -> Result<WithStatus<Json>, Rejection> {
         (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
     ),
 )]
-async fn evaluate_tacosched(body: Bytes) -> Result<WithStatus<Json>, Rejection> {
+async fn evaluate_tacosched(_body: Bytes) -> Result<WithStatus<Json>, Rejection> {
     // let program_instance = match serde_json::from_slice::<ProgramInstance>(&body) {
     //     Ok(p) => p,
     //     Err(e) => return invalid_request(e.to_string()).await,
@@ -180,22 +163,5 @@ async fn evaluate_tacosched(body: Bytes) -> Result<WithStatus<Json>, Rejection> 
     //     Err(e) => invalid_request(e.to_string()).await,
     // }
 
-    Ok(ready_ok().await?)
-}
-
-pub trait OpenApiExtensions: OpenApi {
-    async fn api_docs_reply() -> Result<WithStatus<Json>, Rejection> {
-        Ok(warp::reply::with_status(
-            warp::reply::json(&Self::openapi()),
-            StatusCode::OK,
-        ))
-    }
-
-    #[allow(unused)]
-    fn api_docs_print() {
-        println!(
-            "{}",
-            Self::openapi().to_pretty_json().unwrap_or("".to_string())
-        );
-    }
+    ready_ok()
 }

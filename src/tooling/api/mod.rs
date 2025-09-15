@@ -20,7 +20,7 @@ use std::convert::Infallible;
 
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{OpenApi, ToSchema};
 use warp::{
     reject::Rejection,
     reply::{Json, WithStatus},
@@ -52,15 +52,24 @@ pub fn health_handler() -> impl Filter<Extract = (WithStatus<Json>,), Error = Re
         .and(warp::path!("readyz"))
         .or(warp::path!("livez"))
         .and(warp::path::end())
-        .and_then(|_| ready_ok())
+        .and_then(|_| async { ready_ok() })
 }
 
 pub fn catchall_handler() -> impl Filter<Extract = (WithStatus<Json>,), Error = Rejection> + Clone {
-    warp::any().and_then(|| not_found())
+    warp::any().and_then(|| async { not_found() })
 }
 
-#[allow(unused)]
-pub async fn not_found() -> Result<WithStatus<Json>, Rejection> {
+pub fn openapi_handler<O: OpenApiExtensions>(
+) -> impl Filter<Extract = (WithStatus<Json>,), Error = Rejection> + Clone {
+    warp::get()
+        .and(warp::path!("swagger.json"))
+        .or(warp::path!("openapi.json"))
+        .or(warp::path!("api-docs"))
+        .and(warp::path::end())
+        .and_then(|_| async { O::api_docs_reply() })
+}
+
+pub fn not_found() -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::NOT_FOUND;
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new(code.into(), "resource not found")),
@@ -68,7 +77,7 @@ pub async fn not_found() -> Result<WithStatus<Json>, Rejection> {
     ))
 }
 
-pub async fn ready_ok() -> Result<WithStatus<Json>, Rejection> {
+pub fn ready_ok() -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::OK;
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new(code.into(), "application is ready")),
@@ -77,7 +86,7 @@ pub async fn ready_ok() -> Result<WithStatus<Json>, Rejection> {
 }
 
 #[allow(unused)]
-pub async fn invalid_authorization() -> Result<WithStatus<Json>, Rejection> {
+pub fn invalid_authorization() -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::UNAUTHORIZED;
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new(
@@ -89,7 +98,7 @@ pub async fn invalid_authorization() -> Result<WithStatus<Json>, Rejection> {
 }
 
 #[allow(unused)]
-pub async fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json>, Infallible> {
+pub fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json>, Infallible> {
     let code = StatusCode::BAD_REQUEST;
     println!("invalid request made: {:?}", rej);
     Ok(warp::reply::with_status(
@@ -101,7 +110,7 @@ pub async fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json
     ))
 }
 
-pub async fn invalid_request(err: String) -> Result<WithStatus<Json>, Rejection> {
+pub fn invalid_request(err: String) -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::BAD_REQUEST;
     println!("invalid request made: {}", err);
     Ok(warp::reply::with_status(
@@ -114,7 +123,7 @@ pub async fn invalid_request(err: String) -> Result<WithStatus<Json>, Rejection>
 }
 
 #[allow(unused)]
-pub async fn internal_error(err: String) -> Result<WithStatus<Json>, Rejection> {
+pub fn internal_error(err: String) -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::INTERNAL_SERVER_ERROR;
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
@@ -123,4 +132,21 @@ pub async fn internal_error(err: String) -> Result<WithStatus<Json>, Rejection> 
         )),
         code,
     ))
+}
+
+pub trait OpenApiExtensions: OpenApi {
+    fn api_docs_reply() -> Result<WithStatus<Json>, Rejection> {
+        Ok(warp::reply::with_status(
+            warp::reply::json(&Self::openapi()),
+            StatusCode::OK,
+        ))
+    }
+
+    #[allow(unused)]
+    fn api_docs_print() {
+        println!(
+            "{}",
+            Self::openapi().to_pretty_json().unwrap_or("".to_string())
+        );
+    }
 }

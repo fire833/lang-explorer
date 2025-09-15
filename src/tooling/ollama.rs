@@ -50,6 +50,7 @@ pub(crate) async fn get_embedding_ollama(
     Ok(res.embedding)
 }
 
+#[allow(unused)]
 pub(crate) async fn get_embeddings_bulk_ollama(
     client: &Client,
     host: &String,

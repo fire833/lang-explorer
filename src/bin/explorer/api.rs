@@ -23,12 +23,14 @@ use std::{
 
 use burn::prelude::Backend;
 use bytes::Bytes;
-use lang_explorer::languages::GenerateResultsV2;
 use lang_explorer::{
     expanders::ExpanderWrapper,
     languages::{GenerateParams, LanguageWrapper},
-    tooling::api::{catchall_handler, health_handler, invalid_request, ErrorMessage},
+    tooling::api::{
+        catchall_handler, health_handler, invalid_request, ErrorMessage, OpenApiExtensions,
+    },
 };
+use lang_explorer::{languages::GenerateResultsV2, tooling::api::openapi_handler};
 use utoipa::OpenApi;
 use warp::{
     http::StatusCode,
@@ -77,13 +79,6 @@ pub(super) async fn start_server<B: Backend>(
         .and(output_filter.clone())
         .and_then(generate::<B>);
 
-    let openapi = warp::get()
-        .and(warp::path!("swagger.json"))
-        .or(warp::path!("openapi.json"))
-        .or(warp::path!("api-docs"))
-        .and(warp::path::end())
-        .and_then(|_| ExplorerAPIDocs::api_docs_reply());
-
     let cors = warp::cors()
         .allow_any_origin()
         .allow_header("Content-Type")
@@ -93,7 +88,7 @@ pub(super) async fn start_server<B: Backend>(
 
     let routes = generate2
         .or(health_handler())
-        .or(openapi)
+        .or(openapi_handler::<ExplorerAPIDocs>())
         .or(catchall_handler())
         .with(cors);
 
@@ -127,7 +122,7 @@ async fn generate<B: Backend>(
 ) -> Result<WithStatus<Json>, Rejection> {
     let params = match serde_json::from_slice::<GenerateParams>(&body) {
         Ok(p) => p,
-        Err(e) => return invalid_request(e.to_string()).await,
+        Err(e) => return invalid_request(e.to_string()),
     };
 
     match params
@@ -138,23 +133,6 @@ async fn generate<B: Backend>(
             let code = StatusCode::OK;
             return Ok(warp::reply::with_status(warp::reply::json(&resp), code));
         }
-        Err(e) => return invalid_request(e.to_string()).await,
-    }
-}
-
-pub trait OpenApiExtensions: OpenApi {
-    async fn api_docs_reply() -> Result<WithStatus<Json>, Rejection> {
-        Ok(warp::reply::with_status(
-            warp::reply::json(&Self::openapi()),
-            StatusCode::OK,
-        ))
-    }
-
-    #[allow(unused)]
-    fn api_docs_print() {
-        println!(
-            "{}",
-            Self::openapi().to_pretty_json().unwrap_or("".to_string())
-        );
+        Err(e) => return invalid_request(e.to_string()),
     }
 }

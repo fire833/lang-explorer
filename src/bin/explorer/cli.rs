@@ -18,9 +18,7 @@
 
 use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
-    errors::LangExplorerError,
-    expanders::ExpanderWrapper,
-    languages::{GenerateParams, LanguageWrapper},
+    errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
 };
 
 use crate::api;
