@@ -17,7 +17,6 @@
  */
 
 use std::{
-    convert::Infallible,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4},
     str::FromStr,
 };
@@ -28,9 +27,9 @@ use lang_explorer::languages::GenerateResultsV2;
 use lang_explorer::{
     expanders::ExpanderWrapper,
     languages::{GenerateParams, LanguageWrapper},
+    tooling::api::{catchall_handler, health_handler, invalid_request, ErrorMessage},
 };
-use serde::{Deserialize, Serialize};
-use utoipa::{OpenApi, ToSchema};
+use utoipa::OpenApi;
 use warp::{
     http::StatusCode,
     reply::{Json, WithStatus},
@@ -78,20 +77,12 @@ pub(super) async fn start_server<B: Backend>(
         .and(output_filter.clone())
         .and_then(generate::<B>);
 
-    let health = warp::get()
-        .and(warp::path!("readyz"))
-        .or(warp::path!("livez"))
-        .and(warp::path::end())
-        .and_then(|_| ready_ok());
-
     let openapi = warp::get()
         .and(warp::path!("swagger.json"))
         .or(warp::path!("openapi.json"))
         .or(warp::path!("api-docs"))
         .and(warp::path::end())
         .and_then(|_| ExplorerAPIDocs::api_docs_reply());
-
-    let any_handler = warp::any().and_then(|| not_found());
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -100,7 +91,11 @@ pub(super) async fn start_server<B: Backend>(
         .allow_header("User-Agent")
         .allow_methods(vec!["POST", "GET"]);
 
-    let routes = generate2.or(health).or(openapi).or(any_handler).with(cors);
+    let routes = generate2
+        .or(health_handler())
+        .or(openapi)
+        .or(catchall_handler())
+        .with(cors);
 
     warp::serve(routes)
         .run(SocketAddr::V4(SocketAddrV4::new(
@@ -145,92 +140,6 @@ async fn generate<B: Backend>(
         }
         Err(e) => return invalid_request(e.to_string()).await,
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-struct ErrorMessage {
-    code: u16,
-    message: String,
-}
-
-impl ErrorMessage {
-    #[allow(unused)]
-    fn new(code: u16, message: &str) -> Self {
-        Self {
-            code,
-            message: message.to_string(),
-        }
-    }
-
-    fn new_from_string(code: u16, message: String) -> Self {
-        Self { code, message }
-    }
-}
-
-#[allow(unused)]
-async fn not_found() -> Result<WithStatus<Json>, Rejection> {
-    let code = StatusCode::NOT_FOUND;
-    Ok(warp::reply::with_status(
-        warp::reply::json(&ErrorMessage::new(code.into(), "resource not found")),
-        code,
-    ))
-}
-
-async fn ready_ok() -> Result<WithStatus<Json>, Rejection> {
-    let code = StatusCode::OK;
-    Ok(warp::reply::with_status(
-        warp::reply::json(&ErrorMessage::new(code.into(), "application is ready")),
-        code,
-    ))
-}
-
-#[allow(unused)]
-async fn invalid_authorization() -> Result<WithStatus<Json>, Rejection> {
-    let code = StatusCode::UNAUTHORIZED;
-    Ok(warp::reply::with_status(
-        warp::reply::json(&ErrorMessage::new(
-            code.into(),
-            "invalid authorization credentials provided",
-        )),
-        code,
-    ))
-}
-
-#[allow(unused)]
-async fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json>, Infallible> {
-    let code = StatusCode::BAD_REQUEST;
-    println!("invalid request made: {:?}", rej);
-    Ok(warp::reply::with_status(
-        warp::reply::json(&ErrorMessage::new_from_string(
-            code.into(),
-            format!("invalid request: {:?}", rej),
-        )),
-        code,
-    ))
-}
-
-async fn invalid_request(err: String) -> Result<WithStatus<Json>, Rejection> {
-    let code = StatusCode::BAD_REQUEST;
-    println!("invalid request made: {}", err);
-    Ok(warp::reply::with_status(
-        warp::reply::json(&ErrorMessage::new_from_string(
-            code.into(),
-            format!("invalid request: {}", err),
-        )),
-        code,
-    ))
-}
-
-#[allow(unused)]
-async fn internal_error(err: String) -> Result<WithStatus<Json>, Rejection> {
-    let code = StatusCode::INTERNAL_SERVER_ERROR;
-    Ok(warp::reply::with_status(
-        warp::reply::json(&ErrorMessage::new_from_string(
-            code.into(),
-            format!("unable to execute request: {}", err),
-        )),
-        code,
-    ))
 }
 
 pub trait OpenApiExtensions: OpenApi {

@@ -16,6 +16,186 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use utoipa::OpenApi;
+use std::{
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4},
+    str::FromStr,
+};
 
-pub(super) async fn start_server(addr: &str, port: u16) {}
+use bytes::Bytes;
+use lang_explorer::tooling::api::{catchall_handler, ready_ok, ErrorMessage};
+use serde::{Deserialize, Serialize};
+use utoipa::{OpenApi, ToSchema};
+use warp::{
+    http::StatusCode,
+    reply::{Json, WithStatus},
+    Filter, Rejection,
+};
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct KarelEvaluationResult {
+    // TODO: Define the fields for Karel evaluation results
+    pub success: bool,
+    pub score: f64,
+    pub execution_time_ms: u64,
+    pub error_message: Option<String>,
+    pub output: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct TacoschedEvaluationResult {
+    // TODO: Define the fields for Tacosched evaluation results
+    pub success: bool,
+    pub performance_metrics: Option<serde_json::Value>,
+    pub validation_errors: Vec<String>,
+    pub execution_time_ms: u64,
+}
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(evaluate_karel, evaluate_tacosched),
+    components(
+        schemas(
+            // ProgramInstance,
+            KarelEvaluationResult,
+            TacoschedEvaluationResult,
+            ErrorMessage
+        ),
+        responses()
+    ),
+    info(
+        description = "OpenAPI specification for the Evaluation API.",
+        title = "Evaluation API",
+        version = "1.0.0",
+        contact(name = "Kendall Tauser", email = "kttpsy@gmail.com"),
+        license(name = "GPL2", identifier = "GPL2")
+    )
+)]
+struct EvaluationAPIDocs;
+
+impl OpenApiExtensions for EvaluationAPIDocs {}
+
+pub async fn start_server(addr: &str, port: u16) {
+    // Karel evaluation endpoint
+    let karel_route = warp::post()
+        .and(warp::path!("v1" / "evaluate" / "karel"))
+        .and(warp::path::end())
+        .and(warp::body::bytes())
+        .and_then(evaluate_karel);
+
+    // Tacosched evaluation endpoint
+    let tacosched_route = warp::post()
+        .and(warp::path!("v1" / "evaluate" / "tacosched"))
+        .and(warp::path::end())
+        .and(warp::body::bytes())
+        .and_then(evaluate_tacosched);
+
+    // Health endpoints
+    let health = warp::get()
+        .and(warp::path!("readyz"))
+        .or(warp::path!("livez"))
+        .and(warp::path::end())
+        .and_then(|_| ready_ok());
+
+    // // OpenAPI documentation endpoints
+    // let openapi = warp::get()
+    //     .and(warp::path!("swagger.json"))
+    //     .or(warp::path!("openapi.json"))
+    //     .or(warp::path!("api-docs"))
+    //     .and(warp::path::end())
+    //     .and_then(EvaluationAPIDocs::api_docs_reply);
+
+    // CORS configuration
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_header("Content-Type")
+        .allow_header("Accept")
+        .allow_header("User-Agent")
+        .allow_methods(vec!["POST", "GET"]);
+
+    // Combine all routes
+    let routes = karel_route
+        .or(tacosched_route)
+        .or(health)
+        // .or(openapi)
+        .or(catchall_handler())
+        .with(cors);
+
+    // Start the server
+    warp::serve(routes)
+        .run(SocketAddr::V4(SocketAddrV4::new(
+            Ipv4Addr::from_str(addr).expect("invalid bind ip address"),
+            port,
+        )))
+        .await;
+}
+
+#[utoipa::path(
+    post,
+    path = "/v1/evaluate/karel",
+    // request_body = ProgramInstance,
+    responses(
+        (status = 200, description = "Successfully evaluated Karel program.", body = KarelEvaluationResult),
+        (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
+    ),
+)]
+async fn evaluate_karel(body: Bytes) -> Result<WithStatus<Json>, Rejection> {
+    // let program_instance = match serde_json::from_slice::<ProgramInstance>(&body) {
+    //     Ok(p) => p,
+    //     Err(e) => return invalid_request(e.to_string()).await,
+    // };
+
+    // // TODO: Implement Karel evaluation logic here
+    // match execute_karel_evaluation(&program_instance, &config_dir).await {
+    //     Ok(result) => {
+    //         let code = StatusCode::OK;
+    //         Ok(warp::reply::with_status(warp::reply::json(&result), code))
+    //     }
+    //     Err(e) => invalid_request(e.to_string()).await,
+    // }
+
+    Ok(ready_ok().await?)
+}
+
+#[utoipa::path(
+    post,
+    path = "/v1/evaluate/tacosched",
+    // request_body = ProgramInstance,
+    responses(
+        (status = 200, description = "Successfully evaluated Tacosched program.", body = TacoschedEvaluationResult),
+        (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
+    ),
+)]
+async fn evaluate_tacosched(body: Bytes) -> Result<WithStatus<Json>, Rejection> {
+    // let program_instance = match serde_json::from_slice::<ProgramInstance>(&body) {
+    //     Ok(p) => p,
+    //     Err(e) => return invalid_request(e.to_string()).await,
+    // };
+
+    // // TODO: Implement Tacosched evaluation logic here
+    // match execute_tacosched_evaluation(&program_instance, &config_dir).await {
+    //     Ok(result) => {
+    //         let code = StatusCode::OK;
+    //         Ok(warp::reply::with_status(warp::reply::json(&result), code))
+    //     }
+    //     Err(e) => invalid_request(e.to_string()).await,
+    // }
+
+    Ok(ready_ok().await?)
+}
+
+pub trait OpenApiExtensions: OpenApi {
+    async fn api_docs_reply() -> Result<WithStatus<Json>, Rejection> {
+        Ok(warp::reply::with_status(
+            warp::reply::json(&Self::openapi()),
+            StatusCode::OK,
+        ))
+    }
+
+    #[allow(unused)]
+    fn api_docs_print() {
+        println!(
+            "{}",
+            Self::openapi().to_pretty_json().unwrap_or("".to_string())
+        );
+    }
+}

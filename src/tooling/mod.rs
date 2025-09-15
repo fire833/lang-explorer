@@ -16,6 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+pub mod api;
 pub mod modules;
 pub(crate) mod ollama;
 pub mod training;
