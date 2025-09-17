@@ -24,9 +24,14 @@ use crate::{
     errors::LangExplorerError,
     evaluators::{Evaluator, Metric},
     grammar::{
-        elem::GrammarElement, grammar::Grammar, lhs::ProductionLHS, prod::context_free_production,
-        prod::production_rule, prod::Production, rule::ProductionRule,
+        elem::GrammarElement,
+        grammar::Grammar,
+        lhs::ProductionLHS,
+        prod::{context_free_production, production_rule, Production},
+        rule::ProductionRule,
+        NonTerminal, Terminal,
     },
+    languages::GrammarExpansionChecker,
 };
 
 use super::{
@@ -78,6 +83,10 @@ terminal_str!(PARALLELIZE_RACE_TEMP, "Temporary");
 terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage;
+
+pub struct TacoScheduleLanguageChecker {}
+
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for TacoScheduleLanguageChecker {}
 
 /// Parameters for Taco Schedule Language.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -147,6 +156,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = TacoScheduleLanguageParams;
+    type Checker = TacoScheduleLanguageChecker;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -345,6 +355,10 @@ impl GrammarBuilder for TacoScheduleLanguage {
         };
 
         Ok(grammar)
+    }
+
+    fn new_checker() -> Self::Checker {
+        TacoScheduleLanguageChecker {}
     }
 }
 

@@ -27,13 +27,14 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
+        NonTerminal, Terminal,
     },
     languages::{
         strings::{
             alphanumeric::{T_1, T_2, T_3, T_4, T_5, T_6, T_7, T_8, T_9},
             nterminal_str, terminal_str, StringValue, COLON, LPAREN, RPAREN, SEMICOLON, SPACE,
         },
-        GrammarBuilder,
+        GrammarBuilder, GrammarExpansionChecker,
     },
 };
 
@@ -74,16 +75,18 @@ terminal_str!(T_19, "19");
 
 pub struct KarelLanguage;
 
+pub struct KarelLanguageChecker;
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for KarelLanguageChecker {}
+
 /// Parameters for Karel Language.
 #[derive(Default, Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct KarelLanguageParameters {}
 
 impl GrammarBuilder for KarelLanguage {
     type Term = StringValue;
-
     type NTerm = StringValue;
-
     type Params<'de> = KarelLanguageParameters;
+    type Checker = KarelLanguageChecker;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
@@ -162,5 +165,9 @@ impl GrammarBuilder for KarelLanguage {
             ],
             "karel".into(),
         ))
+    }
+
+    fn new_checker() -> Self::Checker {
+        KarelLanguageChecker {}
     }
 }

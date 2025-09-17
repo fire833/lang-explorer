@@ -21,11 +21,14 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::grammar::Grammar,
-    languages::{strings::StringValue, GrammarBuilder},
+    grammar::{grammar::Grammar, NonTerminal, Terminal},
+    languages::{strings::StringValue, GrammarBuilder, GrammarExpansionChecker},
 };
 
 pub struct SpiralLanguage;
+
+pub struct SpiralLanguageChecker;
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for SpiralLanguageChecker {}
 
 /// Parameters for SPIRAL Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
@@ -35,10 +38,15 @@ impl GrammarBuilder for SpiralLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = SpiralLanguageParams;
+    type Checker = SpiralLanguageChecker;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        todo!()
+        todo!() // TODO: Do Veras' thing on the paper.
+    }
+
+    fn new_checker() -> Self::Checker {
+        SpiralLanguageChecker {}
     }
 }

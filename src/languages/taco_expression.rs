@@ -26,14 +26,16 @@ use crate::{
         grammar::Grammar,
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
+        program::ProgramInstance,
         rule::ProductionRule,
+        NonTerminal, Terminal,
     },
     languages::{
         strings::{
             nterminal_str, StringValue, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN,
             STAR,
         },
-        GrammarBuilder,
+        GrammarBuilder, GrammarExpansionChecker,
     },
 };
 
@@ -45,6 +47,18 @@ nterminal_str!(NT_INDEX, "nt_index");
 nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
+
+pub struct TacoExpressionLanguageChecker {}
+
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for TacoExpressionLanguageChecker {
+    fn check<'a>(
+        &mut self,
+        _context: &'a ProgramInstance<T, I>,
+        _production: &'a Production<T, I>,
+    ) -> bool {
+        true
+    }
+}
 
 /// Parameters for Taco Expression Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
@@ -75,6 +89,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = TacoExpressionLanguageParams;
+    type Checker = TacoExpressionLanguageChecker;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -127,5 +142,9 @@ impl GrammarBuilder for TacoExpressionLanguage {
         };
 
         Ok(grammar)
+    }
+
+    fn new_checker() -> Self::Checker {
+        TacoExpressionLanguageChecker {}
     }
 }

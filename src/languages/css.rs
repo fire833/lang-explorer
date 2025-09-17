@@ -27,6 +27,7 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
+        NonTerminal, Terminal,
     },
     languages::{
         strings::{
@@ -37,7 +38,7 @@ use crate::{
             nterminal_str, terminal_str, StringValue, COLON, COMMA, EPSILON, GREATER, LBRACKET,
             MINUS, PERCENT, PLUS, RBRACKET, SEMICOLON, SPACE,
         },
-        GrammarBuilder,
+        GrammarBuilder, GrammarExpansionChecker,
     },
 };
 
@@ -490,6 +491,9 @@ terminal_str!(JUSTIFY, "justify");
 
 pub struct CSSLanguage;
 
+pub struct CSSLanguageChecker;
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for CSSLanguageChecker {}
+
 /// Parameters for CSS Language.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CSSLanguageParameters {
@@ -553,6 +557,7 @@ impl GrammarBuilder for CSSLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = CSSLanguageParameters;
+    type Checker = CSSLanguageChecker;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -1219,5 +1224,9 @@ impl GrammarBuilder for CSSLanguage {
         );
 
         Ok(grammar)
+    }
+
+    fn new_checker() -> Self::Checker {
+        todo!()
     }
 }

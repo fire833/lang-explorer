@@ -34,7 +34,8 @@ use utoipa::ToSchema;
 
 use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
 use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
-use crate::grammar::program::InstanceId;
+use crate::grammar::prod::Production;
+use crate::grammar::program::{InstanceId, ProgramInstance};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
 use crate::tooling::ollama::get_embedding_ollama;
@@ -85,10 +86,31 @@ pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
     type Params<'de>: Default + Serialize + Deserialize<'de> + ToSchema;
+    type Checker: GrammarExpansionChecker<Self::Term, Self::NTerm>;
 
+    /// Method to actually construct a new grammar instance.
+    /// Uses the input parameters to customize the grammar.
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
+
+    /// Create a new verifier for verifying that expansions are valid.
+    fn new_checker() -> Self::Checker;
+}
+
+pub trait GrammarExpansionChecker<T: Terminal, I: NonTerminal> {
+    /// Check for whether or not a given rule is valid given
+    /// the context. This has originally been implemented for keeping
+    /// track of context in a more tractable way than with explicit
+    /// context in the grammar productions itself. Default implementation
+    /// is to always return true.
+    fn check<'a>(
+        &mut self,
+        _context: &'a ProgramInstance<T, I>,
+        _production: &'a Production<T, I>,
+    ) -> bool {
+        true
+    }
 }
 
 /// Enumeration of all supported languages currently within lang-explorer.

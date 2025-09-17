@@ -19,7 +19,11 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::{errors::LangExplorerError, grammar::grammar::Grammar};
+use crate::{
+    errors::LangExplorerError,
+    grammar::{grammar::Grammar, NonTerminal, Terminal},
+    languages::GrammarExpansionChecker,
+};
 
 use super::{strings::StringValue, GrammarBuilder};
 
@@ -38,6 +42,9 @@ use super::{strings::StringValue, GrammarBuilder};
 
 pub struct NFTRulesetLanguage;
 
+pub struct NFTRulesetChecker;
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for NFTRulesetChecker {}
+
 /// Parameters for NFTables language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct NFTRulesetParams {}
@@ -46,10 +53,15 @@ impl GrammarBuilder for NFTRulesetLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = NFTRulesetParams;
+    type Checker = NFTRulesetChecker;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         todo!()
+    }
+
+    fn new_checker() -> Self::Checker {
+        NFTRulesetChecker {}
     }
 }

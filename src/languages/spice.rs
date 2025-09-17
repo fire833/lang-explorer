@@ -21,11 +21,14 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::grammar::Grammar,
-    languages::{strings::StringValue, GrammarBuilder},
+    grammar::{grammar::Grammar, NonTerminal, Terminal},
+    languages::{strings::StringValue, GrammarBuilder, GrammarExpansionChecker},
 };
 
 pub struct SpiceLanguage;
+
+pub struct SpiceLanguageChecker;
+impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for SpiceLanguageChecker {}
 
 /// Parameters for SPICE language.
 #[derive(Default, Debug, Serialize, Deserialize, ToSchema)]
@@ -35,10 +38,15 @@ impl GrammarBuilder for SpiceLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = SpiceLanguageParams;
+    type Checker = SpiceLanguageChecker;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
         todo!()
+    }
+
+    fn new_checker() -> Self::Checker {
+        SpiceLanguageChecker {}
     }
 }
