@@ -185,6 +185,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             self.wl_kernel_iterations,
             self.wl_kernel_order.clone(),
             self.wl_dedup,
+            false,
         );
 
         let embedding = match self.embedder.forward(doc, words) {

@@ -118,6 +118,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         degree: u32,
         ordering: WLKernelHashingOrder,
         dedup: bool,
+        sort: bool,
     ) -> Vec<Feature> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
@@ -204,6 +205,10 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
         if dedup {
             found_features.dedup();
+        }
+
+        if sort {
+            found_features.sort();
         }
 
         found_features
@@ -348,6 +353,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
                 wl_degree,
                 WLKernelHashingOrder::SelfChildrenParentOrdered,
                 true,
+                false,
             ));
         }
 
@@ -422,11 +428,19 @@ fn test_extract_words_wl_kernel() {
         ProgramInstance::new(BUZZ, 5),
     ]);
 
-    let mut words =
-        program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenParentOrdered, false);
+    let mut words = program.extract_words_wl_kernel(
+        4,
+        WLKernelHashingOrder::SelfChildrenParentOrdered,
+        false,
+        false,
+    );
 
-    let mut wordsdedup =
-        program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenParentOrdered, true);
+    let mut wordsdedup = program.extract_words_wl_kernel(
+        4,
+        WLKernelHashingOrder::SelfChildrenParentOrdered,
+        true,
+        false,
+    );
 
     words.sort();
     wordsdedup.sort();
