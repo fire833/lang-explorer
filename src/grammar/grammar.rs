@@ -165,7 +165,9 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
             // TODO: need to handle backtracking if we don't have any places
             // where any productions can be expanded, otherwise we stall.
-            if lhs_slots.is_empty() {}
+            if lhs_slots.is_empty() {
+                return Err("no valid LHS found to expand in context-sensitive grammar".into());
+            }
 
             let temp_root = ProgramInstance::new(GrammarElement::Epsilon, 0);
 
@@ -250,15 +252,11 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
                 GrammarElement::NonTerminal(nt) => {
                     match grammar.productions.get(&ProductionLHS::new_context_free(nt.clone())) // Hack for right now
             {
-                Some(prod) => {
-                    match Grammar::generate_program_instance_ctx_free_recursive(grammar, Some(ctx), prod, expander, counter)  {
+                Some(prod) => match Grammar::generate_program_instance_ctx_free_recursive(grammar, Some(ctx), prod, expander, counter)  {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
-                    }
-                }
-                None => {
-                    return Err(format!("non-terminal {:?} not found in productions", nt).into())
-                }
+                },
+                None => return Err(format!("non-terminal {:?} not found in productions", nt).into()),
             }
                 }
                 GrammarElement::Epsilon | GrammarElement::Terminal(_) => children.push(

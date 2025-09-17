@@ -21,7 +21,6 @@ use std::collections::HashMap;
 
 use burn::{
     optim::AdamWConfig,
-    prelude::Backend,
     tensor::{activation::log_softmax, backend::AutodiffBackend, Int, Tensor},
 };
 
@@ -69,6 +68,8 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     wl_kernel_iterations: u32,
     /// The order in which to hash items when computing new labels.
     wl_kernel_order: WLKernelHashingOrder,
+    /// Toggle whether to deduplicate words when extracting WL kernel features.
+    wl_dedup: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -169,6 +170,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             embedder: EmbedderWrapper::Doc2Vec(d2v),
             wl_kernel_iterations: 5,
             wl_kernel_order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
+            wl_dedup: true,
         })
     }
 
@@ -179,8 +181,11 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
         let doc = context.clone();
-        let words =
-            doc.extract_words_wl_kernel(self.wl_kernel_iterations, self.wl_kernel_order.clone());
+        let words = doc.extract_words_wl_kernel(
+            self.wl_kernel_iterations,
+            self.wl_kernel_order.clone(),
+            self.wl_dedup,
+        );
 
         let embedding = match self.embedder.forward(doc, words) {
             Ok(e) => e,

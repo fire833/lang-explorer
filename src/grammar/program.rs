@@ -117,6 +117,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         &self,
         degree: u32,
         ordering: WLKernelHashingOrder,
+        dedup: bool,
     ) -> Vec<Feature> {
         let nodes = self.get_all_nodes();
         let mut node_features_new: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
@@ -130,7 +131,6 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
         nodes.iter().for_each(|node| {
             let hash = city::hash64(node.serialize_bytes().as_slice());
-
             node_features_old.insert(node, hash);
         });
 
@@ -200,6 +200,10 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             let cp2 = node_features_old;
             node_features_old = cp;
             node_features_new = cp2;
+        }
+
+        if dedup {
+            found_features.dedup();
         }
 
         found_features
@@ -343,6 +347,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             res.set_features(self.extract_words_wl_kernel(
                 wl_degree,
                 WLKernelHashingOrder::SelfChildrenParentOrdered,
+                true,
             ));
         }
 
@@ -417,8 +422,17 @@ fn test_extract_words_wl_kernel() {
         ProgramInstance::new(BUZZ, 5),
     ]);
 
-    let words = program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenParentOrdered);
+    let mut words =
+        program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenParentOrdered, false);
+
+    let mut wordsdedup =
+        program.extract_words_wl_kernel(4, WLKernelHashingOrder::SelfChildrenParentOrdered, true);
+
+    words.sort();
+    wordsdedup.sort();
+
     println!("{:?}", words);
+    println!("{:?}", wordsdedup);
 }
 
 impl<T: Terminal, I: NonTerminal> BinarySerialize for ProgramInstance<T, I> {
