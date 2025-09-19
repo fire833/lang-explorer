@@ -16,21 +16,34 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::config::Config;
-use utoipa::ToSchema;
+use burn::{
+    config::Config,
+    module::Module,
+    prelude::Backend,
+    tensor::{Float, Tensor},
+};
 
-pub mod code2vec;
-pub mod gat;
-mod gatconv;
-pub mod gcn;
-mod gcnconv;
-pub mod pvdbow;
-pub mod pvdm;
-pub mod wvcbow;
-pub mod wvsg;
+use crate::tooling::modules::embed::gatconv::GATConv;
 
-#[derive(Debug, Config, ToSchema)]
-pub enum AggregationMethod {
-    Average,
-    Sum,
+#[derive(Debug, Config)]
+pub struct GraphAttentionNetConfig {}
+
+impl GraphAttentionNetConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GraphAttentionNet<B> {
+        GraphAttentionNet { layers: vec![] }
+    }
 }
+
+#[derive(Debug, Module)]
+pub struct GraphAttentionNet<B: Backend> {
+    layers: Vec<GATConv<B>>,
+}
+
+impl<B: Backend> GraphAttentionNet<B> {
+    pub fn forward(&self) -> Tensor<B, 2, Float> {
+        todo!()
+    }
+}
+
+#[test]
+fn test_forward() {}

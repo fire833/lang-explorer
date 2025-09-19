@@ -16,21 +16,35 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::config::Config;
-use utoipa::ToSchema;
+use burn::{
+    config::Config,
+    module::Module,
+    nn::{Linear, LinearConfig},
+    prelude::Backend,
+    tensor::{Float, Tensor},
+};
 
-pub mod code2vec;
-pub mod gat;
-mod gatconv;
-pub mod gcn;
-mod gcnconv;
-pub mod pvdbow;
-pub mod pvdm;
-pub mod wvcbow;
-pub mod wvsg;
+#[derive(Debug, Config)]
+pub struct GCNConvConfig {}
 
-#[derive(Debug, Config, ToSchema)]
-pub enum AggregationMethod {
-    Average,
-    Sum,
+impl GCNConvConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GCNConv<B> {
+        GCNConv {
+            linear: LinearConfig::new(4, 4).init(device),
+        }
+    }
 }
+
+#[derive(Debug, Module)]
+pub struct GCNConv<B: Backend> {
+    linear: Linear<B>,
+}
+
+impl<B: Backend> GCNConv<B> {
+    pub fn forward(&self) -> Tensor<B, 2, Float> {
+        todo!()
+    }
+}
+
+#[test]
+fn test_forward() {}
