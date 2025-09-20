@@ -38,6 +38,7 @@ use crate::{
 
 pub mod doc2vecdbowns;
 pub mod doc2vecdm;
+pub mod graphmae;
 
 /// Main trait for creating embeddings of programs.
 pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
