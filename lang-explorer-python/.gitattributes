@@ -45,3 +45,11 @@ results/embeddings_128_10_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -te
 results/embeddings_128_15000_css_gensim.csv filter=lfs diff=lfs merge=lfs -text
 results/embeddings_128_5000_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -text
 results/embeddings_128_5000_tacosched_mxbai_embed_large.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_tacosched_nopartials_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/temporal filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_css_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_css_nopartials_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_karel_nopartials_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_tacoexpr_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_tacoexpr_nopartials_gensim.csv filter=lfs diff=lfs merge=lfs -text
+results/embeddings_128_10000_tacosched_gensim.csv filter=lfs diff=lfs merge=lfs -text
