@@ -21,7 +21,7 @@ def data_viz(args):
 
 	print(data.shape)
 
-	embedding2 = TSNE(2).fit_transform(data.iloc[:,2:-1])
+	embedding2 = TSNE(2).fit_transform(data.iloc[:,3:-1])
 	plt.title(f"t-SNE (2D) of {plain} dataset")
 	plt.scatter(embedding2[:,0], embedding2[:,1], c=data["plen"])
 	plt.tight_layout()
@@ -29,7 +29,12 @@ def data_viz(args):
 	plt.close()
 
 	plt.title(f"t-SNE (2D) of {plain} dataset")
-	plt.scatter(embedding2[:,0], embedding2[:,1], c=data["is_partial"])
+	color_map = {True: "green", False: "blue"}
+	label_map = {True: "Incomplete Program", False: "Complete Program"}
+	colors = [color_map[val] for val in data["is_partial"]]
+	# labels = [label_map[val] for val in data["is_partial"]]
+
+	plt.scatter(embedding2[:,0], embedding2[:,1], c=colors)
 	plt.tight_layout()
 	plt.legend()
 	plt.savefig(f"{args.output}/tsne2d{plain}ispartial.png", dpi=300)
