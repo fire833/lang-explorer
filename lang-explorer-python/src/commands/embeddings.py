@@ -10,7 +10,7 @@ def generate_embeddings(args):
 
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc",
-		GenerateParams(args.count, False, True, True, False, True, embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50, False, True),
+		GenerateParams(args.count, False, True, True, False, args.partials, embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50, False, True),
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
 	        "#20b01c",
@@ -82,8 +82,8 @@ def save_embedding_new(output_path, programs, t):
 	dims = 0
 	for prog in programs:
 		dims = len(prog["embeddings"][t])
-		out.append([prog["program"], prog["graphviz"]] + list(prog["embeddings"][t]))
-	column_names = ["type", "graphviz"] + ["x_" + str(dim) for dim in range(dims)]
+		out.append([prog["program"], prog["graphviz"], prog["is_partial"]] + list(prog["embeddings"][t]))
+	column_names = ["type", "graphviz", "is_partial"] + ["x_" + str(dim) for dim in range(dims)]
 	out = pd.DataFrame(out, columns=column_names)
 	out = out.sort_values(["type"])
 	out.to_csv(output_path, index=None)
@@ -98,8 +98,8 @@ def save_embedding(output_path, model, programs, dimensions):
 	"""
 	out = []
 	for prog in programs:
-		out.append([prog["program"], prog["graphviz"]] + list(model.docvecs[prog["program"]])) 
-	column_names = ["type" ,"graphviz"] + ["x_"+str(dim) for dim in range(dimensions)]
+		out.append([prog["program"], prog["graphviz"], prog["is_partial"]] + list(model.docvecs[prog["program"]])) 
+	column_names = ["type" ,"graphviz", "is_partial"] + ["x_"+str(dim) for dim in range(dimensions)]
 	out = pd.DataFrame(out, columns=column_names)
 	out = out.sort_values(["type"])
 	out.to_csv(output_path, index=None)

@@ -28,6 +28,13 @@ def data_viz(args):
 	plt.savefig(f"{args.output}/tsne2d{plain}colors.png", dpi=300)
 	plt.close()
 
+	plt.title(f"t-SNE (2D) of {plain} dataset")
+	plt.scatter(embedding2[:,0], embedding2[:,1], c=data["is_partial"])
+	plt.tight_layout()
+	plt.legend()
+	plt.savefig(f"{args.output}/tsne2d{plain}ispartial.png", dpi=300)
+	plt.close()
+
 	# embedding3 = TSNE(3).fit_transform(data.iloc[:,2:-1])
 	# fig = plt.figure(figsize=(8,6))
 	# ax = fig.add_subplot(111, projection='3d')

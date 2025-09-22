@@ -32,6 +32,7 @@ def main():
 	embed.add_argument("--batch-size", type=int, default=128, help="Specify the batch size to train on.")
 	embed.add_argument("--grad-clip", type=int, default=5.0, help="Specify the gradient clipping.")
 	embed.add_argument("--seed", type=int, default=50, help="Specify a seed when generating and training data.")
+	embed.add_argument("--partials", type=bool, default=True, help="Toggle whether partial programs should be returned.")
 	embed.set_defaults(func=generate_embeddings)
 
 	viz = sub.add_parser("dataviz", help="Visualize embedding spaces.")
