@@ -10,7 +10,7 @@ def generate_embeddings(args):
 
 	print("making call to explorer")
 	res = generate("http://localhost:8080", args.language, "wmc",
-		GenerateParams(args.count, False, True, True, False, args.partials, embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50, False, True),
+		GenerateParams(args.count, False, True, True, False, args.partials == "true", embeddings, args.wl_count, args.num_neg_samples, 128, 3, 3, args.grad_clip, "Average", GeneralTrainingParameters(512, args.epochs, args.learning_rate, 0.9, args.seed, 50, False, True),
 		css=CSSLanguageParameters("exhaustivev1", ["div", "h1", "h2", "h3", "h4", "h5", "h6", "a"], ["foobar"], [
 			"#842d5b",
 	        "#20b01c",
