@@ -365,6 +365,8 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             res.set_graphviz(self.serialize_to_graphviz());
         }
 
+        res.set_is_partial(!is_complete);
+
         if is_complete {
             match String::from_utf8(self.serialize()) {
                 Ok(data) => res.set_program(data),

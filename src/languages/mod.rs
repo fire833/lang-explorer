@@ -635,6 +635,10 @@ impl ProgramResult {
         }
     }
 
+    pub(crate) fn set_is_partial(&mut self, is_partial: bool) {
+        self.is_partial = is_partial;
+    }
+
     pub(crate) fn set_program(&mut self, program: String) {
         self.program = Some(program);
     }
