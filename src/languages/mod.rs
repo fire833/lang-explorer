@@ -36,6 +36,7 @@ use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedd
 use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
 use crate::grammar::prod::Production;
 use crate::grammar::program::{InstanceId, ProgramInstance};
+use crate::languages::anbncn::{AnBnCnLanguage, AnBnCnLanguageParams};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
 use crate::tooling::ollama::get_embedding_ollama;
@@ -54,6 +55,7 @@ use crate::{
     },
 };
 
+pub mod anbncn;
 pub mod css;
 pub mod karel;
 pub mod nft_ruleset;
@@ -125,6 +127,7 @@ pub enum LanguageWrapper {
     TacoSchedule,
     Spice,
     Karel,
+    AnBnCn,
 }
 
 impl FromStr for LanguageWrapper {
@@ -139,6 +142,7 @@ impl FromStr for LanguageWrapper {
             "tacosched" => Ok(Self::TacoSchedule),
             "spice" => Ok(Self::Spice),
             "karel" => Ok(Self::Karel),
+            "anbncn" => Ok(Self::AnBnCn),
             _ => Err(LangExplorerError::General(
                 "invalid language value provided".into(),
             )),
@@ -156,6 +160,7 @@ impl Display for LanguageWrapper {
             Self::TacoSchedule => write!(f, "tacosched"),
             Self::Spice => write!(f, "spice"),
             Self::Karel => write!(f, "karel"),
+            Self::AnBnCn => write!(f, "anbncn"),
         }
     }
 }
@@ -446,6 +451,7 @@ impl GenerateParams {
             }
             LanguageWrapper::Spice => SpiceLanguage::generate_grammar(self.spice),
             LanguageWrapper::Karel => KarelLanguage::generate_grammar(self.karel),
+            LanguageWrapper::AnBnCn => AnBnCnLanguage::generate_grammar(AnBnCnLanguageParams {}),
         }?;
 
         let mut results = GenerateResultsV2 {

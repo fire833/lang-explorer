@@ -142,9 +142,24 @@ macro_rules! context_free_production {
 
 pub(crate) use context_free_production;
 
+macro_rules! single_prefix_production {
+    ($prefix: expr, $nt: expr, $($rules:expr),+) => {
+        Production::new(ProductionLHS::new_with_prefix_single($prefix, $nt), vec![$($rules),+])
+    };
+}
+
+macro_rules! single_suffix_production {
+    ($nt: expr, $suffix: expr, $($rules:expr),+) => {
+        Production::new(ProductionLHS::new_with_suffix_single($suffix, $nt), vec![$($rules),+])
+    };
+}
+
+pub(crate) use single_prefix_production;
+pub(crate) use single_suffix_production;
+
 #[allow(unused)]
 macro_rules! context_sensitive_production {
-    (($($prefix:expr),*), $nt:expr, ($($suffix:expr),*), $($rules:expr),+) => {
+    (($($prefix:expr),*) / ($nt:expr) / ($($suffix:expr),*) / ($($rules:expr),+)) => {
         Production::new(ProductionLHS::new_with_prefix_and_suffix(vec![$($prefix),+], $nt, vec![$($suffix),+]), vec![$($rules),+])
     };
 }
