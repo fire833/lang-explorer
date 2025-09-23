@@ -125,9 +125,18 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
         &mut self,
         _grammar: &'a Grammar<T, I>,
         _context: &'a ProgramInstance<T, I>,
-        _lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
+        lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize) {
-        todo!()
+        // For now, copy mc
+        let idx = self.rng.random::<u64>() as usize % lhs_location_matrix.len();
+        let (lhs, indices) = lhs_location_matrix
+            .get(idx)
+            .expect("got out of bounds index for lhs");
+        let idx = self.rng.random::<u64>() as usize % indices.len();
+        let index = indices
+            .get(idx)
+            .expect("got invalid index for frontier indices");
+        (*lhs, *index)
     }
 
     fn cleanup(&mut self) {}
