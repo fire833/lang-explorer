@@ -39,7 +39,7 @@ def generate_embeddings(args):
 	        ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"], 
 	        ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
 		taco_schedule=TacoScheduleParameters(args.version, index_variables=["a", "b", "c", "d", "e"], workspace_index_variables=["f", "g", "h", "i"], fused_index_variables=["j", "k", "l", "m"], split_factor_variables=["n", "o", "p", "q"], divide_factor_variables=["r", "s", "t", "u"], unroll_factor_variables=["v", "w", "x", "y", "z"]),
-	    karel=KarelLanguageParameters()))	
+	    karel=KarelLanguageParameters(), anbncn=AnBnCnParameters())),	
 	document_collections = []
 
 	print("extracting explorer response")

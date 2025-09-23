@@ -33,6 +33,10 @@ class KarelLanguageParameters:
 	pass
 
 @dataclass
+class AnBnCnParameters:
+	pass
+
+@dataclass
 class GeneralTrainingParameters:
 	batch_size: int
 	n_epochs: int
@@ -65,6 +69,7 @@ class GenerateParams:
 	taco_schedule: TacoScheduleParameters
 	taco_expression: TacoExpressionParameters
 	karel: KarelLanguageParameters
+	anbncn: AnBnCnParameters
 
 @dataclass
 class ProgramResult:
