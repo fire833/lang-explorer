@@ -63,11 +63,6 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         production.get(idx).expect("got out of bounds index")
     }
 
-    /// For context sensitive grammars, we could be in a situation where we have
-    /// multiple left-hand sides that match some point on the frontier, along with
-    /// multiple positions within the frontier where we could expand such left-hand side
-    /// with a production. Thus, we want the expander to have the ability to make this
-    /// decision on our behalf as well.
     fn choose_lhs_and_slot<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
@@ -85,9 +80,5 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for MonteCarloExpander {
         (*lhs, *index)
     }
 
-    /// Whenever a program has finished being generated, this method will be called
-    /// to reset/update internal state in the expander. This is mostly going to be used
-    /// in the learned expander to run backprop and update the internal models for
-    /// generating the program in the first place.
     fn cleanup(&mut self) {}
 }
