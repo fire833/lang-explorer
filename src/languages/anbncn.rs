@@ -33,7 +33,10 @@ use crate::{
         NonTerminal, Terminal,
     },
     languages::{
-        strings::{alphanumeric::T_LO_A, nterminal_str, StringValue},
+        strings::{
+            alphanumeric::{T_LO_A, T_LO_B, T_LO_C},
+            nterminal_str, StringValue,
+        },
         GrammarBuilder, GrammarExpansionChecker,
     },
 };
@@ -66,9 +69,7 @@ impl GrammarBuilder for AnBnCnLanguage {
     /// C	B	→	C	Z
     /// C	Z	→	W	Z
     /// W	Z	→	W	C
-    ///
     /// W	C	→	B	C
-    ///
     /// a	B	→	a	b
     /// b	B	→	b	b
     /// b	C	→	b	c
@@ -87,6 +88,11 @@ impl GrammarBuilder for AnBnCnLanguage {
                 single_prefix_production!(C, "B".into(), production_rule!(Z)),
                 single_suffix_production!("C".into(), Z, production_rule!(W)),
                 single_prefix_production!(W, "Z".into(), production_rule!(C)),
+                single_suffix_production!("W".into(), C, production_rule!(B)),
+                single_prefix_production!(T_LO_A, "B".into(), production_rule!(T_LO_B)),
+                single_prefix_production!(T_LO_B, "B".into(), production_rule!(T_LO_B)),
+                single_prefix_production!(T_LO_B, "C".into(), production_rule!(T_LO_C)),
+                single_prefix_production!(T_LO_C, "C".into(), production_rule!(T_LO_C)),
             ],
             "anbncn".into(),
         );
