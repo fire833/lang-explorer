@@ -60,6 +60,19 @@ impl GrammarBuilder for AnBnCnLanguage {
     type Params<'de> = AnBnCnLanguageParams;
     type Checker = AnBnCnLanguageChecker;
 
+    /// Spec
+    ///     S   →  	a	B	C
+    ///     S   →	a	S	B	C
+    /// C	B	→	C	Z
+    /// C	Z	→	W	Z
+    /// W	Z	→	W	C
+    ///
+    /// W	C	→	B	C
+    ///
+    /// a	B	→	a	b
+    /// b	B	→	b	b
+    /// b	C	→	b	c
+    /// c	C	→	c	c
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
@@ -71,19 +84,9 @@ impl GrammarBuilder for AnBnCnLanguage {
                     production_rule!(T_LO_A, B, C),
                     production_rule!(T_LO_A, S, B, C)
                 ),
-                single_suffix_production!("C".into(), B, production_rule!(Z)),
-                Production::new(
-                    ProductionLHS::new_with_prefix_list(vec![C], "B".into()),
-                    vec![production_rule!(Z)],
-                ),
-                Production::new(
-                    ProductionLHS::new_with_suffix_single(C, "Z".into()),
-                    vec![production_rule!(W, Z)],
-                ),
-                Production::new(
-                    ProductionLHS::new_with_prefix_list(vec![W], "Z".into()),
-                    vec![production_rule!(W, C)],
-                ),
+                single_prefix_production!(C, "B".into(), production_rule!(Z)),
+                single_suffix_production!("C".into(), Z, production_rule!(W)),
+                single_prefix_production!(W, "Z".into(), production_rule!(C)),
             ],
             "anbncn".into(),
         );
