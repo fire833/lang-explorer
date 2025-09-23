@@ -536,7 +536,13 @@ impl GenerateParams {
                                     }
                                 }
                             }
-                            Err(e) => return Err(e),
+                            Err(e) => {
+                                if gc.is_context_sensitive() {
+                                    println!("error generating program: {e}");
+                                } else {
+                                    return Err(e);
+                                }
+                            }
                         }
                     }
 

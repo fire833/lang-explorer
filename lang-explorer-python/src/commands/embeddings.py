@@ -1,6 +1,6 @@
 
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from src.utils.client import generate, TacoExpressionParameters, TacoScheduleParameters, CSSLanguageParameters, GenerateParams, GenerateResults, GeneralTrainingParameters, KarelLanguageParameters
+from src.utils.client import generate, TacoExpressionParameters, TacoScheduleParameters, CSSLanguageParameters, GenerateParams, GenerateResults, GeneralTrainingParameters, KarelLanguageParameters, AnBnCnParameters
 import os
 import pandas as pd
 

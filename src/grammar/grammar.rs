@@ -131,6 +131,10 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         }
     }
 
+    pub fn is_context_sensitive(&self) -> bool {
+        self.is_context_sensitive
+    }
+
     /// Check if the frontier is able to be grown.
     /// This mutable reference of ProgramInstances is a bit of a hack to get
     /// this stuff working, sorry me and anyone else reading this in the future.
