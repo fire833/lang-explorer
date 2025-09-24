@@ -16,9 +16,12 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::prelude::Backend;
+use burn::{module::Module, prelude::Backend};
 
-use crate::tooling::modules::expander::{lin2::Linear2Deep, lin3::Linear3Deep, lin4::Linear4Deep};
+use crate::{
+    expanders::learned::{NormalizationStrategy, SamplingStrategy},
+    tooling::modules::expander::{lin2::Linear2Deep, lin3::Linear3Deep, lin4::Linear4Deep},
+};
 
 pub mod lin2;
 pub mod lin3;
@@ -27,6 +30,7 @@ pub mod lin4;
 pub mod frontier_decision;
 pub mod prod_decision_attn;
 pub mod prod_decision_fixed;
+pub mod prod_decision_var;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Activation {
@@ -37,8 +41,46 @@ pub enum Activation {
 }
 
 /// A bit of a hack to allow us to keep an enum for all linear model types.
+#[derive(Module, Debug)]
 pub enum LinearModuleWrapper<B: Backend> {
     Linear2(Linear2Deep<B>),
     Linear3(Linear3Deep<B>),
     Linear4(Linear4Deep<B>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProductionModelType {
+    Linear2,
+    Linear3,
+    Linear4,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductionConfiguration {
+    sampling: SamplingStrategy,
+    normalization: NormalizationStrategy,
+    activation: Activation,
+    with_bias: bool,
+    model: ProductionModelType,
+    // Temperature value that will be divided by 1000 to get actual temperature.
+    temperature: u32,
+}
+
+impl ProductionConfiguration {
+    pub const fn new() -> Self {
+        Self {
+            sampling: SamplingStrategy::HighestProb,
+            normalization: NormalizationStrategy::LogSoftmax,
+            activation: Activation::ReLU,
+            model: ProductionModelType::Linear2,
+            with_bias: true,
+            temperature: 1000,
+        }
+    }
+}
+
+impl Default for ProductionConfiguration {
+    fn default() -> Self {
+        Self::new()
+    }
 }

@@ -16,6 +16,16 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::{
+    fmt::{Debug, Display},
+    hash::{DefaultHasher, Hash, Hasher},
+};
+
+use crate::{
+    grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal},
+    tooling::modules::expander::ProductionConfiguration,
+};
+
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
 #[derive(Clone, PartialEq, Eq)]
@@ -31,16 +41,6 @@ pub struct Production<T: Terminal, I: NonTerminal> {
     /// production.
     pub ml_config: ProductionConfiguration,
 }
-
-use std::{
-    fmt::{Debug, Display},
-    hash::{Hash, Hasher},
-};
-
-use crate::{
-    expanders::ml::ProductionConfiguration,
-    grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal},
-};
 
 impl<T: Terminal, I: NonTerminal> Production<T, I> {
     pub const fn new(non_terminal: ProductionLHS<T, I>, items: Vec<ProductionRule<T, I>>) -> Self {
@@ -73,6 +73,12 @@ impl<T: Terminal, I: NonTerminal> Production<T, I> {
     /// Wrapper to return a specific rule.
     pub fn get(&self, i: usize) -> Option<&ProductionRule<T, I>> {
         self.items.get(i)
+    }
+
+    pub(crate) fn hash_internal(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 }
 

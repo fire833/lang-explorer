@@ -44,6 +44,7 @@ use crate::{
 };
 
 pub mod exhaustive;
+pub mod learned;
 pub mod mc;
 pub mod ml;
 pub mod mlfixed;

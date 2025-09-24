@@ -17,12 +17,8 @@
  */
 
 use core::panic;
-use std::collections::HashMap;
 
-use burn::{
-    optim::AdamWConfig,
-    tensor::{activation::log_softmax, backend::AutodiffBackend, Int, Tensor},
-};
+use burn::{optim::AdamWConfig, tensor::backend::AutodiffBackend};
 
 use crate::{
     embedding::{
@@ -39,30 +35,13 @@ use crate::{
         rule::ProductionRule,
         NonTerminal, Terminal,
     },
-    tooling::{
-        modules::{
-            embed::AggregationMethod,
-            expander::{
-                lin2::{Linear2Deep, Linear2DeepConfig},
-                lin3::{Linear3Deep, Linear3DeepConfig},
-                lin4::{Linear4Deep, Linear4DeepConfig},
-                Activation, LinearModuleWrapper,
-            },
-        },
-        training::TrainingParams,
-    },
+    tooling::{modules::embed::AggregationMethod, training::TrainingParams},
 };
 
 pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// The embedder to create embeddings for a
     /// new program or partial program.
     embedder: EmbedderWrapper<T, I, B>,
-
-    /// Mapping of each production rule to its corresponding decision function.
-    production_to_model: HashMap<Production<T, I>, LinearModuleWrapper<B>>,
-
-    /// When generating outputs, store output tensors here for backpropagation later.
-    prod_output_map: HashMap<Production<T, I>, Vec<Tensor<B, 1, Int>>>,
 
     /// Number of iterations to run to extract words.
     wl_kernel_iterations: u32,
@@ -72,82 +51,11 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     wl_dedup: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ProductionModelType {
-    Linear2,
-    Linear3,
-    Linear4,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProductionConfiguration {
-    sampling: SamplingStrategy,
-    activation: Activation,
-    with_bias: bool,
-    model: ProductionModelType,
-    // Temperature value that will be divided by 1000 to get actual temperature.
-    temperature: u32,
-}
-
-impl ProductionConfiguration {
-    pub const fn new() -> Self {
-        Self {
-            sampling: SamplingStrategy::HighestProb,
-            activation: Activation::ReLU,
-            model: ProductionModelType::Linear2,
-            with_bias: true,
-            temperature: 1000,
-        }
-    }
-}
-
-impl Default for ProductionConfiguration {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// The different strategies for choosing the next expansion rule
-/// given the probability distribution from the model.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SamplingStrategy {
-    /// Choose the highest probability expansion.
-    HighestProb,
-
-    /// Choose the lowest probability distribution,
-    /// you probably don't want to do this if you
-    /// care about your output.
-    LowestProb,
-}
-
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
     for LearnedExpander<T, I, B>
 {
     fn init(grammar: &Grammar<T, I>, _seed: u64) -> Result<Self, LangExplorerError> {
         let device = Default::default();
-        let mut map = HashMap::new();
-
-        for production in grammar.get_productions() {
-            let module = match production.ml_config.model {
-                ProductionModelType::Linear2 => LinearModuleWrapper::Linear2(
-                    Linear2DeepConfig::new(production.len())
-                        .with_bias(production.ml_config.with_bias)
-                        .init::<B>(&device),
-                ),
-                ProductionModelType::Linear3 => LinearModuleWrapper::Linear3(
-                    Linear3DeepConfig::new(production.len())
-                        .with_bias(production.ml_config.with_bias)
-                        .init::<B>(&device),
-                ),
-                ProductionModelType::Linear4 => LinearModuleWrapper::Linear4(
-                    Linear4DeepConfig::new(production.len())
-                        .with_bias(production.ml_config.with_bias)
-                        .init::<B>(&device),
-                ),
-            };
-
-            map.insert(production.clone(), module);
-        }
 
         let d2v = Doc2VecEmbedderDBOWNS::new(
             grammar,
@@ -165,8 +73,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         );
 
         Ok(Self {
-            production_to_model: map,
-            prod_output_map: HashMap::new(),
             embedder: EmbedderWrapper::Doc2Vec(d2v),
             wl_kernel_iterations: 5,
             wl_kernel_order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
@@ -188,60 +94,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             false,
         );
 
-        let embedding = match self.embedder.forward(doc, words) {
+        let _embedding = match self.embedder.forward(doc, words) {
             Ok(e) => e,
             Err(err) => panic!("{}", err),
         };
 
-        let model = self
-            .production_to_model
-            .get(production)
-            .unwrap_or_else(|| panic!("could not find model for {:?}", production));
-
-        let output = match model {
-            LinearModuleWrapper::Linear2(linear) => linear.forward(
-                embedding.unsqueeze(),
-                production.ml_config.activation.clone(),
-            ),
-            LinearModuleWrapper::Linear3(linear) => linear.forward(
-                embedding.unsqueeze(),
-                production.ml_config.activation.clone(),
-            ),
-            LinearModuleWrapper::Linear4(linear) => linear.forward(
-                embedding.unsqueeze(),
-                production.ml_config.activation.clone(),
-            ),
-        };
-
-        // Optionally scale by temperature.
-        let output = if production.ml_config.temperature != 1000 {
-            output.div_scalar(production.ml_config.temperature as f32 * 0.001)
-        } else {
-            output
-        };
-
-        let output = log_softmax(output, 1).squeeze::<1>(0);
-
-        // Depending on our strategy, choose the next expansion.
-        let loss = match production.ml_config.sampling {
-            SamplingStrategy::HighestProb => output.argmax(0),
-            SamplingStrategy::LowestProb => output.argmin(0),
-        };
-
-        let index: usize = loss
-            .to_data()
-            .to_vec::<u32>()
-            .expect("unable to cast loss to vec")[0] as usize;
-
-        if let Some(v) = self.prod_output_map.get_mut(production) {
-            v.push(loss);
-        } else {
-            self.prod_output_map.insert(production.clone(), vec![loss]);
-        }
-
-        production
-            .get(index)
-            .expect("couldn't find the selected index")
+        production.get(0).expect("couldn't find the selected index")
     }
 
     /// For context sensitive grammars, we could be in a situation where we have
