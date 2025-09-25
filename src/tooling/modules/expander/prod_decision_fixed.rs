@@ -66,10 +66,8 @@ impl ProductionDecisionFixedConfig {
             }
         }
 
-        rule_count += 1;
-
         ProductionDecisionFixed {
-            rule_embeddings: EmbeddingConfig::new(rule_count, self.d_model).init(device),
+            rule_embeddings: EmbeddingConfig::new(rule_count + 1, self.d_model).init(device),
             linear: Linear2DeepConfig::new(self.d_model)
                 .with_bias(true)
                 .with_d_embed(self.d_embed)
@@ -119,9 +117,11 @@ impl<B: Backend> ProductionDecisionFixed<B> {
         sampling: SamplingStrategy,
     ) -> Tensor<B, 2, Int> {
         let max = productions.iter().map(|p| p.len()).max().unwrap_or(0);
+
+        let mut rules: Tensor<B, 2, Int> = Tensor::ones([productions.len(), max], &inputs.device());
         let mut rule_indices: Vec<usize> = vec![];
 
-        for prod in productions.iter() {
+        for (idx, prod) in productions.iter().enumerate() {
             let phash = prod.hash_internal();
             for rule in prod.items.iter() {
                 let rhash = rule.hash_internal();
@@ -133,10 +133,14 @@ impl<B: Backend> ProductionDecisionFixed<B> {
             for _ in 0..(max - prod.len()) {
                 rule_indices.push(self.num_embeddings.0);
             }
-        }
 
-        let rules = Tensor::<B, 2, Int>::from_data(rule_indices.as_slice(), &inputs.device())
-            .reshape([productions.len(), max]);
+            let t: Tensor<B, 2, Int> =
+                Tensor::<B, 1, Int>::from_data(rule_indices.as_slice(), &inputs.device())
+                    .unsqueeze_dim(0);
+
+            rules = rules.slice_assign([idx..idx + 1, 0..max], t);
+            rule_indices.clear();
+        }
 
         let lout = self.linear.forward(inputs, activation);
         let rules = self.rule_embeddings.forward(rules);
@@ -163,20 +167,32 @@ impl<B: Backend> ProductionDecisionFixed<B> {
     }
 }
 
-// #[test]
-// fn test_forward() {
-//     use burn::backend::NdArray;
+#[test]
+fn test_forward() {
+    use crate::languages::{
+        strings::StringValue, taco_schedule::TacoScheduleLanguage, GrammarBuilder,
+    };
+    use burn::backend::NdArray;
 
-//     let dev = Default::default();
-//     let model = ProductionDecisionFixedConfig::new(10, 5, 10).init::<NdArray>(&dev);
+    let tacosched = TacoScheduleLanguage::generate_grammar(Default::default()).unwrap();
 
-//     let out = model.forward(
-//         Tensor::<NdArray, 2, Int>::from_data([[0, 1, 2], [3, 4, 5]], &dev),
-//         Tensor::<NdArray, 2, Float>::from_data(
-//             [[1.0, 2.0, 3.0, 4.0, 5.0], [4.0, 5.0, 4.5, 4.6, 4.7]],
-//             &dev,
-//         ),
-//         Activation::ReLU,
-//     );
-//     println!("out: {out}");
-// }
+    let dev = Default::default();
+    let model = ProductionDecisionFixedConfig::new(5, 5)
+        .init::<StringValue, StringValue, NdArray>(&tacosched, &dev);
+
+    let prods = tacosched.get_productions();
+    let len = prods.len();
+
+    let out = model.forward(
+        tacosched.get_productions(),
+        Tensor::<NdArray, 2, Float>::random(
+            [len, 5],
+            burn::tensor::Distribution::Uniform(-1.0, 1.0),
+            &dev,
+        ),
+        Activation::ReLU,
+        NormalizationStrategy::Softmax,
+        SamplingStrategy::HighestProb,
+    );
+    println!("out: {out}");
+}
