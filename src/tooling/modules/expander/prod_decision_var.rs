@@ -112,7 +112,7 @@ impl<B: Backend> ProductionDecisionVariable<B> {
 
             let emb = inputs
                 .clone()
-                .gather(1, Tensor::from_data([0, 1], &inputs.device()))
+                .gather(0, Tensor::from_data([idx], &inputs.device()))
                 .unsqueeze();
 
             let logits = match model {

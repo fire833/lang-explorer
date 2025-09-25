@@ -56,13 +56,19 @@ impl ProductionDecisionFixedConfig {
         let prods = grammar.get_productions();
         let mut map = HashMap::new();
 
-        for (idx, prod) in prods.iter().enumerate() {
-            map.insert(prod.hash_internal(), idx);
+        let mut rule_count = 0;
+
+        for prod in prods.iter() {
+            let phash = prod.hash_internal();
+            for rule in prod.items.iter() {
+                map.insert((phash, rule.hash_internal()), rule_count);
+                rule_count += 1;
+            }
         }
 
         ProductionDecisionFixed {
             production_to_index: Ignored(map),
-            rule_embeddings: EmbeddingConfig::new(prods.len(), self.d_model).init(device),
+            rule_embeddings: EmbeddingConfig::new(rule_count + 1, self.d_model).init(device),
             linear: Linear2DeepConfig::new(self.d_model)
                 .with_bias(true)
                 .with_d_embed(self.d_embed)
@@ -74,7 +80,7 @@ impl ProductionDecisionFixedConfig {
 #[derive(Debug, Module)]
 pub struct ProductionDecisionFixed<B: Backend> {
     /// Map from production to index in the embedding matrix.
-    production_to_index: Ignored<HashMap<u64, usize>>,
+    production_to_index: Ignored<HashMap<(u64, u64), usize>>,
     /// Embeddings for each rule that we want to expand.
     rule_embeddings: Embedding<B>,
     /// The linear decision function.
@@ -102,6 +108,9 @@ impl<B: Backend> ProductionDecisionFixed<B> {
         normalization: NormalizationStrategy,
         sampling: SamplingStrategy,
     ) -> Tensor<B, 2, Int> {
+        let max = productions.iter().map(|p| p.len()).max().unwrap_or(0);
+        let mut rule_indices: Vec<usize> = vec![];
+
         let lout = self.linear.forward(inputs, activation);
         let rules = self.rule_embeddings.forward(rules);
         let rule_count = rules.dims()[1];
@@ -112,7 +121,7 @@ impl<B: Backend> ProductionDecisionFixed<B> {
         // Compare vectors.
         let logits = rules.mul(out).sum_dim(2);
 
-        // Compute softmax
+        // Compute softmax.
         let outputs = match normalization {
             NormalizationStrategy::Softmax => softmax(logits, 1).squeeze(2),
             NormalizationStrategy::LogSoftmax => log_softmax(logits, 1).squeeze(2),

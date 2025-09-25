@@ -16,7 +16,10 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
 
@@ -42,6 +45,12 @@ impl<T: Terminal, I: NonTerminal> ProductionRule<T, I> {
             items: elements,
             logit: Some(logit),
         }
+    }
+
+    pub(crate) fn hash_internal(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
     }
 }
 
