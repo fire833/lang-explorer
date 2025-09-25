@@ -30,7 +30,11 @@ use utoipa::ToSchema;
 use crate::{
     embedding::{doc2vecdbowns::Doc2VecEmbedderDBOWNS, LanguageEmbedder},
     errors::LangExplorerError,
-    expanders::{mc::MonteCarloExpander, wmc::WeightedMonteCarloExpander},
+    expanders::{
+        learned::{NormalizationStrategy, SamplingStrategy},
+        mc::MonteCarloExpander,
+        wmc::WeightedMonteCarloExpander,
+    },
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
         rule::ProductionRule, NonTerminal, Terminal,
@@ -39,7 +43,8 @@ use crate::{
     tooling::modules::expander::{
         frontier_decision::FrontierDecisionAttention,
         prod_decision_attn::ProductionDecisionAttention,
-        prod_decision_fixed::ProductionDecisionFixed, Activation,
+        prod_decision_fixed::ProductionDecisionFixed,
+        prod_decision_var::ProductionDecisionVariable, Activation,
     },
 };
 
@@ -168,19 +173,25 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
 
 enum ProductionDecisionWrapper<B: Backend> {
     ProdDecisionFixed(ProductionDecisionFixed<B>),
+    ProdDecisionVariable(ProductionDecisionVariable<B>),
     ProdDecisionAttentionOnly(ProductionDecisionAttention<B>),
 }
 
 impl<B: Backend> ProductionDecisionWrapper<B> {
-    fn forward(
+    fn forward<'a, T: Terminal, I: NonTerminal>(
         &self,
-        embedding: Tensor<B, 2, Float>,
-        rules: Tensor<B, 2, Int>,
+        productions: Vec<&'a Production<T, I>>,
+        inputs: Tensor<B, 2, Float>,
+        normalization: NormalizationStrategy,
+        sampling: SamplingStrategy,
         activation: Activation,
-    ) -> Tensor<B, 2, Float> {
+    ) -> Tensor<B, 2, Int> {
         match self {
             ProductionDecisionWrapper::ProdDecisionFixed(model) => {
-                model.forward(embedding, rules, activation)
+                model.forward(productions, inputs, activation, normalization, sampling)
+            }
+            ProductionDecisionWrapper::ProdDecisionVariable(model) => {
+                model.forward(productions, inputs)
             }
             ProductionDecisionWrapper::ProdDecisionAttentionOnly(model) => model.forward(),
         }

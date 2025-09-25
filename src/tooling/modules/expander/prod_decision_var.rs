@@ -94,7 +94,7 @@ impl<B: Backend> ProductionDecisionVariable<B> {
     pub fn forward<'a, T: Terminal, I: NonTerminal>(
         &self,
         productions: Vec<&'a Production<T, I>>,
-        inputs: Vec<Tensor<B, 1, Float>>,
+        inputs: Tensor<B, 2, Float>,
     ) -> Tensor<B, 2, Int> {
         let mut outputs: Vec<Tensor<B, 1, Int>> = vec![];
 
@@ -110,19 +110,21 @@ impl<B: Backend> ProductionDecisionVariable<B> {
                 )
                 .unwrap_or_else(|| panic!("could not find model for {:?}", prod));
 
+            let emb = inputs
+                .clone()
+                .gather(1, Tensor::from_data([0, 1], &inputs.device()))
+                .unsqueeze();
+
             let logits = match model {
-                LinearModuleWrapper::Linear2(linear) => linear.forward(
-                    inputs.get(idx).unwrap().clone().unsqueeze(),
-                    prod.ml_config.activation.clone(),
-                ),
-                LinearModuleWrapper::Linear3(linear) => linear.forward(
-                    inputs.get(idx).unwrap().clone().unsqueeze(),
-                    prod.ml_config.activation.clone(),
-                ),
-                LinearModuleWrapper::Linear4(linear) => linear.forward(
-                    inputs.get(idx).unwrap().clone().unsqueeze(),
-                    prod.ml_config.activation.clone(),
-                ),
+                LinearModuleWrapper::Linear2(linear) => {
+                    linear.forward(emb, prod.ml_config.activation.clone())
+                }
+                LinearModuleWrapper::Linear3(linear) => {
+                    linear.forward(emb, prod.ml_config.activation.clone())
+                }
+                LinearModuleWrapper::Linear4(linear) => {
+                    linear.forward(emb, prod.ml_config.activation.clone())
+                }
             };
 
             // Optionally scale by temperature.

@@ -16,17 +16,26 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::collections::HashMap;
+
 use burn::{
     config::Config,
-    module::Module,
+    module::{Ignored, Module},
     nn::{Embedding, EmbeddingConfig},
     prelude::Backend,
-    tensor::{activation::softmax, Float, Int, Tensor},
+    tensor::{
+        activation::{log_softmax, softmax},
+        Float, Int, Tensor,
+    },
 };
 
-use crate::tooling::modules::expander::{
-    lin2::{Linear2Deep, Linear2DeepConfig},
-    Activation,
+use crate::{
+    expanders::learned::{NormalizationStrategy, SamplingStrategy},
+    grammar::{grammar::Grammar, prod::Production, NonTerminal, Terminal},
+    tooling::modules::expander::{
+        lin2::{Linear2Deep, Linear2DeepConfig},
+        Activation,
+    },
 };
 
 #[derive(Debug, Config)]
@@ -36,17 +45,24 @@ pub struct ProductionDecisionFixedConfig {
 
     /// The dimension of input vectors.
     d_embed: usize,
-
-    /// The number of embeddings to store. This will typically
-    /// correspond to the number of rules within the grammar, since
-    /// we will want to score the best rule to expand.
-    n_embed: usize,
 }
 
 impl ProductionDecisionFixedConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> ProductionDecisionFixed<B> {
+    pub fn init<T: Terminal, I: NonTerminal, B: Backend>(
+        &self,
+        grammar: &Grammar<T, I>,
+        device: &B::Device,
+    ) -> ProductionDecisionFixed<B> {
+        let prods = grammar.get_productions();
+        let mut map = HashMap::new();
+
+        for (idx, prod) in prods.iter().enumerate() {
+            map.insert(prod.hash_internal(), idx);
+        }
+
         ProductionDecisionFixed {
-            rule_embeddings: EmbeddingConfig::new(self.n_embed, self.d_model).init(device),
+            production_to_index: Ignored(map),
+            rule_embeddings: EmbeddingConfig::new(prods.len(), self.d_model).init(device),
             linear: Linear2DeepConfig::new(self.d_model)
                 .with_bias(true)
                 .with_d_embed(self.d_embed)
@@ -57,6 +73,8 @@ impl ProductionDecisionFixedConfig {
 
 #[derive(Debug, Module)]
 pub struct ProductionDecisionFixed<B: Backend> {
+    /// Map from production to index in the embedding matrix.
+    production_to_index: Ignored<HashMap<u64, usize>>,
     /// Embeddings for each rule that we want to expand.
     rule_embeddings: Embedding<B>,
     /// The linear decision function.
@@ -73,16 +91,18 @@ impl<B: Backend> ProductionDecisionFixed<B> {
     ///
     /// # Shapes
     ///
-    /// - embedding: `[batch_size, d_embedding]`
     /// - rules: `[batch_size, k]`
+    /// - inputs: `[batch_size, d_embedding]`
     /// - output: `[batch_size, k]`
-    pub fn forward(
+    pub fn forward<'a, T: Terminal, I: NonTerminal>(
         &self,
-        embedding: Tensor<B, 2, Float>,
-        rules: Tensor<B, 2, Int>,
+        productions: Vec<&'a Production<T, I>>,
+        inputs: Tensor<B, 2, Float>,
         activation: Activation,
-    ) -> Tensor<B, 2, Float> {
-        let lout = self.linear.forward(embedding, activation);
+        normalization: NormalizationStrategy,
+        sampling: SamplingStrategy,
+    ) -> Tensor<B, 2, Int> {
+        let lout = self.linear.forward(inputs, activation);
         let rules = self.rule_embeddings.forward(rules);
         let rule_count = rules.dims()[1];
 
@@ -90,29 +110,37 @@ impl<B: Backend> ProductionDecisionFixed<B> {
         let out: Tensor<B, 3> = lout.unsqueeze_dim(1).repeat_dim(1, rule_count);
 
         // Compare vectors.
-        let out = rules.mul(out).sum_dim(2);
+        let logits = rules.mul(out).sum_dim(2);
 
         // Compute softmax
-        let out = softmax(out, 1).squeeze(2);
+        let outputs = match normalization {
+            NormalizationStrategy::Softmax => softmax(logits, 1).squeeze(2),
+            NormalizationStrategy::LogSoftmax => log_softmax(logits, 1).squeeze(2),
+        };
 
-        out
+        let loss = match sampling {
+            SamplingStrategy::HighestProb => outputs.argmax(1),
+            SamplingStrategy::LowestProb => outputs.argmin(1),
+        };
+
+        loss
     }
 }
 
-#[test]
-fn test_forward() {
-    use burn::backend::NdArray;
+// #[test]
+// fn test_forward() {
+//     use burn::backend::NdArray;
 
-    let dev = Default::default();
-    let model = ProductionDecisionFixedConfig::new(10, 5, 10).init::<NdArray>(&dev);
+//     let dev = Default::default();
+//     let model = ProductionDecisionFixedConfig::new(10, 5, 10).init::<NdArray>(&dev);
 
-    let out = model.forward(
-        Tensor::<NdArray, 2, Float>::from_data(
-            [[1.0, 2.0, 3.0, 4.0, 5.0], [4.0, 5.0, 4.5, 4.6, 4.7]],
-            &dev,
-        ),
-        Tensor::<NdArray, 2, Int>::from_data([[0, 1, 2], [3, 4, 5]], &dev),
-        Activation::ReLU,
-    );
-    println!("out: {out}");
-}
+//     let out = model.forward(
+//         Tensor::<NdArray, 2, Int>::from_data([[0, 1, 2], [3, 4, 5]], &dev),
+//         Tensor::<NdArray, 2, Float>::from_data(
+//             [[1.0, 2.0, 3.0, 4.0, 5.0], [4.0, 5.0, 4.5, 4.6, 4.7]],
+//             &dev,
+//         ),
+//         Activation::ReLU,
+//     );
+//     println!("out: {out}");
+// }

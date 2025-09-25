@@ -24,7 +24,7 @@ use burn::{
         Embedding, EmbeddingConfig,
     },
     prelude::Backend,
-    tensor::{Float, Tensor},
+    tensor::{Int, Tensor},
 };
 
 #[derive(Debug, Config)]
@@ -61,7 +61,7 @@ pub struct ProductionDecisionAttention<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionAttention<B> {
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
+    pub fn forward(&self) -> Tensor<B, 2, Int> {
         todo!()
     }
 }
