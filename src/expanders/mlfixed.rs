@@ -86,7 +86,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         let symbols = grammar.get_all_symbols();
 
         let prod_decision = ProductionDecisionWrapper::ProdDecisionFixed(
-            ProductionDecisionFixedConfig::new(256, rules.len(), 16).init(&device),
+            ProductionDecisionFixedConfig::new(256, 128).init(grammar, &device),
         );
 
         let frontier_decision = FrontierDecisionWrapper::FrontierDecisionV1(

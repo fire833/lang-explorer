@@ -66,6 +66,8 @@ impl ProductionDecisionFixedConfig {
             }
         }
 
+        rule_count += 1;
+
         ProductionDecisionFixed {
             rule_embeddings: EmbeddingConfig::new(rule_count, self.d_model).init(device),
             linear: Linear2DeepConfig::new(self.d_model)
@@ -123,36 +125,18 @@ impl<B: Backend> ProductionDecisionFixed<B> {
             let phash = prod.hash_internal();
             for rule in prod.items.iter() {
                 let rhash = rule.hash_internal();
-                let idx = *self
-                    .production_to_index
-                    .0
-                    .get(&(phash, rhash))
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "could not find index for production {:?} and rule {:?}",
-                            prod, rule
-                        )
-                    });
+                let idx = *self.production_to_index.0.get(&(phash, rhash)).unwrap();
                 rule_indices.push(idx);
             }
 
             // Pad with dummy rules if necessary.
             for _ in 0..(max - prod.len()) {
-                rule_indices.push(0);
+                rule_indices.push(self.num_embeddings.0);
             }
         }
 
-        // let rules = Tensor::<B, 2, Int>::from_data(
-        //     rule_indices
-        //         .chunks(max)
-        //         .map(|chunk| {
-        //             let mut v = chunk.to_vec();
-        //             v.resize(max, self.rule_embeddings.num_embeddings() - 1);
-        //             v
-        //         })
-        //         .collect::<Vec<_>>(),
-        //     &inputs.device(),
-        // );
+        let rules = Tensor::<B, 2, Int>::from_data(rule_indices.as_slice(), &inputs.device())
+            .reshape([productions.len(), max]);
 
         let lout = self.linear.forward(inputs, activation);
         let rules = self.rule_embeddings.forward(rules);
