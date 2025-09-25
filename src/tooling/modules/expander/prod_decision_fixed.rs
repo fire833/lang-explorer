@@ -111,6 +111,41 @@ impl<B: Backend> ProductionDecisionFixed<B> {
         let max = productions.iter().map(|p| p.len()).max().unwrap_or(0);
         let mut rule_indices: Vec<usize> = vec![];
 
+        for prod in productions.iter() {
+            let phash = prod.hash_internal();
+            for rule in prod.items.iter() {
+                let rhash = rule.hash_internal();
+                let idx = *self
+                    .production_to_index
+                    .0
+                    .get(&(phash, rhash))
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "could not find index for production {:?} and rule {:?}",
+                            prod, rule
+                        )
+                    });
+                rule_indices.push(idx);
+            }
+
+            // Pad with dummy rules if necessary.
+            for _ in 0..(max - prod.len()) {
+                rule_indices.push(self.rule_embeddings.num_embeddings() - 1);
+            }
+        }
+
+        // let rules = Tensor::<B, 2, Int>::from_data(
+        //     rule_indices
+        //         .chunks(max)
+        //         .map(|chunk| {
+        //             let mut v = chunk.to_vec();
+        //             v.resize(max, self.rule_embeddings.num_embeddings() - 1);
+        //             v
+        //         })
+        //         .collect::<Vec<_>>(),
+        //     &inputs.device(),
+        // );
+
         let lout = self.linear.forward(inputs, activation);
         let rules = self.rule_embeddings.forward(rules);
         let rule_count = rules.dims()[1];
