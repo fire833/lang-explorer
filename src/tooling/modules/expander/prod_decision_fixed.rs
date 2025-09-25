@@ -67,12 +67,14 @@ impl ProductionDecisionFixedConfig {
         }
 
         ProductionDecisionFixed {
-            production_to_index: Ignored(map),
-            rule_embeddings: EmbeddingConfig::new(rule_count + 1, self.d_model).init(device),
+            rule_embeddings: EmbeddingConfig::new(rule_count, self.d_model).init(device),
             linear: Linear2DeepConfig::new(self.d_model)
                 .with_bias(true)
                 .with_d_embed(self.d_embed)
                 .init(device),
+            production_to_index: Ignored(map),
+            config: Ignored(self.clone()),
+            num_embeddings: Ignored(rule_count),
         }
     }
 }
@@ -81,6 +83,12 @@ impl ProductionDecisionFixedConfig {
 pub struct ProductionDecisionFixed<B: Backend> {
     /// Map from production to index in the embedding matrix.
     production_to_index: Ignored<HashMap<(u64, u64), usize>>,
+
+    /// Configuration for this module.
+    config: Ignored<ProductionDecisionFixedConfig>,
+
+    num_embeddings: Ignored<usize>,
+
     /// Embeddings for each rule that we want to expand.
     rule_embeddings: Embedding<B>,
     /// The linear decision function.
@@ -130,7 +138,7 @@ impl<B: Backend> ProductionDecisionFixed<B> {
 
             // Pad with dummy rules if necessary.
             for _ in 0..(max - prod.len()) {
-                rule_indices.push(self.rule_embeddings.num_embeddings() - 1);
+                rule_indices.push(0);
             }
         }
 
