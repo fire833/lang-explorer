@@ -63,6 +63,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         Self: Sized,
     {
         let device = Default::default();
+        B::seed(seed);
 
         let d2v = Doc2VecEmbedderDBOWNS::new(
             grammar,
@@ -82,7 +83,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         // Hack
         let device = Default::default();
 
-        let rules = grammar.get_all_rules();
         let symbols = grammar.get_all_symbols();
 
         let prod_decision = ProductionDecisionWrapper::ProdDecisionFixed(
