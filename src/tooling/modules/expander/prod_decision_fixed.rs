@@ -108,9 +108,9 @@ impl<B: Backend> ProductionDecisionFixed<B> {
     /// - rules: `[batch_size, k]`
     /// - inputs: `[batch_size, d_embedding]`
     /// - output: `[batch_size, k]`
-    pub fn forward<'a, T: Terminal, I: NonTerminal>(
+    pub fn forward<T: Terminal, I: NonTerminal>(
         &self,
-        productions: Vec<&'a Production<T, I>>,
+        productions: Vec<&Production<T, I>>,
         inputs: Tensor<B, 2, Float>,
         activation: Activation,
         normalization: NormalizationStrategy,
@@ -158,12 +158,10 @@ impl<B: Backend> ProductionDecisionFixed<B> {
             NormalizationStrategy::LogSoftmax => log_softmax(logits, 1).squeeze(2),
         };
 
-        let loss = match sampling {
+        match sampling {
             SamplingStrategy::HighestProb => outputs.argmax(1),
             SamplingStrategy::LowestProb => outputs.argmin(1),
-        };
-
-        loss
+        }
     }
 }
 

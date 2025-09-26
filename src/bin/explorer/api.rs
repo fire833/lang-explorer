@@ -131,8 +131,8 @@ async fn generate<B: Backend>(
     {
         Ok(resp) => {
             let code = StatusCode::OK;
-            return Ok(warp::reply::with_status(warp::reply::json(&resp), code));
+            Ok(warp::reply::with_status(warp::reply::json(&resp), code))
         }
-        Err(e) => return invalid_request(e.to_string()),
+        Err(e) => invalid_request(e.to_string()),
     }
 }

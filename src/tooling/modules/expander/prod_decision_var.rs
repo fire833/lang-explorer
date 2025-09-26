@@ -54,17 +54,17 @@ impl ProductionDecisionVariableConfig {
                 ProductionModelType::Linear2 => LinearModuleWrapper::Linear2(
                     Linear2DeepConfig::new(production.len())
                         .with_bias(production.ml_config.with_bias)
-                        .init::<B>(&device),
+                        .init::<B>(device),
                 ),
                 ProductionModelType::Linear3 => LinearModuleWrapper::Linear3(
                     Linear3DeepConfig::new(production.len())
                         .with_bias(production.ml_config.with_bias)
-                        .init::<B>(&device),
+                        .init::<B>(device),
                 ),
                 ProductionModelType::Linear4 => LinearModuleWrapper::Linear4(
                     Linear4DeepConfig::new(production.len())
                         .with_bias(production.ml_config.with_bias)
-                        .init::<B>(&device),
+                        .init::<B>(device),
                 ),
             };
 
@@ -91,9 +91,9 @@ pub struct ProductionDecisionVariable<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionVariable<B> {
-    pub fn forward<'a, T: Terminal, I: NonTerminal>(
+    pub fn forward<T: Terminal, I: NonTerminal>(
         &self,
-        productions: Vec<&'a Production<T, I>>,
+        productions: Vec<&Production<T, I>>,
         inputs: Tensor<B, 2, Float>,
     ) -> Tensor<B, 2, Int> {
         let mut outputs: Vec<Tensor<B, 1, Int>> = vec![];

@@ -281,10 +281,7 @@ impl EmbeddingModel {
 
                 let mut embeddings = model.get_embeddings()?;
                 for prog in res.programs.iter_mut() {
-                    prog.set_embedding(
-                        emb_name.clone(),
-                        embeddings.drain(0..dim as usize).collect(),
-                    );
+                    prog.set_embedding(emb_name.clone(), embeddings.drain(0..dim).collect());
                 }
             }
             Self::MXBAILarge
@@ -567,7 +564,7 @@ impl GenerateParams {
 
             for embed in self.return_embeddings.iter() {
                 println!("creating embeddings with {} model", embed);
-                let _ = embed
+                embed
                     .create_embeddings::<B>(
                         &grammar,
                         self.params.clone(),

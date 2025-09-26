@@ -30,7 +30,10 @@ impl EvaluatorArgs {
     pub async fn entry(&self) -> Result<(), LangExplorerError> {
         match &self.cmd {
             Some(cmd) => match cmd {
-                Subcommand::Serve { address, port } => Ok(start_server(&address, *port).await),
+                Subcommand::Serve { address, port } => {
+                    let _: () = start_server(address, *port).await;
+                    Ok(())
+                }
             },
             None => Ok(()),
         }

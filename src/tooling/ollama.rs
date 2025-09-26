@@ -78,12 +78,9 @@ pub(crate) async fn get_embeddings_bulk_ollama(
     ))
     .buffer_unordered(num_parallel_requests)
     .for_each(|result| {
-        match result {
-            Ok(res) => {
-                let data = results.clone();
-                data.insert(res.0, res.1.embedding);
-            }
-            Err(_) => {}
+        if let Ok(res) = result {
+            let data = results.clone();
+            data.insert(res.0, res.1.embedding);
         }
 
         future::ready(())
