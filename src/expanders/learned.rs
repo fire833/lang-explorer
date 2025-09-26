@@ -24,9 +24,14 @@ use crate::{
         EmbedderWrapper, FrontierDecisionWrapper, GrammarExpander, ProductionDecisionWrapper,
     },
     grammar::{
-        grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
-        rule::ProductionRule, NonTerminal, Terminal,
+        grammar::Grammar,
+        lhs::ProductionLHS,
+        prod::Production,
+        program::{ProgramInstance, WLKernelHashingOrder},
+        rule::ProductionRule,
+        NonTerminal, Terminal,
     },
+    tooling::modules::expander::Activation,
 };
 
 /// The different strategies for choosing the next expansion rule
@@ -59,12 +64,25 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 
     /// Wrapper for frontier decision model.
     frontier_decision: FrontierDecisionWrapper<B>,
+
+    /// Number of iterations to run to extract words.
+    wl_kernel_iterations: u32,
+    /// The order in which to hash items when computing new labels.
+    wl_kernel_order: WLKernelHashingOrder,
+    /// Toggle whether to deduplicate words when extracting WL kernel features.
+    wl_dedup: bool,
+    /// Strategy for normalizing the output logits from the model.
+    normalization: NormalizationStrategy,
+    /// Strategy for sampling from the output distribution of the model.
+    sampling: SamplingStrategy,
+    /// Activation function to use on the output of the model.
+    activation: Activation,
 }
 
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
     for LearnedExpander<T, I, B>
 {
-    fn init(grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
@@ -75,23 +93,52 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
     fn expand_rule<'a>(
         &mut self,
-        grammar: &'a Grammar<T, I>,
+        _grammar: &'a Grammar<T, I>,
         context: &'a ProgramInstance<T, I>,
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
-        todo!()
+        let doc = context.clone();
+        let words = doc.extract_words_wl_kernel(
+            self.wl_kernel_iterations,
+            self.wl_kernel_order.clone(),
+            self.wl_dedup,
+            false,
+        );
+
+        let embedding = self
+            .embedder
+            .forward(doc, words)
+            .expect("failed to create embedding");
+
+        let out = self.production_decision.forward(
+            vec![production],
+            embedding.unsqueeze_dim(0),
+            self.normalization.clone(),
+            self.sampling.clone(),
+            self.activation.clone(),
+        );
+
+        let idx = *out
+            .to_data()
+            .convert::<u64>()
+            .to_vec::<u64>()
+            .expect("failed to convert tensor to vec")
+            .get(0)
+            .expect("failed to get index") as usize;
+
+        production
+            .get(idx)
+            .expect("couldn't find the selected index")
     }
 
     fn choose_lhs_and_slot<'a>(
         &mut self,
-        grammar: &'a Grammar<T, I>,
+        _grammar: &'a Grammar<T, I>,
         context: &'a ProgramInstance<T, I>,
         lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize) {
         todo!()
     }
 
-    fn cleanup(&mut self) {
-        todo!()
-    }
+    fn cleanup(&mut self) {}
 }
