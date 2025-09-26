@@ -16,9 +16,13 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::tensor::backend::AutodiffBackend;
+use burn::{optim::AdamWConfig, tensor::backend::AutodiffBackend};
 
 use crate::{
+    embedding::{
+        doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS},
+        GeneralEmbeddingTrainingParams, LanguageEmbedder,
+    },
     errors::LangExplorerError,
     expanders::{
         EmbedderWrapper, FrontierDecisionWrapper, GrammarExpander, ProductionDecisionWrapper,
@@ -31,7 +35,16 @@ use crate::{
         rule::ProductionRule,
         NonTerminal, Terminal,
     },
-    tooling::modules::expander::Activation,
+    tooling::{
+        modules::{
+            embed::AggregationMethod,
+            expander::{
+                frontier_decision::FrontierDecisionAttentionConfig,
+                prod_decision_fixed::ProductionDecisionFixedConfig, Activation,
+            },
+        },
+        training::TrainingParams,
+    },
 };
 
 /// The different strategies for choosing the next expansion rule
@@ -82,13 +95,52 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
     for LearnedExpander<T, I, B>
 {
-    fn init(_grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
+    fn init(grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
         B::seed(seed);
 
-        todo!()
+        let device = Default::default();
+
+        let d2v = Doc2VecEmbedderDBOWNS::new(
+            grammar,
+            Doc2VecDBOWNSEmbedderParams::new(
+                AdamWConfig::new(),
+                1000,
+                1000,
+                GeneralEmbeddingTrainingParams::new(
+                    AggregationMethod::Average,
+                    TrainingParams::new(),
+                ),
+                "".to_string(),
+            ),
+            device,
+        );
+
+        let device = Default::default();
+
+        let symbols = grammar.get_all_symbols();
+
+        let production_decision = ProductionDecisionWrapper::ProdDecisionFixed(
+            ProductionDecisionFixedConfig::new(256, 128).init(grammar, &device),
+        );
+
+        let frontier_decision = FrontierDecisionWrapper::FrontierDecisionV1(
+            FrontierDecisionAttentionConfig::new(256, symbols.len(), 16).init(&device),
+        );
+
+        Ok(Self {
+            embedder: EmbedderWrapper::Doc2Vec(d2v),
+            production_decision,
+            frontier_decision,
+            wl_kernel_iterations: 5,
+            wl_kernel_order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
+            wl_dedup: true,
+            normalization: NormalizationStrategy::Softmax,
+            sampling: SamplingStrategy::HighestProb,
+            activation: Activation::ReLU,
+        })
     }
 
     fn expand_rule<'a>(
