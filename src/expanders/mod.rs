@@ -51,8 +51,6 @@ use crate::{
 pub mod exhaustive;
 pub mod learned;
 pub mod mc;
-pub mod ml;
-pub mod mlfixed;
 pub mod wmc;
 
 /// A grammar expander is an object that is able to take a
@@ -105,26 +103,24 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
 pub enum ExpanderWrapper {
     MonteCarlo,
     WeightedMonteCarlo,
-    ML,
-    FixedML,
+    Learned,
 }
 
 impl ExpanderWrapper {
     pub fn get_expander<T: Terminal, I: NonTerminal>(
         &self,
+        grammar: &Grammar<T, I>,
         seed: u64,
     ) -> Result<Box<dyn GrammarExpander<T, I>>, LangExplorerError> {
         match self {
-            ExpanderWrapper::MonteCarlo => Ok(Box::new(MonteCarloExpander::new(seed))),
+            ExpanderWrapper::MonteCarlo => Ok(Box::new(MonteCarloExpander::init(grammar, seed)?)),
             ExpanderWrapper::WeightedMonteCarlo => {
-                Ok(Box::new(WeightedMonteCarloExpander::new(seed)))
+                Ok(Box::new(WeightedMonteCarloExpander::init(grammar, seed)?))
             }
-            ExpanderWrapper::ML => Err(LangExplorerError::General(
-                "ml method not implemented".into(),
-            )),
-            ExpanderWrapper::FixedML => Err(LangExplorerError::General(
-                "fixed ml method not implemented".into(),
-            )),
+            ExpanderWrapper::Learned => Err(LangExplorerError::General("not implemented".into())),
+            // ExpanderWrapper::Learned => Ok(Box::<LearnedExpander<T, I, B>>::new(
+            //     LearnedExpander::init(grammar, seed)?,
+            // )),
         }
     }
 }
@@ -135,8 +131,7 @@ impl FromStr for ExpanderWrapper {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "mc" | "montecarlo" => Ok(Self::MonteCarlo),
-            "ml" => Ok(Self::ML),
-            "fixedml" => Ok(Self::FixedML),
+            "ml" => Ok(Self::Learned),
             "wmc" | "weightedmontecarlo" => Ok(Self::WeightedMonteCarlo),
             _ => Err(LangExplorerError::General("invalid expander string".into())),
         }
@@ -147,8 +142,7 @@ impl Display for ExpanderWrapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::MonteCarlo => write!(f, "montecarlo"),
-            Self::ML => write!(f, "ml"),
-            Self::FixedML => write!(f, "fixedml"),
+            Self::Learned => write!(f, "learned"),
             Self::WeightedMonteCarlo => write!(f, "weightedmontecarlo"),
         }
     }

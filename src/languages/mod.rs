@@ -483,7 +483,7 @@ impl GenerateParams {
                 let all_progs = all_programs.clone(); // Need to do this twice, idk
                 let seed = self.params.get_seed();
                 tokio::spawn(async move {
-                    let mut expander = exp.get_expander(seed + i * 5).unwrap();
+                    let mut expander = exp.get_expander(&gc, seed + i * 5).unwrap();
                     let all_programs = all_progs.clone();
                     let count = self.count / num_cpus; // TODO fix
 
