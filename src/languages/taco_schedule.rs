@@ -122,11 +122,11 @@ impl Default for TacoScheduleLanguageParams {
         Self {
             version: Default::default(),
             index_variables: vec!["i".into(), "j".into(), "k".into(), "x".into(), "y".into()],
-            workspace_index_variables: Default::default(),
-            fused_index_variables: Default::default(),
-            split_factor_variables: Default::default(),
-            divide_factor_variables: Default::default(),
-            unroll_factor_variables: Default::default(),
+            workspace_index_variables: vec!["l".into(), "m".into(), "n".into()],
+            fused_index_variables: vec!["o".into(), "p".into()],
+            split_factor_variables: vec!["q".into(), "r".into(), "s".into()],
+            divide_factor_variables: vec!["t".into(), "u".into()],
+            unroll_factor_variables: vec!["v".into(), "w".into(), "z".into()],
         }
     }
 }
