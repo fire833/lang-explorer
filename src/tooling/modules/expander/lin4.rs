@@ -104,8 +104,13 @@ impl<B: Backend> Linear4Deep<B> {
             Activation::LeakyReLU => leaky_relu(x, 0.01),
             Activation::TanH => tanh(x),
         };
-
-        self.output.forward(x)
+        let x = self.output.forward(x);
+        match activation {
+            Activation::Sigmoid => sigmoid(x),
+            Activation::ReLU => relu(x),
+            Activation::LeakyReLU => leaky_relu(x, 0.01),
+            Activation::TanH => tanh(x),
+        }
     }
 }
 

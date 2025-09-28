@@ -30,16 +30,13 @@ use burn::{
 use crate::tooling::modules::expander::Activation;
 
 #[derive(Debug, Config)]
-pub struct Linear3DeepConfig {
+pub struct Linear1DeepConfig {
     /// The size of the input embeddings.
     #[config(default = 128)]
     pub d_embed: usize,
-    /// The size of the 1st hidden layer.
+    /// The size of the hidden layer.
     #[config(default = 64)]
-    pub d_hidden_1: usize,
-    /// The size of the 2nd hidden layer.
-    #[config(default = 64)]
-    pub d_hidden_2: usize,
+    pub d_hidden: usize,
     /// The number of output productions rules
     pub n_productions: usize,
     /// Optionally toggle bias within the model.
@@ -47,16 +44,10 @@ pub struct Linear3DeepConfig {
     pub bias: bool,
 }
 
-impl Linear3DeepConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> Linear3Deep<B> {
-        Linear3Deep {
-            input: LinearConfig::new(self.d_embed, self.d_hidden_1)
-                .with_bias(self.bias)
-                .init(device),
-            hidden: LinearConfig::new(self.d_hidden_1, self.d_hidden_2)
-                .with_bias(self.bias)
-                .init(device),
-            output: LinearConfig::new(self.d_hidden_2, self.n_productions)
+impl Linear1DeepConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> Linear1Deep<B> {
+        Linear1Deep {
+            input: LinearConfig::new(self.d_embed, self.d_hidden)
                 .with_bias(self.bias)
                 .init(device),
         }
@@ -64,33 +55,17 @@ impl Linear3DeepConfig {
 }
 
 #[derive(Debug, Module)]
-pub struct Linear3Deep<B: Backend> {
+pub struct Linear1Deep<B: Backend> {
     input: Linear<B>,
-    hidden: Linear<B>,
-    output: Linear<B>,
 }
 
-impl<B: Backend> Linear3Deep<B> {
+impl<B: Backend> Linear1Deep<B> {
     pub fn forward(
         &self,
         embed: Tensor<B, 2, Float>,
         activation: Activation,
     ) -> Tensor<B, 2, Float> {
         let x = self.input.forward(embed);
-        let x = match activation {
-            Activation::Sigmoid => sigmoid(x),
-            Activation::ReLU => relu(x),
-            Activation::LeakyReLU => leaky_relu(x, 0.01),
-            Activation::TanH => tanh(x),
-        };
-        let x = self.hidden.forward(x);
-        let x = match activation {
-            Activation::Sigmoid => sigmoid(x),
-            Activation::ReLU => relu(x),
-            Activation::LeakyReLU => leaky_relu(x, 0.01),
-            Activation::TanH => tanh(x),
-        };
-        let x = self.output.forward(x);
         match activation {
             Activation::Sigmoid => sigmoid(x),
             Activation::ReLU => relu(x),

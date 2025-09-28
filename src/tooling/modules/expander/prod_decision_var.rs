@@ -116,6 +116,9 @@ impl<B: Backend> ProductionDecisionVariable<B> {
                 .unsqueeze();
 
             let logits = match model {
+                LinearModuleWrapper::Linear1(linear) => {
+                    linear.forward(emb, prod.ml_config.activation.clone())
+                }
                 LinearModuleWrapper::Linear2(linear) => {
                     linear.forward(emb, prod.ml_config.activation.clone())
                 }
