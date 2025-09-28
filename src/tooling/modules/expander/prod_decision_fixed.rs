@@ -32,9 +32,9 @@ use burn::{
 use crate::{
     expanders::learned::{NormalizationStrategy, SamplingStrategy},
     grammar::{grammar::Grammar, prod::Production, NonTerminal, Terminal},
-    tooling::modules::expander::{
-        lin2::{Linear2Deep, Linear2DeepConfig},
-        Activation,
+    tooling::modules::{
+        expander::Activation,
+        general::{GeneralLinear, GeneralLinearConfig},
     },
 };
 
@@ -68,10 +68,7 @@ impl ProductionDecisionFixedConfig {
 
         ProductionDecisionFixed {
             rule_embeddings: EmbeddingConfig::new(rule_count + 1, self.d_model).init(device),
-            linear: Linear2DeepConfig::new(self.d_model)
-                .with_bias(true)
-                .with_d_embed(self.d_embed)
-                .init(device),
+            linear: GeneralLinearConfig::new(vec![self.d_embed, 64, 64, self.d_model]).init(device),
             production_to_index: Ignored(map),
             config: Ignored(self.clone()),
             num_embeddings: Ignored(rule_count),
@@ -92,7 +89,7 @@ pub struct ProductionDecisionFixed<B: Backend> {
     /// Embeddings for each rule that we want to expand.
     rule_embeddings: Embedding<B>,
     /// The linear decision function.
-    linear: Linear2Deep<B>,
+    linear: GeneralLinear<B>,
 }
 
 impl<B: Backend> ProductionDecisionFixed<B> {

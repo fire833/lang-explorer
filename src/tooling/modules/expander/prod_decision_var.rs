@@ -31,14 +31,18 @@ use burn::{
 use crate::{
     expanders::learned::{NormalizationStrategy, SamplingStrategy},
     grammar::{grammar::Grammar, prod::Production, NonTerminal, Terminal},
-    tooling::modules::expander::{
-        lin2::Linear2DeepConfig, lin3::Linear3DeepConfig, lin4::Linear4DeepConfig,
-        LinearModuleWrapper, ProductionModelType,
+    tooling::modules::{
+        expander::ProductionModelType,
+        general::{GeneralLinear, GeneralLinearConfig},
     },
 };
 
 #[derive(Debug, Config)]
-pub struct ProductionDecisionVariableConfig {}
+pub struct ProductionDecisionVariableConfig {
+    /// The size of the input embeddings.
+    #[config(default = 128)]
+    pub d_embed: usize,
+}
 
 impl ProductionDecisionVariableConfig {
     pub fn init<T: Terminal, I: NonTerminal, B: Backend>(
@@ -51,21 +55,20 @@ impl ProductionDecisionVariableConfig {
 
         for (idx, production) in grammar.get_productions().iter().enumerate() {
             let module = match production.ml_config.model {
-                ProductionModelType::Linear2 => LinearModuleWrapper::Linear2(
-                    Linear2DeepConfig::new(production.len())
-                        .with_bias(production.ml_config.with_bias)
-                        .init::<B>(device),
-                ),
-                ProductionModelType::Linear3 => LinearModuleWrapper::Linear3(
-                    Linear3DeepConfig::new(production.len())
-                        .with_bias(production.ml_config.with_bias)
-                        .init::<B>(device),
-                ),
-                ProductionModelType::Linear4 => LinearModuleWrapper::Linear4(
-                    Linear4DeepConfig::new(production.len())
-                        .with_bias(production.ml_config.with_bias)
-                        .init::<B>(device),
-                ),
+                ProductionModelType::Linear1 => {
+                    GeneralLinearConfig::new(vec![self.d_embed, production.len()]).init(device)
+                }
+                ProductionModelType::Linear2 => {
+                    GeneralLinearConfig::new(vec![self.d_embed, 64, production.len()]).init(device)
+                }
+                ProductionModelType::Linear3 => {
+                    GeneralLinearConfig::new(vec![self.d_embed, 64, 64, production.len()])
+                        .init(device)
+                }
+                ProductionModelType::Linear4 => {
+                    GeneralLinearConfig::new(vec![self.d_embed, 64, 64, 64, production.len()])
+                        .init(device)
+                }
             };
 
             items.push(module);
@@ -87,7 +90,7 @@ pub struct ProductionDecisionVariable<B: Backend> {
     production_to_model: Ignored<HashMap<u64, usize>>,
 
     /// Mapping of each production rule to its corresponding decision function.
-    models: Vec<LinearModuleWrapper<B>>,
+    models: Vec<GeneralLinear<B>>,
 }
 
 impl<B: Backend> ProductionDecisionVariable<B> {
@@ -115,20 +118,7 @@ impl<B: Backend> ProductionDecisionVariable<B> {
                 .gather(0, Tensor::from_data([idx], &inputs.device()))
                 .unsqueeze();
 
-            let logits = match model {
-                LinearModuleWrapper::Linear1(linear) => {
-                    linear.forward(emb, prod.ml_config.activation.clone())
-                }
-                LinearModuleWrapper::Linear2(linear) => {
-                    linear.forward(emb, prod.ml_config.activation.clone())
-                }
-                LinearModuleWrapper::Linear3(linear) => {
-                    linear.forward(emb, prod.ml_config.activation.clone())
-                }
-                LinearModuleWrapper::Linear4(linear) => {
-                    linear.forward(emb, prod.ml_config.activation.clone())
-                }
-            };
+            let logits = model.forward(emb, prod.ml_config.activation.clone());
 
             // Optionally scale by temperature.
             let logits = if prod.ml_config.temperature != 1000 {
