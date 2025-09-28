@@ -21,7 +21,7 @@ use burn::{
     module::Module,
     nn::{Embedding, EmbeddingConfig, Linear, LinearConfig},
     prelude::Backend,
-    tensor::{Float, Tensor},
+    tensor::{Distribution, Float, Int, Tensor},
 };
 
 #[derive(Debug, Config)]
@@ -39,7 +39,7 @@ pub struct Code2VecConfig {
     pub d_path: usize,
     /// The dimension of the encoded vectors after
     /// passing through the linear input.
-    pub d_encode: usize,
+    pub d_model: usize,
 }
 
 impl Code2VecConfig {
@@ -48,10 +48,11 @@ impl Code2VecConfig {
         Code2Vec {
             terminals: EmbeddingConfig::new(self.n_terminals, self.d_terminal).init(device),
             paths: EmbeddingConfig::new(self.n_paths, self.d_path).init(device),
-            hidden_in: LinearConfig::new(2 * self.d_terminal + self.d_path, self.d_encode)
+            attention: Tensor::random([self.d_model], Distribution::Uniform(-1.0, 1.0), device),
+            hidden_in: LinearConfig::new(2 * self.d_terminal + self.d_path, self.d_model)
                 .with_bias(false)
                 .init(device),
-            hidden_out: LinearConfig::new(self.d_encode, self.n_labels)
+            hidden_out: LinearConfig::new(self.d_model, self.n_labels)
                 .with_bias(true)
                 .init(device),
         }
@@ -64,6 +65,8 @@ pub struct Code2Vec<B: Backend> {
     terminals: Embedding<B>,
     /// Embeddings of all paths within the corpus.
     paths: Embedding<B>,
+    /// The attention weights for code2vec.
+    attention: Tensor<B, 1, Float>,
     /// The hidden input layer.
     hidden_in: Linear<B>,
     /// The hidden output layer.
@@ -71,8 +74,24 @@ pub struct Code2Vec<B: Backend> {
 }
 
 impl<B: Backend> Code2Vec<B> {
-    #[allow(unused)]
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
+    pub fn forward(
+        &self,
+        start_terminals: Tensor<B, 1, Int>,
+        end_terminals: Tensor<B, 1, Int>,
+        paths: Tensor<B, 1, Int>,
+    ) -> Tensor<B, 2, Float> {
+        let start_emb = self.terminals.forward(start_terminals.unsqueeze_dim(1));
+        let end_emb = self.terminals.forward(end_terminals.unsqueeze_dim(1));
+        let path_emb = self.paths.forward(paths.unsqueeze_dim(1));
+
+        let concat = Tensor::cat(vec![start_emb, path_emb, end_emb], 1);
+        let hidden = self.hidden_in.forward(concat);
+
+        // let attn_scores = hidden.matmul(&self.attention).softmax(0);
+        // let attn_applied = hidden * attn_scores.unsqueeze(1);
+        // let code_vec = attn_applied.sum_dim(0);
+
+        // self.hidden_out.forward(code_vec.unsqueeze(0))
         todo!()
     }
 }
