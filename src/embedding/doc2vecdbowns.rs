@@ -243,7 +243,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         let mut counter = 0;
         let set = document.1.iter().cloned().collect::<HashSet<Feature>>();
 
-        for num in 0..5 {
+        for _num in 0..5 {
             let mut items = vec![];
 
             // Adaptive learning rate
