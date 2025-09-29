@@ -57,23 +57,27 @@ def nearest_neighbors2(args):
 
 		x = 0
 		y = 0
+		suffix = ""
 		if j == 1:
 			x = 0
 			y = 1
+			suffix = "st"
 		if j == 2:
 			x = 1
 			y = 0
+			suffix = "nd"
 		if j == 3:
 			x = 1
 			y = 1
+			suffix = "rd"
 
 		neighprogram = data.iloc[neighind[0, j], 0]
 		neighbor = data.iloc[neighind[0, j], 1]
 		img = Source(neighbor).render(f"/tmp/{x}_{y}", format="png", cleanup=True)
 		axes[x, y].imshow(mpimg.imread(img))
 		axes[x, y].axis('off')
-		axes[x, y].set_title(f"{j}th NN")
+		axes[x, y].set_title(f"{j}{suffix} NN")
 		# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
 
-	plt.savefig(f"images/{args.output}.png", dpi=1500)
-	subprocess.run(["mogrify", "-trim", f"images/{args.output}.png"])
+	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
+	subprocess.run(["mogrify", "-trim", f"images/{args.output}.jpeg"])
