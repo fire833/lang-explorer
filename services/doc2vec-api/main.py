@@ -7,7 +7,8 @@ import json
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import os
 
-app = Flask(__name__)
+print("starting server...")
+app = Flask("doc2vec-api")
 
 @dataclass
 class Doc2VecConfig:
@@ -20,15 +21,6 @@ class Doc2VecConfig:
     window: int = 0
     sample: float = 1e-5
     negative: int = 5
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict) -> "Doc2VecConfig":
-        """Create config from dictionary, filtering out invalid keys"""
-        valid_fields = {f.name for f in dataclass.__dict__["__dataclass_fields__"].values() 
-                       if f.name in cls.__annotations__}
-        filtered = {k: v for k, v in config_dict.items() if k in valid_fields}
-        return cls(**filtered)
-
 
 def train_doc2vec(documents: Dict[str, List[str]], config: Doc2VecConfig) -> Dict[str, List[float]]:
     """
@@ -71,7 +63,6 @@ def train_doc2vec(documents: Dict[str, List[str]], config: Doc2VecConfig) -> Dic
 
 @app.route("/health", methods=["GET"])
 def health_check():
-    """Health check endpoint"""
     return jsonify({"status": "healthy"}), 200
 
 
@@ -140,26 +131,17 @@ def embed_documents():
 
 @app.route("/config", methods=["GET"])
 def get_default_config():
-    """Return default configuration parameters"""
     config = Doc2VecConfig()
     return jsonify({
-        "default_config": {
-            "vector_size": config.vector_size,
-            "min_count": config.min_count,
-            "epochs": config.epochs,
-            "alpha": config.alpha,
-            "min_alpha": config.min_alpha,
-            "window": config.window,
-            "sample": config.sample,
-            "negative": config.negative,
-            "hs": config.hs,
-        },
-        "fixed_params": {
-            "dm": config.dm,
-            "workers": config.workers
-        }
+        "vector_size": config.vector_size,
+        "min_count": config.min_count,
+        "epochs": config.epochs,
+        "alpha": config.alpha,
+        "min_alpha": config.min_alpha,
+        "window": config.window,
+        "sample": config.sample,
+        "negative": config.negative,
     }), 200
-
 
 if __name__ == "__main__":
     # For development
