@@ -52,7 +52,7 @@ jobs:
     if: "inputs.ONLY == 'lang-explorer' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/lang-explorer/'))"
     with:
       APP_NAME: lang-explorer
-      VERSION: v0.1.1
+      VERSION: v0.2.0
       DOCKERFILE_PATH: src/bin/explorer/Dockerfile
       # RUNNER: fire833-lang-explorer
 
@@ -63,4 +63,14 @@ jobs:
       APP_NAME: lang-evaluator
       VERSION: v0.1.0
       DOCKERFILE_PATH: src/bin/evaluator/Dockerfile
+      # RUNNER: fire833-lang-explorer
+
+  doc2vec-api:
+    uses: fire833/cicd-templates/.github/workflows/containers_cd_v1.yaml@main
+    if: "inputs.ONLY == 'doc2vec-api' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/doc2vec-api/'))"
+    with:
+      APP_NAME: doc2vec-api
+      VERSION: v0.1.0
+      DOCKERFILE_PATH: services/doc2vec-api/Dockerfile
+      DOCKERFILE_CONTEXT: services/doc2vec-api/
       # RUNNER: fire833-lang-explorer
