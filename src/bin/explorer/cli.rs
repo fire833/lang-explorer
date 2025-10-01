@@ -18,7 +18,9 @@
 
 use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
-    errors::LangExplorerError, expanders::ExpanderWrapper, languages::LanguageWrapper,
+    errors::LangExplorerError,
+    expanders::ExpanderWrapper,
+    languages::{EmbeddingModel, LanguageWrapper},
 };
 
 use crate::api;
@@ -60,6 +62,7 @@ impl LangExplorerArgs {
                 Subcommand::EmbedGen {
                     language: _,
                     expander: _,
+                    embedders: _,
                     count: _,
                 } => Ok(()),
                 Subcommand::Serve {
@@ -128,6 +131,9 @@ enum Subcommand {
 
         #[arg(short, long, value_enum)]
         expander: ExpanderWrapper,
+
+        #[arg(short, long, value_enum)]
+        embedders: Vec<EmbeddingModel>,
 
         #[arg(short, long, default_value_t = 1)]
         count: u64,
