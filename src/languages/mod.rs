@@ -34,6 +34,7 @@ use utoipa::ToSchema;
 
 use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
 use crate::embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder};
+use crate::expanders::learned::LabelExtractionStrategy;
 use crate::grammar::prod::Production;
 use crate::grammar::program::{InstanceId, ProgramInstance};
 use crate::languages::anbncn::{AnBnCnLanguage, AnBnCnLanguageParams};
@@ -438,21 +439,18 @@ pub struct GenerateParams {
     #[serde(alias = "count", default = "default_count")]
     count: u64,
 
-    /// Specify the number of WL-kernel iterations to be run
-    /// with each graph to extract features.
-    #[serde(alias = "wl_degree", default = "default_wl_degree")]
-    wl_degree: u32,
+    /// Specify the label extraction strategy for creating
+    /// labels for each document program.
+    #[serde(alias = "label_extraction", default)]
+    label_extraction: LabelExtractionStrategy,
 
+    /// General purpose training parameters for doing training runs.
     #[serde(flatten)]
     params: GeneralEmbeddingTrainingParams,
 }
 
 fn default_count() -> u64 {
     1
-}
-
-fn default_wl_degree() -> u32 {
-    3
 }
 
 fn default_return_partials() -> bool {
@@ -512,6 +510,8 @@ impl GenerateParams {
                 let txt = tx.clone();
                 let all_progs = all_programs.clone(); // Need to do this twice, idk
                 let seed = self.params.get_seed();
+                let label_extraction = self.label_extraction.clone();
+
                 tokio::spawn(async move {
                     let mut expander = exp.get_expander(&gc, seed + i * 5).unwrap();
                     let all_programs = all_progs.clone();
@@ -532,7 +532,7 @@ impl GenerateParams {
                                         self.return_edge_lists,
                                         self.return_graphviz,
                                         true,
-                                        self.wl_degree,
+                                        &label_extraction.clone(),
                                     ) {
                                         // Ship it off and keep going.
                                         Ok(res) => match txt.send(res).await {
@@ -554,7 +554,7 @@ impl GenerateParams {
                                                 self.return_edge_lists,
                                                 self.return_graphviz,
                                                 false,
-                                                self.wl_degree,
+                                                &label_extraction.clone(),
                                             ) {
                                                 Ok(res) => match txt.send(res).await {
                                                     Ok(_) => {}

@@ -17,6 +17,8 @@
  */
 
 use burn::{optim::AdamWConfig, tensor::backend::AutodiffBackend};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     embedding::{
@@ -68,6 +70,7 @@ pub enum NormalizationStrategy {
     LogSoftmax,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, ToSchema)]
 pub enum LabelExtractionStrategy {
     WLKernel {
         /// Number of iterations to run to extract words.
@@ -80,6 +83,17 @@ pub enum LabelExtractionStrategy {
         sort: bool,
     },
     CodePaths {},
+}
+
+impl Default for LabelExtractionStrategy {
+    fn default() -> Self {
+        Self::WLKernel {
+            iterations: 5,
+            order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
+            dedup: true,
+            sort: false,
+        }
+    }
 }
 
 pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {

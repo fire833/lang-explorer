@@ -26,9 +26,12 @@ use std::{
 use fasthash::{city, FastHasher};
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
+    expanders::learned::LabelExtractionStrategy,
     grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal},
     languages::{Feature, ProgramResult},
 };
@@ -52,10 +55,13 @@ pub struct ProgramInstance<T: Terminal, I: NonTerminal> {
     parent_id: Option<InstanceId>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 pub enum WLKernelHashingOrder {
+    #[serde(alias = "self_children_parent")]
     SelfChildrenParentOrdered,
+    #[serde(alias = "parent_self_children")]
     ParentSelfChildrenOrdered,
+    #[serde(alias = "total_ordered")]
     TotalOrdered,
 }
 
@@ -354,17 +360,27 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         return_edge_lists: bool,
         return_graphviz: bool,
         is_complete: bool,
-        wl_degree: u32,
+        label_extraction: &LabelExtractionStrategy,
     ) -> Result<ProgramResult, LangExplorerError> {
         let mut res = ProgramResult::new();
 
         if return_features {
-            res.set_features(self.extract_words_wl_kernel(
-                wl_degree,
-                WLKernelHashingOrder::SelfChildrenParentOrdered,
-                true,
-                false,
-            ));
+            match label_extraction {
+                LabelExtractionStrategy::WLKernel {
+                    iterations,
+                    order,
+                    dedup,
+                    sort,
+                } => {
+                    res.set_features(self.extract_words_wl_kernel(
+                        *iterations,
+                        order.clone(),
+                        *dedup,
+                        *sort,
+                    ));
+                }
+                LabelExtractionStrategy::CodePaths {} => todo!(),
+            }
         }
 
         if return_edge_lists {
