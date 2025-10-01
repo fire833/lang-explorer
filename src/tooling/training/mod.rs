@@ -33,6 +33,8 @@ pub struct TrainingParams {
     pub learning_rate: f64,
     #[config(default = 0.75)]
     pub learning_rate_drop: f64,
+    #[config(default = 0.000001)]
+    pub min_learning_rate: f64,
     /// The seed.
     #[config(default = 10)]
     pub seed: u64,

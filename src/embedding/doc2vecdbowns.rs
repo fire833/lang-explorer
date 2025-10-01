@@ -181,8 +181,8 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
             // Adaptive learning rate
             lr *= self.params.gen_params.gen_params.learning_rate_drop;
-            if lr < 0.000001 {
-                lr = 0.000001;
+            if lr < self.params.gen_params.gen_params.min_learning_rate {
+                lr = self.params.gen_params.gen_params.min_learning_rate;
             }
 
             for (docidx, (_, words)) in documents.iter().enumerate() {

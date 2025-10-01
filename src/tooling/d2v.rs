@@ -22,7 +22,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::errors::LangExplorerError;
+use crate::{embedding::GeneralEmbeddingTrainingParams, errors::LangExplorerError};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EmbeddingResult {
@@ -30,7 +30,7 @@ struct EmbeddingResult {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Doc2VecConfig {
+pub(crate) struct Doc2VecGensimConfig {
     vector_size: u32,
     min_count: u8,
     epochs: u32,
@@ -41,11 +41,26 @@ pub(crate) struct Doc2VecConfig {
     negative: u16,
 }
 
+impl From<GeneralEmbeddingTrainingParams> for Doc2VecGensimConfig {
+    fn from(value: GeneralEmbeddingTrainingParams) -> Self {
+        Self {
+            vector_size: value.d_model as u32,
+            min_count: 2,
+            epochs: value.gen_params.n_epochs as u32,
+            alpha: value.gen_params.learning_rate as f32,
+            min_alpha: value.gen_params.min_learning_rate as f32,
+            window: 0,
+            sample: 1e-3,
+            negative: value.num_neg_samples as u16,
+        }
+    }
+}
+
 pub(crate) async fn get_embedding_d2v<D: Serialize, W: Serialize>(
     client: &Client,
     host: &String,
     documents: HashMap<D, Vec<W>>,
-    config: &Doc2VecConfig,
+    config: &Doc2VecGensimConfig,
 ) -> Result<HashMap<String, Vec<f32>>, LangExplorerError> {
     let body = json!({ "documents": documents, "config": config }).to_string();
 

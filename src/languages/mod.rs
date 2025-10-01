@@ -39,6 +39,7 @@ use crate::grammar::program::{InstanceId, ProgramInstance};
 use crate::languages::anbncn::{AnBnCnLanguage, AnBnCnLanguageParams};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
+use crate::tooling::d2v::{self};
 use crate::tooling::ollama::get_embedding_ollama;
 use crate::{
     errors::LangExplorerError,
@@ -170,6 +171,8 @@ impl Display for LanguageWrapper {
 pub enum EmbeddingModel {
     #[serde(alias = "doc2vecdbow")]
     Doc2VecDBOW,
+    #[serde(alias = "docvecgensim")]
+    Doc2VecGensim,
     #[serde(alias = "mxbai-embed-large")]
     MXBAILarge,
     #[serde(alias = "nomic-embed-text")]
@@ -186,6 +189,7 @@ impl Display for EmbeddingModel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Doc2VecDBOW => write!(f, "doc2vecdbow"),
+            Self::Doc2VecGensim => write!(f, "doc2vecgensim"),
             Self::MXBAILarge => write!(f, "mxbai-embed-large"),
             Self::NomicEmbed => write!(f, "nomic-embed-text"),
             Self::SnowflakeArctic137 => write!(f, "snowflake-arctic-embed:137m"),
@@ -201,6 +205,7 @@ impl FromStr for EmbeddingModel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "doc2vec" | "d2vdbow" | "doc2vecdbow" | "doc2vecDBOW" => Ok(Self::Doc2VecDBOW),
+            "doc2vecgensim" | "d2vgensim" | "doc2vec-gensim" => Ok(Self::Doc2VecGensim),
             "mxbailarge" | "mxbai-large" | "mxbai-embed-large" => Ok(Self::MXBAILarge),
             "nomic" | "nomic-embed-text" => Ok(Self::NomicEmbed),
             "snowflake-arctic-embed" => Ok(Self::SnowflakeArctic),
@@ -220,6 +225,7 @@ impl EmbeddingModel {
         params: GeneralEmbeddingTrainingParams,
         models_dir: String,
         ollama_host: String,
+        d2v_host: String,
         res: &mut GenerateResultsV2,
     ) -> Result<(), LangExplorerError> {
         let emb_name = self.to_string();
@@ -284,6 +290,32 @@ impl EmbeddingModel {
                     prog.set_embedding(emb_name.clone(), embeddings.drain(0..dim).collect());
                 }
             }
+            Self::Doc2VecGensim => {
+                let client = ClientBuilder::new()
+                    .pool_max_idle_per_host(10)
+                    .build()
+                    .unwrap();
+
+                let mut docs = HashMap::new();
+
+                for prog in res.programs.iter() {
+                    docs.insert(
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    );
+                }
+
+                match d2v::get_embedding_d2v(&client, &d2v_host, docs, &params.clone().into()).await
+                {
+                    Ok(resp) => {
+                        for prog in res.programs.iter_mut() {
+                            let vec = resp.get(&prog.program.clone().unwrap()).unwrap();
+                            prog.set_embedding(emb_name.clone(), vec.clone());
+                        }
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
             Self::MXBAILarge
             | Self::NomicEmbed
             | Self::SnowflakeArctic
@@ -296,7 +328,7 @@ impl EmbeddingModel {
 
                 let blank: String = "".into();
 
-                let prompts: Vec<String> = res
+                let programs: Vec<String> = res
                     .programs
                     .iter()
                     .map(|item| match &item.program {
@@ -305,8 +337,8 @@ impl EmbeddingModel {
                     })
                     .collect();
 
-                for (idx, prompt) in prompts.iter().enumerate() {
-                    match get_embedding_ollama(&client, &ollama_host, prompt, self.clone()).await {
+                for (idx, prog) in programs.iter().enumerate() {
+                    match get_embedding_ollama(&client, &ollama_host, prog, self.clone()).await {
                         Ok(vec) => {
                             let p = res.programs.get_mut(0).unwrap();
                             p.set_embedding(emb_name.clone(), vec);
@@ -318,7 +350,7 @@ impl EmbeddingModel {
                         println!(
                             "processed {} / {} prompts for embeddings",
                             idx,
-                            prompts.len()
+                            programs.len()
                         );
                     }
                 }
@@ -434,6 +466,7 @@ impl GenerateParams {
         expander: ExpanderWrapper,
         models_dir: String,
         ollama_host: String,
+        d2v_host: String,
         _output_dir: String,
     ) -> Result<GenerateResultsV2, LangExplorerError> {
         let grammar = match language {
@@ -570,6 +603,7 @@ impl GenerateParams {
                         self.params.clone(),
                         models_dir.clone(),
                         ollama_host.clone(),
+                        d2v_host.clone(),
                         &mut results,
                     )
                     .await?;

@@ -29,9 +29,13 @@ pub(super) struct LangExplorerArgs {
     #[arg(short, long, default_value_t = String::from("./models"))]
     model_dir: String,
 
-    /// Specify the Ollama hostname for calling ollama crap.
+    /// Specify the Ollama hostname for calling ollama stuff.
     #[arg(short, long, default_value_t = String::from("http://localhost:11434"))]
     ollama_host: String,
+
+    /// Specify the Doc2Vec server hostname for calling d2v stuff.
+    #[arg(short, long, default_value_t = String::from("http://localhost:8080"))]
+    d2v_host: String,
 
     /// Specify the location for storing outputs.
     #[arg(short, long, default_value_t = String::from("./lang-explorer-python/results"))]
@@ -69,6 +73,7 @@ impl LangExplorerArgs {
                             *port,
                             self.model_dir.clone(),
                             self.ollama_host.clone(),
+                            self.d2v_host.clone(),
                             self.output_dir.clone(),
                         )
                         .await;
@@ -78,6 +83,7 @@ impl LangExplorerArgs {
                             *port,
                             self.model_dir.clone(),
                             self.ollama_host.clone(),
+                            self.d2v_host.clone(),
                             self.output_dir.clone(),
                         )
                         .await;
