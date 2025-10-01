@@ -206,7 +206,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
     fn choose_lhs_and_slot<'a>(
         &mut self,
         _grammar: &'a Grammar<T, I>,
-        context: &'a ProgramInstance<T, I>,
+        _context: &'a ProgramInstance<T, I>,
         lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize) {
         todo!()

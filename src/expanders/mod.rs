@@ -131,7 +131,7 @@ impl FromStr for ExpanderWrapper {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "mc" | "montecarlo" => Ok(Self::MonteCarlo),
-            "ml" => Ok(Self::Learned),
+            "ml" | "learned" => Ok(Self::Learned),
             "wmc" | "weightedmontecarlo" => Ok(Self::WeightedMonteCarlo),
             _ => Err(LangExplorerError::General("invalid expander string".into())),
         }
