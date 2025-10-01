@@ -68,6 +68,20 @@ pub enum NormalizationStrategy {
     LogSoftmax,
 }
 
+pub enum LabelExtractionStrategy {
+    WLKernel {
+        /// Number of iterations to run to extract words.
+        iterations: u32,
+        /// The order in which to hash items when computing new labels.
+        order: WLKernelHashingOrder,
+        /// Toggle whether to deduplicate words when extracting WL kernel features.
+        dedup: bool,
+        /// Toggle whether to sort words when extracting WL kernel features.
+        sort: bool,
+    },
+    CodePaths {},
+}
+
 pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Model for embedding partial programs.
     embedder: EmbedderWrapper<T, I, B>,
@@ -78,12 +92,9 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     /// Wrapper for frontier decision model.
     frontier_decision: FrontierDecisionWrapper<B>,
 
-    /// Number of iterations to run to extract words.
-    wl_kernel_iterations: u32,
-    /// The order in which to hash items when computing new labels.
-    wl_kernel_order: WLKernelHashingOrder,
-    /// Toggle whether to deduplicate words when extracting WL kernel features.
-    wl_dedup: bool,
+    /// The strategy for extracting labels from the current program instance.
+    label_extraction: LabelExtractionStrategy,
+
     /// Strategy for normalizing the output logits from the model.
     normalization: NormalizationStrategy,
     /// Strategy for sampling from the output distribution of the model.
@@ -134,9 +145,12 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             embedder: EmbedderWrapper::Doc2Vec(d2v),
             production_decision,
             frontier_decision,
-            wl_kernel_iterations: 5,
-            wl_kernel_order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
-            wl_dedup: true,
+            label_extraction: LabelExtractionStrategy::WLKernel {
+                iterations: 5,
+                order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
+                dedup: true,
+                sort: false,
+            },
             normalization: NormalizationStrategy::Softmax,
             sampling: SamplingStrategy::HighestProb,
             activation: Activation::ReLU,
@@ -150,12 +164,18 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         production: &'a Production<T, I>,
     ) -> &'a ProductionRule<T, I> {
         let doc = context.clone();
-        let words = doc.extract_words_wl_kernel(
-            self.wl_kernel_iterations,
-            self.wl_kernel_order.clone(),
-            self.wl_dedup,
-            false,
-        );
+
+        let words = match &self.label_extraction {
+            LabelExtractionStrategy::WLKernel {
+                iterations,
+                order,
+                dedup,
+                sort,
+            } => doc.extract_words_wl_kernel(*iterations, order.clone(), *dedup, *sort),
+            LabelExtractionStrategy::CodePaths {} => {
+                panic!("CodePaths label extraction not implemented yet")
+            }
+        };
 
         let embedding = self
             .embedder

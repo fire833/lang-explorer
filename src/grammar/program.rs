@@ -56,6 +56,7 @@ pub struct ProgramInstance<T: Terminal, I: NonTerminal> {
 pub enum WLKernelHashingOrder {
     SelfChildrenParentOrdered,
     ParentSelfChildrenOrdered,
+    TotalOrdered,
 }
 
 impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
@@ -180,6 +181,15 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
                         hasher.write(&parent_bytes);
                         hasher.write(self_bytes.as_slice());
 
+                        child_bytes.sort();
+                        child_bytes
+                            .iter()
+                            .for_each(|child| hasher.write(&child.to_ne_bytes()));
+
+                        hasher.finish()
+                    }
+                    WLKernelHashingOrder::TotalOrdered => {
+                        // TODO: Implement this ordering.
                         child_bytes.sort();
                         child_bytes
                             .iter()
