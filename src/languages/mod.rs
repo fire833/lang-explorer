@@ -617,6 +617,21 @@ impl GenerateParams {
 
         Ok(results)
     }
+
+    pub async fn from_file(path: &str) -> Result<Self, LangExplorerError> {
+        let contents = fs::read_to_string(path)?;
+        let config: GenerateParams = serde_json::from_str(&contents)?;
+        Ok(config)
+    }
+
+    pub async fn from_experiment_id<P: Display>(
+        path: P,
+        lang: &LanguageWrapper,
+        exp_id: usize,
+    ) -> Result<Self, LangExplorerError> {
+        let path = format!("{path}/{lang}/{exp_id}/options.json");
+        Self::from_file(&path).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -694,11 +709,11 @@ impl GraphvizRecord {
 }
 
 impl GenerateResultsV2 {
-    pub(crate) fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
+    pub fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
         let exp_id = Self::get_experiment_id(&path, &self.language)?;
 
         let mut program_writer =
-            csv::Writer::from_path(format!("{path}/{}/{}/programs.csv", self.language, exp_id))?;
+            csv::Writer::from_path(format!("{path}/{}/{exp_id}/programs.csv", self.language))?;
 
         for (idx, prog) in self.programs.iter().enumerate() {
             program_writer.serialize(ProgramRecord::new(
@@ -712,8 +727,8 @@ impl GenerateResultsV2 {
 
         for embed_model in self.options.return_embeddings.iter() {
             let mut embed_writer = csv::Writer::from_path(format!(
-                "{path}/{}/{}/embeddings_{}.csv",
-                self.language, exp_id, embed_model
+                "{path}/{}/{exp_id}/embeddings_{}.csv",
+                self.language, embed_model
             ))?;
 
             for (idx, prog) in self.programs.iter().enumerate() {
@@ -728,10 +743,8 @@ impl GenerateResultsV2 {
         }
 
         if self.options.return_graphviz {
-            let mut graphviz_writer = csv::Writer::from_path(format!(
-                "{path}/{}/{}/graphviz.csv",
-                self.language, exp_id,
-            ))?;
+            let mut graphviz_writer =
+                csv::Writer::from_path(format!("{path}/{}/{exp_id}/graphviz.csv", self.language))?;
 
             for (idx, prog) in self.programs.iter().enumerate() {
                 graphviz_writer.serialize(GraphvizRecord::new(
@@ -745,13 +758,13 @@ impl GenerateResultsV2 {
 
         if let Some(grammar) = &self.grammar {
             fs::write(
-                format!("{path}/{}/{}/grammar.bnf", self.language, exp_id,),
+                format!("{path}/{}/{exp_id}/grammar.bnf", self.language),
                 grammar,
             )?;
         }
 
         fs::write(
-            format!("{path}/{}/{}/options.json", self.language, exp_id,),
+            format!("{path}/{}/{exp_id}/options.json", self.language),
             serde_json::to_string_pretty(&self.options)?,
         )?;
 

@@ -20,7 +20,7 @@ use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
     errors::LangExplorerError,
     expanders::ExpanderWrapper,
-    languages::{EmbeddingModel, GenerateParams, LanguageWrapper},
+    languages::{GenerateParams, LanguageWrapper},
 };
 
 use crate::api;
@@ -29,7 +29,7 @@ use crate::api;
 pub(super) struct LangExplorerArgs {
     /// Specify the location model files are stored.
     #[arg(short, long, default_value_t = String::from("./models"))]
-    model_dir: String,
+    models_dir: String,
 
     /// Specify the Ollama hostname for calling ollama stuff.
     #[arg(short, long, default_value_t = String::from("http://localhost:11434"))]
@@ -42,6 +42,10 @@ pub(super) struct LangExplorerArgs {
     /// Specify the location for storing outputs.
     #[arg(short, long, default_value_t = String::from("./lang-explorer-python/results"))]
     output_dir: String,
+
+    /// Toggle CUDA backend.
+    #[arg(short, long, default_value_t = false)]
+    cuda: bool,
 
     /// Specify the subcommand to be run.
     #[command(subcommand)]
@@ -61,19 +65,52 @@ impl LangExplorerArgs {
                 Subcommand::Generate {
                     language,
                     expander,
-                    embedders,
-                    count,
-                } => Ok(()),
-                Subcommand::Serve {
-                    address,
-                    port,
-                    cuda,
+                    redo,
+                    config,
                 } => {
-                    if *cuda {
+                    let config = match (redo, config) {
+                        (None, None) => GenerateParams::default(),
+                        (None, Some(file)) => GenerateParams::from_file(file.as_str()).await?,
+                        (Some(idx), _) => {
+                            GenerateParams::from_experiment_id(&self.output_dir, language, *idx)
+                                .await?
+                        }
+                    };
+
+                    let res = if self.cuda {
+                        config
+                            .execute::<Cuda>(
+                                language.clone(),
+                                expander.clone(),
+                                self.models_dir.clone(),
+                                self.ollama_host.clone(),
+                                self.d2v_host.clone(),
+                                self.output_dir.clone(),
+                            )
+                            .await?
+                    } else {
+                        config
+                            .execute::<NdArray>(
+                                language.clone(),
+                                expander.clone(),
+                                self.models_dir.clone(),
+                                self.ollama_host.clone(),
+                                self.d2v_host.clone(),
+                                self.output_dir.clone(),
+                            )
+                            .await?
+                    };
+
+                    res.write(self.output_dir.clone())?;
+
+                    Ok(())
+                }
+                Subcommand::Serve { address, port } => {
+                    if self.cuda {
                         let _ = api::start_server::<Cuda>(
                             address.as_str(),
                             *port,
-                            self.model_dir.clone(),
+                            self.models_dir.clone(),
                             self.ollama_host.clone(),
                             self.d2v_host.clone(),
                             self.output_dir.clone(),
@@ -83,7 +120,7 @@ impl LangExplorerArgs {
                         let _ = api::start_server::<NdArray>(
                             address.as_str(),
                             *port,
-                            self.model_dir.clone(),
+                            self.models_dir.clone(),
                             self.ollama_host.clone(),
                             self.d2v_host.clone(),
                             self.output_dir.clone(),
@@ -103,17 +140,21 @@ enum Subcommand {
     /// Generate a new set of programs, optionally along with
     /// corresponding embeddings.
     Generate {
+        /// Specify the language to generate programs in.
         #[arg(short, long, value_enum)]
         language: LanguageWrapper,
 
+        /// Specify the expander to use.
         #[arg(short, long, value_enum)]
         expander: ExpanderWrapper,
 
-        #[arg(short, long, value_enum)]
-        embedders: Vec<EmbeddingModel>,
+        /// Optionally redo another experiment by ID.
+        #[arg(short, long)]
+        redo: Option<usize>,
 
-        #[arg(short, long, default_value_t = 1)]
-        count: u64,
+        /// Optionally specify a configuration file.
+        #[arg(short, long)]
+        config: Option<String>,
     },
 
     /// Generate a default configuration file.
@@ -130,10 +171,6 @@ enum Subcommand {
         /// Specify the port to listen on for the server.
         #[arg(short, long, default_value_t = default_port())]
         port: u16,
-
-        /// Toggle CUDA backend.
-        #[arg(short, long, default_value_t = false)]
-        cuda: bool,
     },
 }
 
