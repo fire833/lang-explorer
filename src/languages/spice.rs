@@ -31,7 +31,7 @@ pub struct SpiceLanguageChecker;
 impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for SpiceLanguageChecker {}
 
 /// Parameters for SPICE language.
-#[derive(Default, Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct SpiceLanguageParams {}
 
 impl GrammarBuilder for SpiceLanguage {

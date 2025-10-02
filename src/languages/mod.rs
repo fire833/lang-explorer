@@ -119,7 +119,7 @@ pub trait GrammarExpansionChecker<T: Terminal, I: NonTerminal> {
 
 /// Enumeration of all supported languages currently within lang-explorer.
 /// This will almost certainly grow and change with time.
-#[derive(Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum LanguageWrapper {
     CSS,
@@ -377,7 +377,7 @@ impl EmbeddingModel {
 
 /// Parameters supplied to the API for generating one or more programs with the provided
 /// language and expander to create said program.
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct GenerateParams {
     /// Toggle whether to return WL-kernel extracted features
     /// along with each graph.
@@ -467,6 +467,8 @@ impl GenerateParams {
         d2v_host: String,
         _output_dir: String,
     ) -> Result<GenerateResultsV2, LangExplorerError> {
+        let res_copy = self.clone();
+
         let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
             LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
@@ -485,6 +487,8 @@ impl GenerateParams {
         let mut results = GenerateResultsV2 {
             grammar: None,
             programs: vec![],
+            options: res_copy,
+            language: language.clone(),
         };
 
         if self.return_grammar {
@@ -624,6 +628,15 @@ pub struct GenerateResultsV2 {
     /// to generate all programs within this batch.
     #[serde(alias = "grammar")]
     grammar: Option<String>,
+
+    /// Return the params that were used to generate these programs.
+    /// Mostly just for bookkeeping & keeping good records of experiments run.
+    #[serde(alias = "options")]
+    options: GenerateParams,
+
+    /// The language that was used to generate these programs.
+    #[serde(alias = "language")]
+    language: LanguageWrapper,
 }
 
 impl Dataset<ProgramResult> for GenerateResultsV2 {
@@ -635,6 +648,105 @@ impl Dataset<ProgramResult> for GenerateResultsV2 {
 
     fn len(&self) -> usize {
         self.programs.len()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+struct ProgramRecord {
+    idx: usize,
+    program: String,
+    is_partial: bool,
+}
+
+impl ProgramRecord {
+    fn new(idx: usize, program: String, is_partial: bool) -> Self {
+        Self {
+            idx,
+            program,
+            is_partial,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+struct EmbeddingRecord {
+    idx: usize,
+    embedding: Vec<f32>,
+}
+
+impl EmbeddingRecord {
+    fn new(idx: usize, embedding: Vec<f32>) -> Self {
+        Self { idx, embedding }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+struct GraphvizRecord {
+    idx: usize,
+    graphviz: String,
+}
+
+impl GraphvizRecord {
+    fn new(idx: usize, graphviz: String) -> Self {
+        Self { idx, graphviz }
+    }
+}
+
+impl GenerateResultsV2 {
+    pub(crate) fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
+        let mut program_writer = csv::Writer::from_path(format!(
+            "{path}/{}/{}/programs.csv",
+            self.language,
+            self.programs.len()
+        ))?;
+
+        for (idx, prog) in self.programs.iter().enumerate() {
+            program_writer.serialize(ProgramRecord::new(
+                idx,
+                prog.program.clone().unwrap_or("".into()),
+                prog.is_partial,
+            ))?;
+        }
+
+        program_writer.flush()?;
+
+        for embed_model in self.options.return_embeddings.iter() {
+            let mut embed_writer = csv::Writer::from_path(format!(
+                "{path}/{}/{}/embeddings_{}.csv",
+                self.language,
+                self.programs.len(),
+                embed_model
+            ))?;
+
+            for (idx, prog) in self.programs.iter().enumerate() {
+                if let Some(map) = &prog.embeddings {
+                    if let Some(emb) = map.get(&embed_model.to_string()) {
+                        embed_writer.serialize(EmbeddingRecord::new(idx, emb.clone()))?;
+                    }
+                }
+            }
+
+            embed_writer.flush()?;
+        }
+
+        if self.options.return_graphviz {
+            let mut graphviz_writer = csv::Writer::from_path(format!(
+                "{path}/{}/{}/graphviz.csv",
+                self.language,
+                self.programs.len()
+            ))?;
+
+            for (idx, prog) in self.programs.iter().enumerate() {
+                graphviz_writer.serialize(GraphvizRecord::new(
+                    idx,
+                    prog.graphviz.clone().unwrap_or("".into()),
+                ))?;
+            }
+
+            graphviz_writer.flush()?;
+        }
+
+        Ok(())
     }
 }
 
