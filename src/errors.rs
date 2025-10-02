@@ -37,6 +37,7 @@ pub enum LangExplorerError {
     DataError(DataError),
     CSVError(csv::Error),
     ReqwestError(reqwest::Error),
+    SerdeJSONError(serde_json::Error),
 }
 
 impl Display for LangExplorerError {
@@ -51,6 +52,7 @@ impl Display for LangExplorerError {
             Self::DataError(e) => write!(f, "data: {:?}", e),
             Self::CSVError(e) => write!(f, "csv: {}", e),
             Self::ReqwestError(e) => write!(f, "req: {}", e),
+            Self::SerdeJSONError(e) => write!(f, "json: {}", e),
         }
     }
 }
@@ -118,5 +120,11 @@ impl From<csv::Error> for LangExplorerError {
 impl From<reqwest::Error> for LangExplorerError {
     fn from(value: reqwest::Error) -> Self {
         Self::ReqwestError(value)
+    }
+}
+
+impl From<serde_json::Error> for LangExplorerError {
+    fn from(value: serde_json::Error) -> Self {
+        Self::SerdeJSONError(value)
     }
 }

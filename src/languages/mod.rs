@@ -17,6 +17,7 @@
  */
 
 use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
@@ -745,6 +746,26 @@ impl GenerateResultsV2 {
 
             graphviz_writer.flush()?;
         }
+
+        if let Some(grammar) = &self.grammar {
+            fs::write(
+                format!(
+                    "{path}/{}/{}/grammar.bnf",
+                    self.language,
+                    self.programs.len()
+                ),
+                grammar,
+            )?;
+        }
+
+        fs::write(
+            format!(
+                "{path}/{}/{}/options.json",
+                self.language,
+                self.programs.len()
+            ),
+            serde_json::to_string_pretty(&self.options)?,
+        )?;
 
         Ok(())
     }
