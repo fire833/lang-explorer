@@ -695,7 +695,7 @@ impl GraphvizRecord {
 
 impl GenerateResultsV2 {
     pub(crate) fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
-        let exp_id = Self::get_experiment_id(&path)?;
+        let exp_id = Self::get_experiment_id(&path, &self.language)?;
 
         let mut program_writer =
             csv::Writer::from_path(format!("{path}/{}/{}/programs.csv", self.language, exp_id))?;
@@ -760,8 +760,11 @@ impl GenerateResultsV2 {
 
     /// Get the latest experiment ID from the output directory. If there is none,
     /// start with 1.
-    fn get_experiment_id<P: Display>(path: P) -> Result<usize, LangExplorerError> {
-        let dir = format!("{path}");
+    fn get_experiment_id<P: Display>(
+        path: P,
+        language: &LanguageWrapper,
+    ) -> Result<usize, LangExplorerError> {
+        let dir = format!("{path}/{language}/");
         let mut max_id = 0;
 
         if let Ok(entries) = fs::read_dir(dir) {
