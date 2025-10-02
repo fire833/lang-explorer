@@ -695,11 +695,10 @@ impl GraphvizRecord {
 
 impl GenerateResultsV2 {
     pub(crate) fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
-        let mut program_writer = csv::Writer::from_path(format!(
-            "{path}/{}/{}/programs.csv",
-            self.language,
-            self.programs.len()
-        ))?;
+        let exp_id = Self::get_experiment_id(&path)?;
+
+        let mut program_writer =
+            csv::Writer::from_path(format!("{path}/{}/{}/programs.csv", self.language, exp_id))?;
 
         for (idx, prog) in self.programs.iter().enumerate() {
             program_writer.serialize(ProgramRecord::new(
@@ -714,9 +713,7 @@ impl GenerateResultsV2 {
         for embed_model in self.options.return_embeddings.iter() {
             let mut embed_writer = csv::Writer::from_path(format!(
                 "{path}/{}/{}/embeddings_{}.csv",
-                self.language,
-                self.programs.len(),
-                embed_model
+                self.language, exp_id, embed_model
             ))?;
 
             for (idx, prog) in self.programs.iter().enumerate() {
@@ -733,8 +730,7 @@ impl GenerateResultsV2 {
         if self.options.return_graphviz {
             let mut graphviz_writer = csv::Writer::from_path(format!(
                 "{path}/{}/{}/graphviz.csv",
-                self.language,
-                self.programs.len()
+                self.language, exp_id,
             ))?;
 
             for (idx, prog) in self.programs.iter().enumerate() {
@@ -749,25 +745,42 @@ impl GenerateResultsV2 {
 
         if let Some(grammar) = &self.grammar {
             fs::write(
-                format!(
-                    "{path}/{}/{}/grammar.bnf",
-                    self.language,
-                    self.programs.len()
-                ),
+                format!("{path}/{}/{}/grammar.bnf", self.language, exp_id,),
                 grammar,
             )?;
         }
 
         fs::write(
-            format!(
-                "{path}/{}/{}/options.json",
-                self.language,
-                self.programs.len()
-            ),
+            format!("{path}/{}/{}/options.json", self.language, exp_id,),
             serde_json::to_string_pretty(&self.options)?,
         )?;
 
         Ok(())
+    }
+
+    /// Get the latest experiment ID from the output directory. If there is none,
+    /// start with 1.
+    fn get_experiment_id<P: Display>(path: P) -> Result<usize, LangExplorerError> {
+        let dir = format!("{path}");
+        let mut max_id = 0;
+
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    if file_type.is_dir() {
+                        if let Some(name) = entry.file_name().to_str() {
+                            if let Ok(id) = name.parse::<usize>() {
+                                if id > max_id {
+                                    max_id = id;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(max_id + 1)
     }
 }
 
