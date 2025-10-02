@@ -38,12 +38,9 @@ use crate::{
         NonTerminal, Terminal,
     },
     tooling::{
-        modules::{
-            embed::AggregationMethod,
-            expander::{
-                frontier_decision::FrontierDecisionAttentionConfig,
-                prod_decision_fixed::ProductionDecisionFixedConfig, Activation,
-            },
+        modules::expander::{
+            frontier_decision::FrontierDecisionAttentionConfig,
+            prod_decision_fixed::ProductionDecisionFixedConfig, Activation,
         },
         training::TrainingParams,
     },
@@ -134,10 +131,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
                 AdamWConfig::new(),
                 1000,
                 1000,
-                GeneralEmbeddingTrainingParams::new(
-                    AggregationMethod::Average,
-                    TrainingParams::new(),
-                ),
+                GeneralEmbeddingTrainingParams::new(TrainingParams::default()),
                 "".to_string(),
             ),
             device,

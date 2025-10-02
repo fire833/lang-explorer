@@ -34,3 +34,9 @@ pub enum AggregationMethod {
     Average,
     Sum,
 }
+
+impl Default for AggregationMethod {
+    fn default() -> Self {
+        AggregationMethod::Average
+    }
+}

@@ -20,7 +20,7 @@ use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
     errors::LangExplorerError,
     expanders::ExpanderWrapper,
-    languages::{EmbeddingModel, LanguageWrapper},
+    languages::{EmbeddingModel, GenerateParams, LanguageWrapper},
 };
 
 use crate::api;
@@ -52,18 +52,17 @@ impl LangExplorerArgs {
     pub(super) async fn entry(&self) -> Result<(), LangExplorerError> {
         match &self.cmd {
             Some(cmd) => match cmd {
-                Subcommand::Explore => todo!(),
-                Subcommand::MPIExplore => todo!(),
+                Subcommand::DefaultConfig => {
+                    let default_config = GenerateParams::default();
+                    let config_str = serde_json::to_string_pretty(&default_config)?;
+                    println!("{}", config_str);
+                    Ok(())
+                }
                 Subcommand::Generate {
-                    language: _,
-                    expander: _,
-                    count: _,
-                } => Ok(()),
-                Subcommand::EmbedGen {
-                    language: _,
-                    expander: _,
-                    embedders: _,
-                    count: _,
+                    language,
+                    expander,
+                    embedders,
+                    count,
                 } => Ok(()),
                 Subcommand::Serve {
                     address,
@@ -101,31 +100,9 @@ impl LangExplorerArgs {
 
 #[derive(clap::Subcommand)]
 enum Subcommand {
-    /// Run lang-explorer to explore a problem space.
-    #[command()]
-    Explore,
-
-    /// Run lang-explorer in an MPI environment.
-    #[command()]
-    MPIExplore,
-
-    /// Generate a new program in a given language from
-    /// a given specification with a given expander.
-    #[command()]
-    Generate {
-        #[arg(short, long, value_enum)]
-        language: LanguageWrapper,
-
-        #[arg(short, long, value_enum)]
-        expander: ExpanderWrapper,
-
-        #[arg(short, long, default_value_t = 1)]
-        count: u64,
-    },
-
-    /// Generate a new set of programs along with
+    /// Generate a new set of programs, optionally along with
     /// corresponding embeddings.
-    EmbedGen {
+    Generate {
         #[arg(short, long, value_enum)]
         language: LanguageWrapper,
 
@@ -138,6 +115,9 @@ enum Subcommand {
         #[arg(short, long, default_value_t = 1)]
         count: u64,
     },
+
+    /// Generate a default configuration file.
+    DefaultConfig,
 
     /// Run an API server to handle requests for
     /// generated programs.

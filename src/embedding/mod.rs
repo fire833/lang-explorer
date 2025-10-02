@@ -70,7 +70,7 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError>;
 }
 
-#[derive(Config, Debug, ToSchema)]
+#[derive(Config, Debug, ToSchema, Default)]
 pub struct GeneralEmbeddingTrainingParams {
     /// The dimension of embeddings within the model.
     #[config(default = 128)]
@@ -88,6 +88,7 @@ pub struct GeneralEmbeddingTrainingParams {
     #[config(default = 4)]
     pub num_neg_samples: usize,
     /// The aggregation method to use.
+    #[config(default = "AggregationMethod::Average")]
     pub agg: AggregationMethod,
     /// General training params.
     pub gen_params: TrainingParams,

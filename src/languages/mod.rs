@@ -378,7 +378,7 @@ impl EmbeddingModel {
 
 /// Parameters supplied to the API for generating one or more programs with the provided
 /// language and expander to create said program.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, Default)]
 pub struct GenerateParams {
     /// Toggle whether to return WL-kernel extracted features
     /// along with each graph.
@@ -758,8 +758,8 @@ impl GenerateResultsV2 {
         Ok(())
     }
 
-    /// Get the latest experiment ID from the output directory. If there is none,
-    /// start with 1.
+    /// Get the latest experiment ID from the output directory.
+    /// If there is none, start with 1.
     fn get_experiment_id<P: Display>(
         path: P,
         language: &LanguageWrapper,
