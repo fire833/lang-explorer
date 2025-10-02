@@ -123,13 +123,21 @@ pub trait GrammarExpansionChecker<T: Terminal, I: NonTerminal> {
 #[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum LanguageWrapper {
+    #[clap(name = "css")]
     CSS,
+    #[clap(name = "nft")]
     NFT,
+    #[clap(name = "spiral")]
     Spiral,
+    #[clap(name = "tacoexpr")]
     TacoExpression,
+    #[clap(name = "tacosched")]
     TacoSchedule,
+    #[clap(name = "spice")]
     Spice,
+    #[clap(name = "karel")]
     Karel,
+    #[clap(name = "anbncn")]
     AnBnCn,
 }
 

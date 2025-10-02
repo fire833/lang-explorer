@@ -101,8 +101,11 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
 #[derive(Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ExpanderWrapper {
+    #[clap(name = "mc")]
     MonteCarlo,
+    #[clap(name = "wmc")]
     WeightedMonteCarlo,
+    #[clap(name = "learned")]
     Learned,
 }
 
