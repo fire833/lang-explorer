@@ -70,7 +70,7 @@ jobs:
     if: "inputs.ONLY == 'doc2vec-api' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/doc2vec-api/'))"
     with:
       APP_NAME: doc2vec-api
-      VERSION: v0.1.0
+      VERSION: v0.2.0
       DOCKERFILE_PATH: services/doc2vec-api/Dockerfile
       DOCKERFILE_CONTEXT: services/doc2vec-api/
       # RUNNER: fire833-lang-explorer
