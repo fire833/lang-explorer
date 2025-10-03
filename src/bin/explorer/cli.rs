@@ -32,11 +32,11 @@ pub(super) struct LangExplorerArgs {
     models_dir: String,
 
     /// Specify the Ollama hostname for calling ollama stuff.
-    #[arg(short, long, default_value_t = String::from("http://localhost:11434"))]
+    #[arg(short, long, default_value_t = String::from("https://ollama.soonerhpclab.org"))]
     ollama_host: String,
 
     /// Specify the Doc2Vec server hostname for calling d2v stuff.
-    #[arg(short, long, default_value_t = String::from("http://localhost:8080"))]
+    #[arg(short, long, default_value_t = String::from("https://d2v.soonerhpclab.org"))]
     d2v_host: String,
 
     /// Specify the location for storing outputs.
