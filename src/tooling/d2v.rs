@@ -20,7 +20,7 @@ use std::collections::HashMap;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::{embedding::GeneralEmbeddingTrainingParams, errors::LangExplorerError};
 
@@ -56,17 +56,31 @@ impl From<GeneralEmbeddingTrainingParams> for Doc2VecGensimConfig {
     }
 }
 
-pub(crate) async fn get_embedding_d2v<D: Serialize, W: Serialize>(
+pub(crate) async fn get_embedding_d2v<D: ToString, W: ToString>(
     client: &Client,
     host: &String,
     documents: HashMap<D, Vec<W>>,
     config: &Doc2VecGensimConfig,
 ) -> Result<HashMap<String, Vec<f32>>, LangExplorerError> {
-    let body = json!({ "documents": documents, "config": config }).to_string();
+    let map = documents
+        .into_iter()
+        .map(|(k, v)| {
+            (
+                k.to_string(),
+                json!(v
+                    .into_iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()),
+            )
+        })
+        .collect::<HashMap<String, Value>>();
+
+    let body = json!({ "documents": map, "config": config }).to_string();
 
     let res = client
         .post(format!("{host}/embed"))
         .body(body)
+        .header("Content-Type", "application/json")
         .send()
         .await?
         .json::<EmbeddingResult>()

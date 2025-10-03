@@ -40,7 +40,7 @@ pub(super) struct LangExplorerArgs {
     d2v_host: String,
 
     /// Specify the location for storing outputs.
-    #[arg(short, long, default_value_t = String::from("./lang-explorer-python/results"))]
+    #[arg(long, default_value_t = String::from("./lang-explorer-python/results"))]
     output_dir: String,
 
     /// Toggle CUDA backend.

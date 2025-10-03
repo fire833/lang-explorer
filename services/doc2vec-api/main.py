@@ -22,7 +22,14 @@ class Doc2VecConfig:
     sample: float = 1e-5
     negative: int = 5
 
-def train_doc2vec(documents: Dict[str, List[str]], config: Doc2VecConfig) -> Dict[str, List[float]]:
+    # @classmethod
+    # def from_dict(cls, config_dict: Dict) -> "Doc2VecConfig":
+    #     """Create config from dictionary, filtering out invalid keys"""
+    #     valid_fields = {f for f in cls.__dataclass_fields__ if f in cls.__annotations__}
+    #     filtered = {k: v for k, v in config_dict.items() if k in valid_fields}
+    #     return cls(**filtered)
+
+def train_doc2vec(documents: Dict[str, List], config: Doc2VecConfig) -> Dict[str, List[float]]:
     """
     Train a Doc2Vec model and return embeddings for all documents.
     
@@ -51,6 +58,7 @@ def train_doc2vec(documents: Dict[str, List[str]], config: Doc2VecConfig) -> Dic
         window=config.window,
         # sample=config.sample,
         negative=config.negative,
+        hs=0,
     )
     
     # Extract embeddings
@@ -117,8 +125,7 @@ def embed_documents():
                 return jsonify({"error": f"Document {doc_id} contains non-string words"}), 400
         
         # Get config or use defaults
-        config_dict = data.get("config", {})
-        config = Doc2VecConfig.from_dict(config_dict)
+        config = Doc2VecConfig(**data.get("config", {}))
         
         # Train model and get embeddings
         embeddings = train_doc2vec(documents, config)
