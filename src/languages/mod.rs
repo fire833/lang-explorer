@@ -720,6 +720,9 @@ impl GenerateResultsV2 {
     pub fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
         let exp_id = Self::get_experiment_id(&path, &self.language)?;
 
+        // Fix, need to create directories here too
+        fs::create_dir_all(format!("{path}/{}/{exp_id}", self.language))?;
+
         let mut program_writer =
             csv::Writer::from_path(format!("{path}/{}/{exp_id}/programs.csv", self.language))?;
 

@@ -56,6 +56,21 @@ impl From<GeneralEmbeddingTrainingParams> for Doc2VecGensimConfig {
     }
 }
 
+impl Default for Doc2VecGensimConfig {
+    fn default() -> Self {
+        Self {
+            vector_size: 128,
+            min_count: 2,
+            epochs: 10,
+            alpha: 0.025,
+            min_alpha: 0.0000001,
+            window: 0,
+            sample: 1e-3,
+            negative: 5,
+        }
+    }
+}
+
 pub(crate) async fn get_embedding_d2v<D: ToString, W: ToString>(
     client: &Client,
     host: &String,

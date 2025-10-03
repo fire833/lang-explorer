@@ -20,7 +20,7 @@ use burn::config::Config;
 use utoipa::ToSchema;
 
 /// Common training parameters used by most (if not all) modules.
-#[derive(Config, Debug, ToSchema, Default)]
+#[derive(Config, Debug, ToSchema)]
 pub struct TrainingParams {
     /// The size of the batches fed through the model.
     #[config(default = 128)]
@@ -51,6 +51,22 @@ pub struct TrainingParams {
     /// exists on disk.
     #[config(default = true)]
     pub save_model: bool,
+}
+
+impl Default for TrainingParams {
+    fn default() -> Self {
+        Self {
+            batch_size: 128,
+            n_epochs: 10,
+            learning_rate: 0.001,
+            learning_rate_drop: 0.75,
+            min_learning_rate: 0.000001,
+            seed: 10,
+            display_frequency: 100,
+            create_new_model: false,
+            save_model: true,
+        }
+    }
 }
 
 pub enum StorageFormat {}

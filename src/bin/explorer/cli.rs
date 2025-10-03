@@ -69,7 +69,10 @@ impl LangExplorerArgs {
                     config,
                 } => {
                     let config = match (redo, config) {
-                        (None, None) => GenerateParams::default(),
+                        (None, None) => {
+                            println!("using defaults");
+                            GenerateParams::default()
+                        }
                         (None, Some(file)) => GenerateParams::from_file(file.as_str()).await?,
                         (Some(idx), _) => {
                             GenerateParams::from_experiment_id(&self.output_dir, language, *idx)
