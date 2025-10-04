@@ -17,6 +17,7 @@ dashmap = "6.1.0"
 fasthash = "0.4.0"
 futures = "0.3.31"
 hex = "0.4.3"
+kodama = "0.3.0"
 lalrpop-util = { version = "0.22.2", features = ["lexer"] }
 libloading = "0.8.5"
 num_cpus = "1.17.0"
