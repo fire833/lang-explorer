@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.82"
+bhtsne = { version = "0.5.4", default-features = false}
 burn = { version = "0.18.0", features = ["autodiff", "cuda", "metrics", "ndarray", "network", "router", "train", "tui"] }
 bytes = "1.10.1"
 cc = "1.1.20"
