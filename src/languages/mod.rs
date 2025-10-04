@@ -723,6 +723,11 @@ impl GenerateResultsV2 {
         let mut program_writer =
             csv::Writer::from_path(format!("{path}/{}/{exp_id}/programs.csv", self.language))?;
 
+        println!(
+            "writing {} programs to {path}/{}/{exp_id}/programs.csv",
+            self.programs.len(),
+            self.language
+        );
         for (idx, prog) in self.programs.iter().enumerate() {
             program_writer.serialize(ProgramRecord::new(
                 idx,
@@ -735,6 +740,10 @@ impl GenerateResultsV2 {
 
         // Need to clone to avoid immutable and mutable borrow downstream.
         for embed_model in self.options.return_embeddings.clone().iter() {
+            println!(
+                "writing embeddings for model {} to {path}/{}/{exp_id}/embeddings_{}.csv",
+                embed_model, self.language, embed_model
+            );
             let mut embed_writer = csv::Writer::from_path(format!(
                 "{path}/{}/{exp_id}/embeddings_{}.csv",
                 self.language, embed_model
@@ -769,6 +778,10 @@ impl GenerateResultsV2 {
             }
 
             if self.options.return_tsne2d {
+                println!(
+                    "creating 2D t-SNE projections for model {} to {path}/{}/{exp_id}/tsne2d.csv",
+                    embed_model, self.language
+                );
                 self.create_tsne(
                     embed_model.to_string(),
                     format!("{path}/{}/{exp_id}/tsne2d.csv", self.language),
@@ -777,6 +790,10 @@ impl GenerateResultsV2 {
             }
 
             if self.options.return_tsne3d {
+                println!(
+                    "creating 3D t-SNE projections for model {} to {path}/{}/{exp_id}/tsne3d.csv",
+                    embed_model, self.language
+                );
                 self.create_tsne(
                     embed_model.to_string(),
                     format!("{path}/{}/{exp_id}/tsne3d.csv", self.language),
@@ -790,6 +807,12 @@ impl GenerateResultsV2 {
         if self.options.return_graphviz {
             let mut graphviz_writer =
                 csv::Writer::from_path(format!("{path}/{}/{exp_id}/graphviz.csv", self.language))?;
+
+            println!(
+                "writing graphviz for {} programs to {path}/{}/{exp_id}/graphviz.csv",
+                self.programs.len(),
+                self.language
+            );
 
             for (idx, prog) in self.programs.iter().enumerate() {
                 graphviz_writer.serialize(GraphvizRecord::new(
