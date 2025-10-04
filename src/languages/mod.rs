@@ -751,6 +751,11 @@ impl GenerateResultsV2 {
                         embed_writer.write_record(None::<&[u8]>)?;
                     }
                 }
+
+                // Flush every once in a while.
+                if idx % 1000 == 0 {
+                    embed_writer.flush()?;
+                }
             }
 
             embed_writer.flush()?;
