@@ -6,6 +6,8 @@
   ],
   "return_grammar": false,
   "return_graphviz": false,
+  "return_tsne2d": true,
+  "return_tsne3d": false,
   "return_partial_graphs": true,
   "css": {
     "version": "exhaustivev1",

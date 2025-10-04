@@ -4,6 +4,8 @@
   "return_embeddings": [],
   "return_grammar": false,
   "return_graphviz": false,
+  "return_tsne2d": false,
+  "return_tsne3d": false,
   "return_partial_graphs": true,
   "css": {
     "version": "exhaustivev1",
