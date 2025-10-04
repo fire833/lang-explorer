@@ -770,7 +770,7 @@ impl GenerateResultsV2 {
 
             if self.options.return_tsne2d {
                 self.create_tsne(
-                    self.language.to_string(),
+                    embed_model.to_string(),
                     format!("{path}/{}/{exp_id}/tsne2d.csv", self.language),
                     2,
                 );
@@ -778,7 +778,7 @@ impl GenerateResultsV2 {
 
             if self.options.return_tsne3d {
                 self.create_tsne(
-                    self.language.to_string(),
+                    embed_model.to_string(),
                     format!("{path}/{}/{exp_id}/tsne3d.csv", self.language),
                     3,
                 );
@@ -838,7 +838,7 @@ impl GenerateResultsV2 {
             })
             .write_csv(&output_path)
         {
-            Ok(_) => todo!(),
+            Ok(_) => println!("wrote t-SNE results to {output_path}"),
             Err(_) => todo!(),
         }
     }
