@@ -693,18 +693,6 @@ impl ProgramRecord {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-struct EmbeddingRecord {
-    idx: usize,
-    embedding: Vec<f32>,
-}
-
-impl EmbeddingRecord {
-    fn new(idx: usize, embedding: Vec<f32>) -> Self {
-        Self { idx, embedding }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct GraphvizRecord {
     idx: usize,
     graphviz: String,
@@ -745,7 +733,22 @@ impl GenerateResultsV2 {
             for (idx, prog) in self.programs.iter().enumerate() {
                 if let Some(map) = &prog.embeddings {
                     if let Some(emb) = map.get(&embed_model.to_string()) {
-                        embed_writer.serialize(EmbeddingRecord::new(idx, emb.clone()))?;
+                        if idx == 0 {
+                            let mut vec = vec!["idx".to_string()];
+                            for i in 0..emb.len() {
+                                vec.push(format!("dim_{}", i));
+                            }
+
+                            embed_writer.write_record(vec)?;
+                        }
+
+                        embed_writer.write_field(idx.to_string())?;
+
+                        for val in emb.iter() {
+                            embed_writer.write_field(val.to_string())?;
+                        }
+
+                        embed_writer.write_record(None::<&[u8]>)?;
                     }
                 }
             }
