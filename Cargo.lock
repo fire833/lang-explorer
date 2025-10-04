@@ -328,6 +328,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7546d227df76fa0c6494d6ebdb4d6aa0be71030f581fc70a89e1bf0bf3fa02e"
 dependencies = [
  "crossbeam",
+ "csv",
  "num-traits",
  "rand 0.9.2",
  "rand_distr",

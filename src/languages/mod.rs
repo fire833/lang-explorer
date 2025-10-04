@@ -21,6 +21,7 @@ use std::fs;
 use std::sync::Arc;
 use std::{fmt::Display, str::FromStr, time::SystemTime};
 
+use bhtsne::tSNE;
 #[allow(unused)]
 use burn::backend::{Autodiff, Cuda, NdArray};
 use burn::data::dataset::Dataset;
@@ -401,6 +402,14 @@ pub struct GenerateParams {
     #[serde(alias = "return_embeddings", default)]
     return_embeddings: Vec<EmbeddingModel>,
 
+    /// Toggle whether to return 2D t-SNE projections of each embedding.
+    #[serde(alias = "return_tsne2d", default)]
+    return_tsne2d: bool,
+
+    /// Toggle whether to return 3D t-SNE projections of each embedding.
+    #[serde(alias = "return_tsne3d", default)]
+    return_tsne3d: bool,
+
     /// Toggle whether to return the grammar in BNF form that was
     /// used to generate programs.
     #[serde(alias = "return_grammar", default)]
@@ -724,7 +733,8 @@ impl GenerateResultsV2 {
 
         program_writer.flush()?;
 
-        for embed_model in self.options.return_embeddings.iter() {
+        // Need to clone to avoid immutable and mutable borrow downstream.
+        for embed_model in self.options.return_embeddings.clone().iter() {
             let mut embed_writer = csv::Writer::from_path(format!(
                 "{path}/{}/{exp_id}/embeddings_{}.csv",
                 self.language, embed_model
@@ -758,6 +768,22 @@ impl GenerateResultsV2 {
                 }
             }
 
+            if self.options.return_tsne2d {
+                self.create_tsne(
+                    self.language.to_string(),
+                    format!("{path}/{}/{exp_id}/tsne2d.csv", self.language),
+                    2,
+                );
+            }
+
+            if self.options.return_tsne3d {
+                self.create_tsne(
+                    self.language.to_string(),
+                    format!("{path}/{}/{exp_id}/tsne3d.csv", self.language),
+                    3,
+                );
+            }
+
             embed_writer.flush()?;
         }
 
@@ -788,6 +814,33 @@ impl GenerateResultsV2 {
         )?;
 
         Ok(())
+    }
+
+    fn create_tsne(&self, embedding_name: String, output_path: String, dim: u8) {
+        let mut vecs = vec![];
+
+        for prog in self.programs.iter() {
+            if let Some(map) = &prog.embeddings {
+                let emb = map.get(&embedding_name).unwrap();
+                vecs.push(emb.as_slice());
+            }
+        }
+
+        match tSNE::new(&vecs)
+            .embedding_dim(dim)
+            .exact(|v1, v2| {
+                let lsum = v1.iter().zip(v2.iter()).fold(0.0, |sum, (x1, x2)| {
+                    let diff = x1 - x2;
+                    sum + (diff * diff) as f32
+                });
+
+                lsum.sqrt()
+            })
+            .write_csv(&output_path)
+        {
+            Ok(_) => todo!(),
+            Err(_) => todo!(),
+        }
     }
 
     /// Get the latest experiment ID from the output directory.
@@ -838,6 +891,10 @@ pub(crate) struct ProgramResult {
     #[serde(alias = "embeddings")]
     embeddings: Option<HashMap<String, Vec<f32>>>,
 
+    /// If enabled, returns t-SNE embeddings for each embedding vector.
+    #[serde(alias = "tsne_2d")]
+    tnse_2d: Option<HashMap<String, Vec<f32>>>,
+
     /// If enabled, returns the program graph in edge-list format.
     #[serde(alias = "edge_list")]
     edge_list: Option<Vec<(InstanceId, InstanceId)>>,
@@ -854,6 +911,7 @@ impl ProgramResult {
             graphviz: None,
             features: None,
             embeddings: None,
+            tnse_2d: None,
             edge_list: None,
             is_partial: false,
         }
