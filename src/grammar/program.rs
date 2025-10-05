@@ -437,6 +437,32 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
         subgraphs
     }
+
+    pub fn simrank_similarity(&self, other: &ProgramInstance<T, I>, c: f64, depth: u32) -> f64 {
+        if self.node == other.node && self.children.is_empty() && other.children.is_empty() {
+            return 1.0;
+        }
+
+        if self.children.is_empty() || other.children.is_empty() || depth == 0 {
+            return 0.0;
+        }
+
+        let mut sim = 0.0;
+
+        for v in self.children.iter() {
+            for w in other.children.iter() {
+                sim += v.simrank_similarity(w, c, depth - 1);
+            }
+        }
+
+        let denom = (self.children.len() * other.children.len()) as f64;
+
+        if denom == 0.0 {
+            0.0
+        } else {
+            (c * sim) / denom
+        }
+    }
 }
 
 #[test]
