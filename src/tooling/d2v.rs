@@ -97,9 +97,18 @@ pub(crate) async fn get_embedding_d2v<D: ToString, W: ToString>(
         .body(body)
         .header("Content-Type", "application/json")
         .send()
-        .await?
-        .json::<EmbeddingResult>()
         .await?;
 
-    Ok(res.embeddings)
+    if !res.status().is_success() {
+        println!(
+            "Error in getting response from d2v API: {:?}",
+            res.text().await?
+        );
+
+        Err(LangExplorerError::General(
+            "Doc2Vec API returned an error".to_string(),
+        ))?
+    } else {
+        Ok(res.json::<EmbeddingResult>().await?.embeddings)
+    }
 }
