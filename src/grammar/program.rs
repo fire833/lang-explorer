@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{BTreeMap, HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, HashMap, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
     sync::Arc,
@@ -33,7 +33,10 @@ use crate::{
     errors::LangExplorerError,
     expanders::learned::LabelExtractionStrategy,
     grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal},
-    languages::{Feature, ProgramResult},
+    languages::{
+        strings::{nterminal_str, terminal_str, StringValue},
+        Feature, ProgramResult,
+    },
 };
 
 /// Type alias for program instance unique identifiers.
@@ -627,5 +630,14 @@ impl<T: Terminal, I: NonTerminal> From<Arc<ProgramInstance<T, I>>> for ProgramIn
             id: value.id,
             parent_id: value.parent_id,
         }
+    }
+}
+
+impl Default for ProgramInstance<StringValue, StringValue> {
+    fn default() -> Self {
+        nterminal_str!(START, "start");
+        terminal_str!(EPSILON, "");
+
+        ProgramInstance::new(START, 0)
     }
 }

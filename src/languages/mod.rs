@@ -901,6 +901,10 @@ pub(crate) struct ProgramResult {
     #[serde(alias = "program")]
     program: Option<String>,
 
+    /// Internal representation of the generated program.
+    // #[serde(skip_serializing, skip_deserializing)]
+    // program_internal: Option<ProgramInstance<StringValue, StringValue>>,
+
     /// Optional graphviz representation for the generated program.
     #[serde(alias = "graphviz")]
     graphviz: Option<String>,
@@ -931,6 +935,7 @@ impl ProgramResult {
     pub(crate) fn new() -> Self {
         Self {
             program: None,
+            // program_internal: None,
             graphviz: None,
             features: None,
             embeddings: None,
@@ -964,4 +969,11 @@ impl ProgramResult {
         let map = self.embeddings.get_or_insert(HashMap::new());
         map.insert(name, embedding);
     }
+
+    // pub(crate) fn set_internal_program(
+    //     &mut self,
+    //     program: ProgramInstance<StringValue, StringValue>,
+    // ) {
+    //     self.program_internal = Some(program);
+    // }
 }
