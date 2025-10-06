@@ -20,4 +20,5 @@ pub mod api;
 pub(crate) mod d2v;
 pub mod modules;
 pub(crate) mod ollama;
+pub mod similarity;
 pub mod training;
