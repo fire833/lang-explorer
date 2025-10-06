@@ -503,11 +503,10 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
                 .map(|entry| (entry.1 .0 as i32 - entry.1 .1 as i32).pow(2) as u32)
                 .sum::<u32>() as f32)
                 .sqrt(),
-            WLKernelVectorSimilarity::Manhattan => (set
+            WLKernelVectorSimilarity::Manhattan => set
                 .iter()
-                .map(|entry| entry.1 .0 as i32 - entry.1 .1 as i32)
-                .sum::<i32>() as f32)
-                .sqrt(),
+                .map(|entry| (entry.1 .0 as i32).abs_diff(entry.1 .1 as i32))
+                .sum::<u32>() as f32,
         }
     }
 }
