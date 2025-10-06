@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{BTreeMap, HashMap, HashSet, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
     sync::Arc,
@@ -63,6 +63,14 @@ pub enum WLKernelHashingOrder {
     ParentSelfChildrenOrdered,
     #[serde(alias = "total_ordered")]
     TotalOrdered,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+pub enum WLKernelVectorSimilarity {
+    #[serde(alias = "l2")]
+    Euclidean,
+    #[serde(alias = "l1")]
+    Manhattan,
 }
 
 impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
@@ -461,6 +469,45 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
             0.0
         } else {
             (c * sim) / denom
+        }
+    }
+
+    pub fn wl_test(
+        &self,
+        other: &ProgramInstance<T, I>,
+        ordering: WLKernelHashingOrder,
+        similarity: WLKernelVectorSimilarity,
+        iterations: u32,
+        dedup: bool,
+        sort: bool,
+    ) -> f32 {
+        let self_features = self.extract_words_wl_kernel(iterations, ordering.clone(), dedup, sort);
+        let other_features = other.extract_words_wl_kernel(iterations, ordering, dedup, sort);
+
+        // Mapping between a feature and (self count, other count).
+        let mut set: BTreeMap<u64, (u32, u32)> = BTreeMap::new();
+
+        self_features.iter().for_each(|f| {
+            let entry = set.entry(*f).or_insert((0, 0));
+            entry.0 += 1;
+        });
+
+        other_features.iter().for_each(|f| {
+            let entry = set.entry(*f).or_insert((0, 0));
+            entry.1 += 1;
+        });
+
+        match similarity {
+            WLKernelVectorSimilarity::Euclidean => (set
+                .iter()
+                .map(|entry| (entry.1 .0 as i32 - entry.1 .1 as i32).pow(2) as u32)
+                .sum::<u32>() as f32)
+                .sqrt(),
+            WLKernelVectorSimilarity::Manhattan => (set
+                .iter()
+                .map(|entry| entry.1 .0 as i32 - entry.1 .1 as i32)
+                .sum::<i32>() as f32)
+                .sqrt(),
         }
     }
 }
