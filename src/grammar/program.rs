@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{BTreeMap, HashMap, VecDeque},
+    collections::{HashMap, VecDeque},
     fmt::Debug,
     hash::{Hash, Hasher},
     sync::Arc,
@@ -285,6 +285,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     }
 
     /// Create a slightly perturbed program.
+    #[allow(unused)]
     pub(crate) fn perturb_program(&self, rng: &mut ChaCha8Rng) -> ProgramInstance<T, I> {
         let mut new = self.clone();
         let mut curr = &mut new;
@@ -320,6 +321,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         new
     }
 
+    #[allow(unused)]
     pub(crate) fn get_all_nodes_exclude_children(&self) -> Vec<&ProgramInstance<T, I>> {
         let mut programs = vec![self];
 
