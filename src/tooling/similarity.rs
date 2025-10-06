@@ -24,18 +24,14 @@ use utoipa::ToSchema;
 use crate::languages::Feature;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
-pub enum WLKernelVectorSimilarity {
+pub enum VectorSimilarity {
     #[serde(alias = "l2")]
     Euclidean,
     #[serde(alias = "l1")]
     Manhattan,
 }
 
-pub fn wl_test(
-    vec1: &Vec<Feature>,
-    vec2: &Vec<Feature>,
-    similarity: WLKernelVectorSimilarity,
-) -> f32 {
+pub fn wl_test(vec1: &Vec<Feature>, vec2: &Vec<Feature>, similarity: VectorSimilarity) -> f32 {
     // Mapping between a feature and (self count, other count).
     let mut set: BTreeMap<u64, (u32, u32)> = BTreeMap::new();
 
@@ -50,14 +46,30 @@ pub fn wl_test(
     });
 
     match similarity {
-        WLKernelVectorSimilarity::Euclidean => (set
+        VectorSimilarity::Euclidean => (set
             .iter()
             .map(|entry| (entry.1 .0 as i32 - entry.1 .1 as i32).pow(2) as u32)
             .sum::<u32>() as f32)
             .sqrt(),
-        WLKernelVectorSimilarity::Manhattan => set
+        VectorSimilarity::Manhattan => set
             .iter()
             .map(|entry| (entry.1 .0 as i32).abs_diff(entry.1 .1 as i32))
             .sum::<u32>() as f32,
+    }
+}
+
+pub fn vector_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>, similarity: VectorSimilarity) -> f32 {
+    match similarity {
+        VectorSimilarity::Euclidean => vec1
+            .iter()
+            .zip(vec2.iter())
+            .map(|(a, b)| (*a - *b).powf(2.0))
+            .sum::<f32>()
+            .sqrt(),
+        VectorSimilarity::Manhattan => vec1
+            .iter()
+            .zip(vec2.iter())
+            .map(|(a, b)| (*a - *b).abs())
+            .sum::<f32>(),
     }
 }

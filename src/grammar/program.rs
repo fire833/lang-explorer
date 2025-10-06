@@ -37,7 +37,7 @@ use crate::{
         strings::{nterminal_str, terminal_str, StringValue},
         Feature, ProgramResult,
     },
-    tooling::similarity::{wl_test, WLKernelVectorSimilarity},
+    tooling::similarity::{wl_test, VectorSimilarity},
 };
 
 /// Type alias for program instance unique identifiers.
@@ -472,7 +472,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         &self,
         other: &ProgramInstance<T, I>,
         ordering: WLKernelHashingOrder,
-        similarity: WLKernelVectorSimilarity,
+        similarity: VectorSimilarity,
         iterations: u32,
         dedup: bool,
         sort: bool,
