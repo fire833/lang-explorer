@@ -887,9 +887,22 @@ impl GenerateResultsV2 {
             }
 
             for sim_check in self.options.similarity_experiments.iter() {
-                match sim_check {
-                    SimilarityCheck::BasicAverage => {}
-                    SimilarityCheck::InverseWeightedAverage => {}
+                let len = ast_similarity_scores.len() as f32;
+                let mut total = 0.0;
+
+                for embsim in emb_c.iter() {
+                    for (coord, sim) in embsim.iter() {
+                        let this = *sim;
+                        let other = *ast_similarity_scores.get(coord).unwrap();
+                        let diff = (this - other).abs();
+
+                        match sim_check {
+                            SimilarityCheck::BasicAverage => {
+                                total += diff;
+                            }
+                            SimilarityCheck::InverseWeightedAverage => {}
+                        }
+                    }
                 }
             }
         }
