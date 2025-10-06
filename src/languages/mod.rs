@@ -179,6 +179,13 @@ impl Display for LanguageWrapper {
 
 #[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
+pub enum SimilarityCheck {
+    #[serde(alias = "basic_average")]
+    BasicAverage,
+}
+
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum EmbeddingModel {
     #[serde(alias = "doc2vecdbow")]
     Doc2VecDBOW,
@@ -401,6 +408,10 @@ pub struct GenerateParams {
     /// Toggle which embeddings to return for each instance.
     #[serde(alias = "return_embeddings", default)]
     return_embeddings: Vec<EmbeddingModel>,
+
+    /// Which similarity experiments to run between embeddings.
+    #[serde(alias = "similarity_experiments", default)]
+    similarity_experiments: Vec<SimilarityCheck>,
 
     /// Toggle whether to return 2D t-SNE projections of each embedding.
     #[serde(alias = "return_tsne2d", default)]
@@ -822,6 +833,12 @@ impl GenerateResultsV2 {
             }
 
             graphviz_writer.flush()?;
+        }
+
+        for sim_check in self.options.similarity_experiments.iter() {
+            match sim_check {
+                SimilarityCheck::BasicAverage => {}
+            }
         }
 
         if let Some(grammar) = &self.grammar {
