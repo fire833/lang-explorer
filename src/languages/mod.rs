@@ -183,6 +183,8 @@ impl Display for LanguageWrapper {
 pub enum SimilarityCheck {
     #[serde(alias = "basic_average")]
     BasicAverage,
+    #[serde(alias = "inverse_weighted_average")]
+    InverseWeightedAverage,
 }
 
 #[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
@@ -837,21 +839,15 @@ impl GenerateResultsV2 {
         }
 
         if self.options.return_features && self.options.similarity_experiments.len() > 0 {
-            let mut ast_similarity_scores = HashMap::new();
+            let mut ast_similarity_scores: HashMap<(usize, usize), f32> = HashMap::new();
 
             // For all experiments, we need to compute pairwise similarities between all ASTs.
             for (i, this) in self.programs.iter().enumerate() {
                 for (j, other) in self.programs.iter().skip(i + 1).enumerate() {
                     match (&this.features, &other.features) {
                         (Some(vec1), Some(vec2)) => {
-                            let tuple = match (i, j) {
-                                (a, b) if a <= b => (a, b),
-                                (a, b) if a > b => (b, a),
-                                _ => continue,
-                            };
-
                             ast_similarity_scores
-                                .insert(tuple, wl_test(vec1, vec2, VectorSimilarity::Euclidean));
+                                .insert((i, j), wl_test(vec1, vec2, VectorSimilarity::Euclidean));
                         }
                         _ => {
                             panic!("we should have features here");
@@ -860,8 +856,12 @@ impl GenerateResultsV2 {
                 }
             }
 
+            let mut emb_c = vec![];
+
             // Now, go through all embeddings and compute the similarity matrix.
             for emb in self.options.return_embeddings.iter() {
+                let mut emb_similarity: HashMap<(usize, usize), f32> = HashMap::new();
+
                 for (i, this) in self.programs.iter().enumerate() {
                     for (j, other) in self.programs.iter().skip(i + 1).enumerate() {
                         match (&this.embeddings, &other.embeddings) {
@@ -870,25 +870,10 @@ impl GenerateResultsV2 {
                                 let vec2 = map2.get(&emb.to_string());
 
                                 if let (Some(v1), Some(v2)) = (vec1, vec2) {
-                                    let tuple = match (i, j) {
-                                        (a, b) if a <= b => (a, b),
-                                        (a, b) if a > b => (b, a),
-                                        _ => continue,
-                                    };
-
-                                    let sim =
-                                        vector_similarity(v1, v2, VectorSimilarity::Euclidean);
-
-                                    if let Some(ast_sim) = ast_similarity_scores.get(&tuple) {
-                                        println!(
-                                            "AST similarity between programs {} and {} is {}, embedding similarity with model {} is {}",
-                                            i,
-                                            j,
-                                            ast_sim,
-                                            emb,
-                                            sim
-                                        );
-                                    }
+                                    emb_similarity.insert(
+                                        (i, j),
+                                        vector_similarity(v1, v2, VectorSimilarity::Euclidean),
+                                    );
                                 }
                             }
                             _ => {
@@ -897,25 +882,14 @@ impl GenerateResultsV2 {
                         }
                     }
                 }
+
+                emb_c.push(emb_similarity);
             }
 
             for sim_check in self.options.similarity_experiments.iter() {
                 match sim_check {
-                    SimilarityCheck::BasicAverage => {
-                        for prog in self.programs.iter() {
-                            if let Some(map) = &prog.embeddings {
-                                for (name, emb) in map.iter() {
-                                    let avg: f32 = emb.iter().sum::<f32>() / emb.len() as f32;
-                                    println!(
-                                        "program {} with embedding model {} has average embedding value of {}",
-                                        prog.program.clone().unwrap_or("".into()),
-                                        name,
-                                        avg
-                                    );
-                                }
-                            }
-                        }
-                    }
+                    SimilarityCheck::BasicAverage => {}
+                    SimilarityCheck::InverseWeightedAverage => {}
                 }
             }
         }
