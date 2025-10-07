@@ -16,20 +16,34 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fmt::Display;
 use std::hash::Hash;
 use std::path::Path;
+use std::str::FromStr;
+use std::time::SystemTime;
 
+use burn::backend::Autodiff;
+use burn::optim::AdamWConfig;
+use burn::prelude::Backend;
 use burn::record::{HalfPrecisionSettings, PrettyJsonFileRecorder};
 use burn::{
     config::Config,
     tensor::{backend::AutodiffBackend, Device, Tensor},
 };
+use clap::ValueEnum;
 use rand::Rng;
 #[allow(unused)]
 use rand::SeedableRng;
+use reqwest::ClientBuilder;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
+use crate::experiments::generate::GenerateResultsV2;
+use crate::languages::strings::StringValue;
+use crate::tooling::d2v;
+use crate::tooling::ollama::get_embedding_ollama;
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
@@ -242,4 +256,212 @@ pub(super) fn save_embeddings_as_csv<P: AsRef<Path>>(
     }
 
     Ok(())
+}
+
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum EmbeddingModel {
+    #[serde(alias = "doc2vecdbow")]
+    Doc2VecDBOW,
+    #[serde(alias = "docvecgensim")]
+    Doc2VecGensim,
+    #[serde(alias = "mxbai-embed-large")]
+    MXBAILarge,
+    #[serde(alias = "nomic-embed-text")]
+    NomicEmbed,
+    #[serde(alias = "snowflake-arctic-embed:137m")]
+    SnowflakeArctic137,
+    #[serde(alias = "snowflake-arctic-embed")]
+    SnowflakeArctic,
+    #[serde(alias = "snowflake-arctic-embed2")]
+    SnowflakeArctic2,
+}
+
+impl Display for EmbeddingModel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Doc2VecDBOW => write!(f, "doc2vecdbow"),
+            Self::Doc2VecGensim => write!(f, "doc2vecgensim"),
+            Self::MXBAILarge => write!(f, "mxbai-embed-large"),
+            Self::NomicEmbed => write!(f, "nomic-embed-text"),
+            Self::SnowflakeArctic137 => write!(f, "snowflake-arctic-embed:137m"),
+            Self::SnowflakeArctic => write!(f, "snowflake-arctic-embed"),
+            Self::SnowflakeArctic2 => write!(f, "snowflake-arctic-embed2"),
+        }
+    }
+}
+
+impl FromStr for EmbeddingModel {
+    type Err = LangExplorerError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "doc2vec" | "d2vdbow" | "doc2vecdbow" | "doc2vecDBOW" => Ok(Self::Doc2VecDBOW),
+            "doc2vecgensim" | "d2vgensim" | "doc2vec-gensim" => Ok(Self::Doc2VecGensim),
+            "mxbailarge" | "mxbai-large" | "mxbai-embed-large" => Ok(Self::MXBAILarge),
+            "nomic" | "nomic-embed-text" => Ok(Self::NomicEmbed),
+            "snowflake-arctic-embed" => Ok(Self::SnowflakeArctic),
+            "snowflake-arctic-embed2" => Ok(Self::SnowflakeArctic2),
+            "snowflake-arctic-embed137" => Ok(Self::SnowflakeArctic137),
+            _ => Err(LangExplorerError::General(
+                "invalid embedding model value provided".into(),
+            )),
+        }
+    }
+}
+
+impl EmbeddingModel {
+    pub async fn create_embeddings<B: Backend>(
+        &self,
+        grammar: &Grammar<StringValue, StringValue>,
+        params: GeneralEmbeddingTrainingParams,
+        models_dir: String,
+        ollama_host: String,
+        d2v_host: String,
+        res: &mut GenerateResultsV2,
+    ) -> Result<(), LangExplorerError> {
+        let emb_name = self.to_string();
+
+        match &self {
+            Self::Doc2VecDBOW => {
+                // Hack for now, recompute the number of words, even
+                // though this is going to be done again.
+                let mut set = HashSet::new();
+                let mut documents = vec![];
+
+                for prog in res.programs.iter() {
+                    documents.push((
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    ));
+                    if let Some(words) = &prog.features {
+                        for word in words.iter() {
+                            set.insert(*word);
+                        }
+                    }
+                }
+
+                let dim = params.d_model;
+                let epochs = params.get_num_epochs();
+                let params = Doc2VecDBOWNSEmbedderParams::new(
+                    AdamWConfig::new(),
+                    set.len(),
+                    res.programs.len(),
+                    params,
+                    models_dir,
+                );
+
+                println!(
+                            "training embeddings, there are {} documents being learned and {} total words being used",
+                            documents.len(),
+                            set.len(),
+                        );
+
+                let start = SystemTime::now();
+
+                let model: Doc2VecEmbedderDBOWNS<StringValue, StringValue, Autodiff<B>> =
+                    Doc2VecEmbedderDBOWNS::<StringValue, StringValue, Autodiff<B>>::new(
+                        grammar,
+                        params,
+                        Default::default(),
+                    )
+                    .fit(&documents)?;
+
+                let end = start.elapsed().unwrap();
+
+                println!(
+                    "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
+                    documents.len(),
+                    set.len(),
+                    epochs,
+                    end.as_secs()
+                );
+
+                let mut embeddings = model.get_embeddings()?;
+                for prog in res.programs.iter_mut() {
+                    prog.set_embedding(emb_name.clone(), embeddings.drain(0..dim).collect());
+                }
+            }
+            Self::Doc2VecGensim => {
+                let client = ClientBuilder::new()
+                    .pool_max_idle_per_host(10)
+                    .build()
+                    .unwrap();
+
+                let mut docs = HashMap::new();
+
+                for prog in res.programs.iter() {
+                    docs.insert(
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    );
+                }
+
+                match d2v::get_embedding_d2v(&client, &d2v_host, docs, &params.clone().into()).await
+                {
+                    Ok(resp) => {
+                        for prog in res.programs.iter_mut() {
+                            let vec = resp.get(&prog.program.clone().unwrap()).unwrap();
+                            prog.set_embedding(emb_name.clone(), vec.clone());
+                        }
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+            Self::MXBAILarge
+            | Self::NomicEmbed
+            | Self::SnowflakeArctic
+            | Self::SnowflakeArctic2
+            | Self::SnowflakeArctic137 => {
+                let client = ClientBuilder::new()
+                    .pool_max_idle_per_host(10)
+                    .build()
+                    .unwrap();
+
+                let blank: String = "".into();
+
+                let programs: Vec<String> = res
+                    .programs
+                    .iter()
+                    .map(|item| match &item.program {
+                        Some(prompt) => prompt.clone(),
+                        None => blank.clone(),
+                    })
+                    .collect();
+
+                for (idx, prog) in programs.iter().enumerate() {
+                    match get_embedding_ollama(&client, &ollama_host, prog, self.clone()).await {
+                        Ok(vec) => {
+                            let p = res.programs.get_mut(0).unwrap();
+                            p.set_embedding(emb_name.clone(), vec);
+                        }
+                        Err(e) => return Err(e),
+                    }
+
+                    if idx % 100 == 0 {
+                        println!(
+                            "processed {} / {} prompts for embeddings",
+                            idx,
+                            programs.len()
+                        );
+                    }
+                }
+
+                // match get_embeddings_bulk_ollama(&client, &ollama_host, prompts, self.clone(), 7)
+                //     .await
+                // {
+                //     Ok(mut responses) => {
+                //         for (idx, vec) in responses.iter_mut().enumerate() {
+                //             let p = res.programs.get_mut(idx).unwrap();
+                //             let new = mem::take(vec);
+                //             p.set_embedding(emb_name.clone(), new);
+                //         }
+                //     }
+                //     Err(e) => return Err(e),
+                // }
+            }
+        };
+
+        Ok(())
+    }
 }

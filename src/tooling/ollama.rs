@@ -23,7 +23,7 @@ use futures::{future, StreamExt};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::{errors::LangExplorerError, languages::EmbeddingModel};
+use crate::{embedding::EmbeddingModel, errors::LangExplorerError};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EmbeddingResult {

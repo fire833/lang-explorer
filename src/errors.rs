@@ -25,7 +25,7 @@ use std::{
 use burn::{record::RecorderError, tensor::DataError};
 use tokio::sync::mpsc::error::SendError;
 
-use crate::languages::ProgramResult;
+use crate::experiments::generate::ProgramResult;
 
 pub enum LangExplorerError {
     General(String),

@@ -16,11 +16,4 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-pub mod embedding;
-pub mod errors;
-pub mod evaluators;
-pub mod expanders;
-pub mod experiments;
-pub mod grammar;
-pub mod languages;
-pub mod tooling;
+pub mod generate;

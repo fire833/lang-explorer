@@ -25,12 +25,13 @@ use burn::prelude::Backend;
 use bytes::Bytes;
 use lang_explorer::{
     expanders::ExpanderWrapper,
-    languages::{GenerateParams, LanguageWrapper},
+    experiments::generate::GenerateParams,
+    languages::LanguageWrapper,
     tooling::api::{
         catchall_handler, health_handler, invalid_request, ErrorMessage, OpenApiExtensions,
     },
 };
-use lang_explorer::{languages::GenerateResultsV2, tooling::api::openapi_handler};
+use lang_explorer::{experiments::generate::GenerateResultsV2, tooling::api::openapi_handler};
 use utoipa::OpenApi;
 use warp::{
     http::StatusCode,
