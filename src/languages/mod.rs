@@ -179,15 +179,6 @@ impl Display for LanguageWrapper {
     }
 }
 
-#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema, PartialEq, Eq, Hash)]
-#[serde(rename_all = "lowercase")]
-pub enum SimilarityCheck {
-    #[serde(alias = "basic_average")]
-    BasicAverage,
-    #[serde(alias = "inverse_weighted_average")]
-    InverseWeightedAverage,
-}
-
 #[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum EmbeddingModel {
@@ -413,9 +404,9 @@ pub struct GenerateParams {
     #[serde(alias = "return_embeddings", default)]
     return_embeddings: Vec<EmbeddingModel>,
 
-    /// Which similarity experiments to run between embeddings.
-    #[serde(alias = "similarity_experiments", default)]
-    similarity_experiments: Vec<SimilarityCheck>,
+    //// Toggle whether or not to run similarity experiments.
+    #[serde(alias = "do_similarity_experiments", default)]
+    do_experiments: bool,
 
     /// Toggle whether to return 2D t-SNE projections of each embedding.
     #[serde(alias = "return_tsne2d", default)]
@@ -685,7 +676,7 @@ pub struct GenerateResultsV2 {
 
     /// Return similarity experiment results if any were run.
     #[serde(alias = "similarity_experiments")]
-    similarity_experiments: Option<HashMap<SimilarityCheck, Vec<Distribution>>>,
+    similarity_experiments: Option<Vec<ExperimentResult>>,
 
     /// The language that was used to generate these programs.
     #[serde(alias = "language")]
@@ -735,7 +726,7 @@ impl GraphvizRecord {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct ExperimentResult {
-    name: SimilarityCheck,
+    average_similarity: f32,
 
     distributions: Vec<Distribution>,
 }
@@ -851,7 +842,7 @@ impl GenerateResultsV2 {
             graphviz_writer.flush()?;
         }
 
-        if self.options.return_features && self.options.similarity_experiments.len() > 0 {
+        if self.options.return_features && self.options.do_experiments {
             let mut ast_similarity_scores: HashMap<(usize, usize), f32> = HashMap::new();
 
             // For all experiments, we need to compute pairwise similarities between all ASTs.
@@ -906,28 +897,16 @@ impl GenerateResultsV2 {
                 emb_c.push(emb_similarity);
             }
 
-            for sim_check in self.options.similarity_experiments.iter() {
-                let len = ast_similarity_scores.len() as f32;
-                let mut total = 0.0;
+            let len = ast_similarity_scores.len() as f32;
+            let mut avg_total = 0.0;
 
-                for embsim in emb_c.iter() {
-                    for (coord, sim) in embsim.iter() {
-                        let this = *sim;
-                        let other = *ast_similarity_scores.get(coord).unwrap();
-                        let diff = (this - other).abs();
+            for embsim in emb_c.iter() {
+                for (coord, sim) in embsim.iter() {
+                    let this = *sim;
+                    let other = *ast_similarity_scores.get(coord).unwrap();
+                    let diff = (this - other).abs();
 
-                        match sim_check {
-                            SimilarityCheck::BasicAverage => {
-                                total += diff;
-                            }
-                            SimilarityCheck::InverseWeightedAverage => {}
-                        }
-                    }
-                }
-
-                match sim_check {
-                    SimilarityCheck::BasicAverage => {}
-                    SimilarityCheck::InverseWeightedAverage => {}
+                    avg_total += diff;
                 }
             }
         }
