@@ -16,17 +16,27 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::{collections::HashMap, fmt::Display, fs, sync::Arc, time::SystemTime};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+    fs,
+    sync::Arc,
+    time::SystemTime,
+};
 
 use bhtsne::tSNE;
-use burn::{data::dataset::Dataset, prelude::Backend};
+use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
 use dashmap::DashMap;
+use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use utoipa::ToSchema;
 
 use crate::{
-    embedding::{EmbeddingModel, GeneralEmbeddingTrainingParams},
+    embedding::{
+        doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS},
+        EmbeddingModel, GeneralEmbeddingTrainingParams, LanguageEmbedder,
+    },
     errors::LangExplorerError,
     expanders::{learned::LabelExtractionStrategy, ExpanderWrapper},
     grammar::{grammar::Grammar, program::InstanceId},
@@ -37,12 +47,15 @@ use crate::{
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
         spice::{SpiceLanguage, SpiceLanguageParams},
         spiral::{SpiralLanguage, SpiralLanguageParams},
+        strings::StringValue,
         taco_expression::{TacoExpressionLanguage, TacoExpressionLanguageParams},
         taco_schedule::{TacoScheduleLanguage, TacoScheduleLanguageParams},
         Feature, GrammarBuilder, LanguageWrapper,
     },
     tooling::{
+        d2v,
         dist::Distribution,
+        ollama::get_embedding_ollama,
         similarity::{vector_similarity, wl_test, VectorSimilarity},
     },
 };
@@ -286,14 +299,14 @@ impl GenerateInput {
 
             for embed in self.return_embeddings.iter() {
                 println!("creating embeddings with {} model", embed);
-                embed
+                results
                     .create_embeddings::<B>(
+                        embed.clone(),
                         &grammar,
                         self.params.clone(),
                         models_dir.clone(),
                         ollama_host.clone(),
                         d2v_host.clone(),
-                        &mut results,
                     )
                     .await?;
             }
@@ -402,7 +415,7 @@ impl GenerateInput {
 pub struct GenerateOutput {
     /// The list of programs that have been generated.
     #[serde(alias = "programs")]
-    pub(crate) programs: Vec<ProgramResult>,
+    programs: Vec<ProgramResult>,
 
     /// If enabled, returns a BNF copy of the grammar that was used
     /// to generate all programs within this batch.
@@ -472,6 +485,161 @@ struct ExperimentResult {
 }
 
 impl GenerateOutput {
+    async fn create_embeddings<B: Backend>(
+        &mut self,
+        embedding: EmbeddingModel,
+        grammar: &Grammar<StringValue, StringValue>,
+        params: GeneralEmbeddingTrainingParams,
+        models_dir: String,
+        ollama_host: String,
+        d2v_host: String,
+    ) -> Result<(), LangExplorerError> {
+        let emb_name = embedding.to_string();
+
+        match &embedding {
+            EmbeddingModel::Doc2VecDBOW => {
+                // Hack for now, recompute the number of words, even
+                // though this is going to be done again.
+                let mut set = HashSet::new();
+                let mut documents = vec![];
+
+                for prog in self.programs.iter() {
+                    documents.push((
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    ));
+                    if let Some(words) = &prog.features {
+                        for word in words.iter() {
+                            set.insert(*word);
+                        }
+                    }
+                }
+
+                let dim = params.d_model;
+                let epochs = params.get_num_epochs();
+                let params = Doc2VecDBOWNSEmbedderParams::new(
+                    AdamWConfig::new(),
+                    set.len(),
+                    self.programs.len(),
+                    params,
+                    models_dir,
+                );
+
+                println!(
+                            "training embeddings, there are {} documents being learned and {} total words being used",
+                            documents.len(),
+                            set.len(),
+                        );
+
+                let start = SystemTime::now();
+
+                let model: Doc2VecEmbedderDBOWNS<StringValue, StringValue, Autodiff<B>> =
+                    Doc2VecEmbedderDBOWNS::<StringValue, StringValue, Autodiff<B>>::new(
+                        grammar,
+                        params,
+                        Default::default(),
+                    )
+                    .fit(&documents)?;
+
+                let end = start.elapsed().unwrap();
+
+                println!(
+                    "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
+                    documents.len(),
+                    set.len(),
+                    epochs,
+                    end.as_secs()
+                );
+
+                let mut embeddings = model.get_embeddings()?;
+                for prog in self.programs.iter_mut() {
+                    prog.set_embedding(emb_name.clone(), embeddings.drain(0..dim).collect());
+                }
+            }
+            EmbeddingModel::Doc2VecGensim => {
+                let client = ClientBuilder::new()
+                    .pool_max_idle_per_host(10)
+                    .build()
+                    .unwrap();
+
+                let mut docs = HashMap::new();
+
+                for prog in self.programs.iter() {
+                    docs.insert(
+                        prog.program.clone().unwrap(),
+                        prog.features.clone().unwrap(),
+                    );
+                }
+
+                match d2v::get_embedding_d2v(&client, &d2v_host, docs, &params.clone().into()).await
+                {
+                    Ok(resp) => {
+                        for prog in self.programs.iter_mut() {
+                            let vec = resp.get(&prog.program.clone().unwrap()).unwrap();
+                            prog.set_embedding(emb_name.clone(), vec.clone());
+                        }
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+            EmbeddingModel::MXBAILarge
+            | EmbeddingModel::NomicEmbed
+            | EmbeddingModel::SnowflakeArctic
+            | EmbeddingModel::SnowflakeArctic2
+            | EmbeddingModel::SnowflakeArctic137 => {
+                let client = ClientBuilder::new()
+                    .pool_max_idle_per_host(10)
+                    .build()
+                    .unwrap();
+
+                let blank: String = "".into();
+
+                let programs: Vec<String> = self
+                    .programs
+                    .iter()
+                    .map(|item| match &item.program {
+                        Some(prompt) => prompt.clone(),
+                        None => blank.clone(),
+                    })
+                    .collect();
+
+                for (idx, prog) in programs.iter().enumerate() {
+                    match get_embedding_ollama(&client, &ollama_host, prog, embedding.clone()).await
+                    {
+                        Ok(vec) => {
+                            let p = self.programs.get_mut(0).unwrap();
+                            p.set_embedding(emb_name.clone(), vec);
+                        }
+                        Err(e) => return Err(e),
+                    }
+
+                    if idx % 100 == 0 {
+                        println!(
+                            "processed {} / {} prompts for embeddings",
+                            idx,
+                            programs.len()
+                        );
+                    }
+                }
+
+                // match get_embeddings_bulk_ollama(&client, &ollama_host, prompts, self.clone(), 7)
+                //     .await
+                // {
+                //     Ok(mut responses) => {
+                //         for (idx, vec) in responses.iter_mut().enumerate() {
+                //             let p = res.programs.get_mut(idx).unwrap();
+                //             let new = mem::take(vec);
+                //             p.set_embedding(emb_name.clone(), new);
+                //         }
+                //     }
+                //     Err(e) => return Err(e),
+                // }
+            }
+        };
+
+        Ok(())
+    }
+
     pub fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
         let exp_id = Self::get_experiment_id(&path, &self.language)?;
 
@@ -657,7 +825,7 @@ impl GenerateOutput {
 pub(crate) struct ProgramResult {
     /// If enabled, the string representation of the generated program.
     #[serde(alias = "program")]
-    pub(crate) program: Option<String>,
+    program: Option<String>,
 
     /// Internal representation of the generated program.
     // #[serde(skip_serializing, skip_deserializing)]
@@ -670,7 +838,7 @@ pub(crate) struct ProgramResult {
     /// If enabled, returns a list of all features extracted from
     /// the program.
     #[serde(alias = "features")]
-    pub(crate) features: Option<Vec<Feature>>,
+    features: Option<Vec<Feature>>,
 
     /// If enabled, returns the embedding of the program.
     #[serde(alias = "embeddings")]
