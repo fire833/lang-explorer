@@ -137,7 +137,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         Self {
             d1: PhantomData,
             d2: PhantomData,
-            model: model,
+            model,
             device: device,
             optim: params.ada_config.init(),
             rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
@@ -187,7 +187,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
             for (docidx, (_, words)) in documents.iter().enumerate() {
                 let set = words.iter().cloned().collect::<HashSet<Feature>>();
-                for (_, _) in words.iter().enumerate() {
+                for _ in words.iter().enumerate() {
                     counter += 1;
                     let positive_indices =
                         super::get_positive_indices(&self.word2idx, words, 1, &mut self.rng);
@@ -252,7 +252,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 lr = 0.000001;
             }
 
-            for (_, _) in document.1.iter().enumerate() {
+            for _ in document.1.iter().enumerate() {
                 counter += 1;
                 let positive_indices =
                     super::get_positive_indices(&self.word2idx, &document.1, 1, &mut self.rng);

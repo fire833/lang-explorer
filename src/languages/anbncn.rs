@@ -64,16 +64,16 @@ impl GrammarBuilder for AnBnCnLanguage {
     type Checker = AnBnCnLanguageChecker;
 
     /// Spec
-    ///     S   →  	a	B	C
-    ///     S   →	a	S	B	C
-    /// C	B	→	C	Z
-    /// C	Z	→	W	Z
-    /// W	Z	→	W	C
-    /// W	C	→	B	C
-    /// a	B	→	a	b
-    /// b	B	→	b	b
-    /// b	C	→	b	c
-    /// c	C	→	c	c
+    ///     S   →   a   B   C
+    ///     S   →   a   S   B   C
+    /// C   B   →   C   Z
+    /// C   Z   →   W   Z
+    /// W   Z   →   W   C
+    /// W   C   →   B   C
+    /// a   B   →   a   b
+    /// b   B   →   b   b
+    /// b   C   →   b   c
+    /// c   C   →   c   c
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {

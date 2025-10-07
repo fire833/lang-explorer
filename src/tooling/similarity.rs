@@ -31,7 +31,7 @@ pub enum VectorSimilarity {
     Manhattan,
 }
 
-pub fn wl_test(vec1: &Vec<Feature>, vec2: &Vec<Feature>, similarity: VectorSimilarity) -> f32 {
+pub fn wl_test(vec1: &[Feature], vec2: &[Feature], similarity: VectorSimilarity) -> f32 {
     // Mapping between a feature and (self count, other count).
     let mut set: BTreeMap<u64, (u32, u32)> = BTreeMap::new();
 
@@ -58,7 +58,7 @@ pub fn wl_test(vec1: &Vec<Feature>, vec2: &Vec<Feature>, similarity: VectorSimil
     }
 }
 
-pub fn vector_similarity(vec1: &Vec<f32>, vec2: &Vec<f32>, similarity: VectorSimilarity) -> f32 {
+pub fn vector_similarity(vec1: &[f32], vec2: &[f32], similarity: VectorSimilarity) -> f32 {
     match similarity {
         VectorSimilarity::Euclidean => vec1
             .iter()

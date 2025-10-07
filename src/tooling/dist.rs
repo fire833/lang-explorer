@@ -29,9 +29,9 @@ pub struct Distribution {
 }
 
 impl Distribution {
-    pub fn from_sample(value: &Vec<f32>) -> Self {
+    pub fn from_sample(value: &[f32]) -> Self {
         let len = value.len() as f32;
-        let mut sum = 0.0 as f32;
+        let mut sum = 0.0_f32;
         let mut min = f32::INFINITY;
         let mut max = f32::NEG_INFINITY;
 

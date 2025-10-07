@@ -203,7 +203,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
             .convert::<u64>()
             .to_vec::<u64>()
             .expect("failed to convert tensor to vec")
-            .get(0)
+            .first()
             .expect("failed to get index") as usize;
 
         production

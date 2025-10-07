@@ -119,7 +119,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         Self {
             d1: PhantomData,
             d2: PhantomData,
-            model: model,
+            model,
             device,
             loss,
             optim: params.ada_config.init(),

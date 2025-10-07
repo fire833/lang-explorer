@@ -318,8 +318,13 @@ impl GenerateInput {
                     }
                 }
 
-                let ast_distribution =
-                    Distribution::from_sample(&ast_similarity_scores.values().cloned().collect());
+                let ast_distribution = Distribution::from_sample(
+                    ast_similarity_scores
+                        .values()
+                        .cloned()
+                        .collect::<Vec<f32>>()
+                        .as_slice(),
+                );
 
                 let mut emb_c = vec![];
                 let mut emb_d = vec![];
@@ -350,7 +355,11 @@ impl GenerateInput {
                     }
 
                     emb_d.push(Distribution::from_sample(
-                        &emb_similarity.values().cloned().collect(),
+                        &emb_similarity
+                            .values()
+                            .cloned()
+                            .collect::<Vec<f32>>()
+                            .as_slice(),
                     ));
                     emb_c.push(emb_similarity);
                 }
@@ -603,7 +612,7 @@ impl GenerateOutput {
             .exact(|v1, v2| {
                 let lsum = v1.iter().zip(v2.iter()).fold(0.0, |sum, (x1, x2)| {
                     let diff = x1 - x2;
-                    sum + (diff * diff) as f32
+                    sum + (diff * diff)
                 });
 
                 lsum.sqrt()
