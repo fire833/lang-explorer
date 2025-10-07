@@ -900,10 +900,10 @@ impl GenerateResultsV2 {
                     }
                 }
 
-                emb_c.push(emb_similarity);
                 emb_d.push(Distribution::from_sample(
                     &emb_similarity.values().cloned().collect(),
                 ));
+                emb_c.push(emb_similarity);
             }
 
             for sim_check in self.options.similarity_experiments.iter() {
