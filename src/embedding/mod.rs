@@ -40,7 +40,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
-use crate::experiments::generate::GenerateResultsV2;
+use crate::experiments::generate::GenerateOutput;
 use crate::languages::strings::StringValue;
 use crate::tooling::d2v;
 use crate::tooling::ollama::get_embedding_ollama;
@@ -318,7 +318,7 @@ impl EmbeddingModel {
         models_dir: String,
         ollama_host: String,
         d2v_host: String,
-        res: &mut GenerateResultsV2,
+        res: &mut GenerateOutput,
     ) -> Result<(), LangExplorerError> {
         let emb_name = self.to_string();
 

@@ -50,7 +50,7 @@ use crate::{
 /// Parameters supplied to the API for generating one or more programs with the provided
 /// language and expander to create said program.
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone, Default)]
-pub struct GenerateParams {
+pub struct GenerateInput {
     /// Toggle whether to return WL-kernel extracted features
     /// along with each graph.
     #[serde(alias = "return_features", default)]
@@ -141,7 +141,7 @@ fn default_return_partials() -> bool {
     false
 }
 
-impl GenerateParams {
+impl GenerateInput {
     pub async fn execute<B: Backend>(
         self,
         language: LanguageWrapper,
@@ -150,7 +150,7 @@ impl GenerateParams {
         ollama_host: String,
         d2v_host: String,
         _output_dir: String,
-    ) -> Result<GenerateResultsV2, LangExplorerError> {
+    ) -> Result<GenerateOutput, LangExplorerError> {
         let res_copy = self.clone();
 
         let grammar = match language {
@@ -168,7 +168,7 @@ impl GenerateParams {
             LanguageWrapper::AnBnCn => AnBnCnLanguage::generate_grammar(AnBnCnLanguageParams {}),
         }?;
 
-        let mut results = GenerateResultsV2 {
+        let mut results = GenerateOutput {
             grammar: None,
             programs: vec![],
             options: res_copy,
@@ -304,7 +304,7 @@ impl GenerateParams {
 
     pub async fn from_file(path: &str) -> Result<Self, LangExplorerError> {
         let contents = fs::read_to_string(path)?;
-        let config: GenerateParams = serde_json::from_str(&contents)?;
+        let config: GenerateInput = serde_json::from_str(&contents)?;
         Ok(config)
     }
 
@@ -319,7 +319,7 @@ impl GenerateParams {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct GenerateResultsV2 {
+pub struct GenerateOutput {
     /// The list of programs that have been generated.
     #[serde(alias = "programs")]
     pub(crate) programs: Vec<ProgramResult>,
@@ -332,7 +332,7 @@ pub struct GenerateResultsV2 {
     /// Return the params that were used to generate these programs.
     /// Mostly just for bookkeeping & keeping good records of experiments run.
     #[serde(alias = "options")]
-    options: GenerateParams,
+    options: GenerateInput,
 
     /// Return similarity experiment results if any were run.
     #[serde(alias = "similarity_experiments")]
@@ -343,7 +343,7 @@ pub struct GenerateResultsV2 {
     language: LanguageWrapper,
 }
 
-impl Dataset<ProgramResult> for GenerateResultsV2 {
+impl Dataset<ProgramResult> for GenerateOutput {
     fn get(&self, index: usize) -> Option<ProgramResult> {
         // This crap is going to be expensive and I shouldn't be doing it,
         // but that's a problem for later.
@@ -391,7 +391,7 @@ struct ExperimentResult {
     distributions: Vec<Distribution>,
 }
 
-impl GenerateResultsV2 {
+impl GenerateOutput {
     pub fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
         let exp_id = Self::get_experiment_id(&path, &self.language)?;
 

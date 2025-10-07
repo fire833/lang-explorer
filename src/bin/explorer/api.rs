@@ -25,13 +25,13 @@ use burn::prelude::Backend;
 use bytes::Bytes;
 use lang_explorer::{
     expanders::ExpanderWrapper,
-    experiments::generate::GenerateParams,
+    experiments::generate::GenerateInput,
     languages::LanguageWrapper,
     tooling::api::{
         catchall_handler, health_handler, invalid_request, ErrorMessage, OpenApiExtensions,
     },
 };
-use lang_explorer::{experiments::generate::GenerateResultsV2, tooling::api::openapi_handler};
+use lang_explorer::{experiments::generate::GenerateOutput, tooling::api::openapi_handler};
 use utoipa::OpenApi;
 use warp::{
     http::StatusCode,
@@ -43,7 +43,7 @@ use warp::{
 #[openapi(
     paths(generate),
     components(
-        schemas(LanguageWrapper, ExpanderWrapper, GenerateResultsV2, GenerateParams),
+        schemas(LanguageWrapper, ExpanderWrapper, GenerateOutput, GenerateInput),
         responses()
     ),
     info(
@@ -106,9 +106,9 @@ pub(super) async fn start_server<B: Backend>(
 
 #[utoipa::path(
     get, path = "/v2/generate/{language}/{expander}", 
-    request_body = GenerateParams,
+    request_body = GenerateInput,
     responses(
-        (status = 200, description = "Successfully generated code.", body = GenerateResultsV2),
+        (status = 200, description = "Successfully generated code.", body = GenerateOutput),
         (status = 400, description = "Invalid request was made to the server.", body = ErrorMessage)
     ),
     params(
@@ -125,7 +125,7 @@ async fn generate<B: Backend>(
     d2v_host: String,
     output_dir: String,
 ) -> Result<WithStatus<Json>, Rejection> {
-    let params = match serde_json::from_slice::<GenerateParams>(&body) {
+    let params = match serde_json::from_slice::<GenerateInput>(&body) {
         Ok(p) => p,
         Err(e) => return invalid_request(e.to_string()),
     };

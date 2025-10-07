@@ -18,7 +18,7 @@
 
 use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
-    errors::LangExplorerError, expanders::ExpanderWrapper, experiments::generate::GenerateParams,
+    errors::LangExplorerError, expanders::ExpanderWrapper, experiments::generate::GenerateInput,
     languages::LanguageWrapper,
 };
 
@@ -56,7 +56,7 @@ impl LangExplorerArgs {
         match &self.cmd {
             Some(cmd) => match cmd {
                 Subcommand::DefaultConfig => {
-                    let default_config = GenerateParams::default();
+                    let default_config = GenerateInput::default();
                     let config_str = serde_json::to_string_pretty(&default_config)?;
                     println!("{}", config_str);
                     Ok(())
@@ -70,11 +70,11 @@ impl LangExplorerArgs {
                     let config = match (redo, config) {
                         (None, None) => {
                             println!("using defaults");
-                            GenerateParams::default()
+                            GenerateInput::default()
                         }
-                        (None, Some(file)) => GenerateParams::from_file(file.as_str()).await?,
+                        (None, Some(file)) => GenerateInput::from_file(file.as_str()).await?,
                         (Some(idx), _) => {
-                            GenerateParams::from_experiment_id(&self.output_dir, language, *idx)
+                            GenerateInput::from_experiment_id(&self.output_dir, language, *idx)
                                 .await?
                         }
                     };
