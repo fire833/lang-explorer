@@ -43,6 +43,7 @@ use crate::languages::anbncn::{AnBnCnLanguage, AnBnCnLanguageParams};
 use crate::languages::karel::{KarelLanguage, KarelLanguageParameters};
 use crate::languages::strings::StringValue;
 use crate::tooling::d2v::{self};
+use crate::tooling::dist::Distribution;
 use crate::tooling::ollama::get_embedding_ollama;
 use crate::tooling::similarity::{vector_similarity, wl_test, VectorSimilarity};
 use crate::{
@@ -178,7 +179,7 @@ impl Display for LanguageWrapper {
     }
 }
 
-#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum SimilarityCheck {
     #[serde(alias = "basic_average")]
@@ -521,6 +522,7 @@ impl GenerateParams {
             programs: vec![],
             options: res_copy,
             language: language.clone(),
+            similarity_experiments: None,
         };
 
         if self.return_grammar {
@@ -681,6 +683,10 @@ pub struct GenerateResultsV2 {
     #[serde(alias = "options")]
     options: GenerateParams,
 
+    /// Return similarity experiment results if any were run.
+    #[serde(alias = "similarity_experiments")]
+    similarity_experiments: Option<HashMap<SimilarityCheck, Vec<Distribution>>>,
+
     /// The language that was used to generate these programs.
     #[serde(alias = "language")]
     language: LanguageWrapper,
@@ -725,6 +731,13 @@ impl GraphvizRecord {
     fn new(idx: usize, graphviz: String) -> Self {
         Self { idx, graphviz }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+struct ExperimentResult {
+    name: SimilarityCheck,
+
+    distributions: Vec<Distribution>,
 }
 
 impl GenerateResultsV2 {
@@ -856,7 +869,11 @@ impl GenerateResultsV2 {
                 }
             }
 
+            let ast_distribution =
+                Distribution::from_sample(&ast_similarity_scores.values().cloned().collect());
+
             let mut emb_c = vec![];
+            let mut emb_d = vec![];
 
             // Now, go through all embeddings and compute the similarity matrix.
             for emb in self.options.return_embeddings.iter() {
@@ -884,6 +901,9 @@ impl GenerateResultsV2 {
                 }
 
                 emb_c.push(emb_similarity);
+                emb_d.push(Distribution::from_sample(
+                    &emb_similarity.values().cloned().collect(),
+                ));
             }
 
             for sim_check in self.options.similarity_experiments.iter() {
@@ -903,6 +923,11 @@ impl GenerateResultsV2 {
                             SimilarityCheck::InverseWeightedAverage => {}
                         }
                     }
+                }
+
+                match sim_check {
+                    SimilarityCheck::BasicAverage => {}
+                    SimilarityCheck::InverseWeightedAverage => {}
                 }
             }
         }
