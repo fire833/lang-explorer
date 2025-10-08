@@ -18,6 +18,7 @@
 
 use std::{
     collections::{HashMap, HashSet},
+    f32::consts::E,
     fmt::Display,
     fs,
     sync::Arc,
@@ -377,18 +378,36 @@ impl GenerateInput {
                     emb_c.push(emb_similarity);
                 }
 
+                let k = 3;
+                let gamma = 2.0;
                 let len = ast_similarity_scores.len() as f32;
-                let mut avg_total = 0.0;
+
+                let mut similarity_results = vec![];
 
                 for embsim in emb_c.iter() {
+                    let mut avg_total = 0.0;
+                    let mut wavg_total = 0.0;
+                    let mut chisq_total = 0.0;
                     for (coord, sim) in embsim.iter() {
                         let this = *sim;
                         let other = *ast_similarity_scores.get(coord).unwrap();
                         let diff = (this - other).abs();
+                        let sum = (this + other).abs();
 
                         avg_total += diff;
+                        wavg_total += (2.0 * diff) / sum;
+                        chisq_total += (diff.powi((k / 2) - 1) * E.powf(-diff / 2.0))
+                            / (2.0_f32.powi(k / 2) * gamma);
                     }
+
+                    similarity_results.push((avg_total / len, wavg_total / len, chisq_total / len));
                 }
+
+                results.similarity_experiments = Some(vec![ExperimentResult {
+                    ast_distribution,
+                    embedding_distributions: emb_d,
+                    similarity_results,
+                }]);
             }
         }
 
@@ -479,9 +498,12 @@ impl GraphvizRecord {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct ExperimentResult {
-    average_similarity: f32,
-
-    distributions: Vec<Distribution>,
+    /// Distribution for AST similarities.
+    ast_distribution: Distribution,
+    /// Distributions for embedding similarities.
+    embedding_distributions: Vec<Distribution>,
+    /// Average, weighted, and chi-square similarity results
+    similarity_results: Vec<(f32, f32, f32)>,
 }
 
 impl GenerateOutput {
