@@ -1,12 +1,14 @@
 {
-  "return_features": false,
+  "return_features": true,
   "return_edge_lists": false,
-  "return_embeddings": [],
-  "do_experiments": false,
+  "return_embeddings": [
+    "docvecgensim"
+  ],
+  "do_experiments": true,
   "return_tsne2d": false,
   "return_tsne3d": false,
   "return_grammar": false,
-  "return_graphviz": false,
+  "return_graphviz": true,
   "return_partial_graphs": true,
   "css": {
     "version": "exhaustivev1",
