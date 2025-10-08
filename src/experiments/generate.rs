@@ -18,7 +18,7 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    f32::consts::E,
+    f32::{consts::E, INFINITY},
     fmt::Display,
     fs,
     sync::Arc,
@@ -28,6 +28,11 @@ use std::{
 use bhtsne::tSNE;
 use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
 use dashmap::DashMap;
+use itertools::iproduct;
+use rayon::{
+    iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator},
+    vec,
+};
 use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -313,33 +318,35 @@ impl GenerateInput {
             }
 
             if self.return_features && self.do_experiments {
-                let mut ast_similarity_scores: HashMap<(usize, usize), f32> = HashMap::new();
+                let len = results.programs.len();
+                let mut ast_similarity_scores = vec![INFINITY; ((len * len) / 2) - len];
 
                 println!("computing ast similarity scores");
-                // For all experiments, we need to compute pairwise similarities between all ASTs.
-                for (i, this) in results.programs.iter().enumerate() {
-                    for (j, other) in results.programs.iter().skip(i + 1).enumerate() {
-                        match (&this.features, &other.features) {
-                            (Some(vec1), Some(vec2)) => {
-                                ast_similarity_scores.insert(
-                                    (i, j),
-                                    wl_test(vec1, vec2, VectorSimilarity::Euclidean),
-                                );
-                            }
-                            _ => {
-                                panic!("we should have features here");
-                            }
-                        }
-                    }
-                }
 
-                let ast_distribution = Distribution::from_sample(
-                    ast_similarity_scores
-                        .values()
-                        .cloned()
-                        .collect::<Vec<f32>>()
-                        .as_slice(),
-                );
+                // For all experiments, we need to compute pairwise similarities between all ASTs.
+                results
+                    .programs
+                    .par_iter()
+                    .enumerate()
+                    .for_each(|(i, this)| {
+                        results
+                            .programs
+                            .par_iter()
+                            .enumerate()
+                            .skip(i + 1)
+                            .for_each(|(j, other)| match (&this.features, &other.features) {
+                                (Some(vec1), Some(vec2)) => {
+                                    let idx = (len * (i - 1) - (((i - 2) * (i - 1)) / 2)) + (j - i);
+                                    ast_similarity_scores[idx] =
+                                        wl_test(vec1, vec2, VectorSimilarity::Euclidean);
+                                }
+                                _ => {
+                                    panic!("we should have features here");
+                                }
+                            });
+                    });
+
+                let ast_distribution = Distribution::from_sample(ast_similarity_scores.as_slice());
 
                 let mut emb_c = vec![];
                 let mut emb_d = vec![];
@@ -347,36 +354,42 @@ impl GenerateInput {
                 // Now, go through all embeddings and compute the similarity matrix.
                 for emb in self.return_embeddings.iter() {
                     println!("computing embedding similarity scores for {}", emb);
-                    let mut emb_similarity: HashMap<(usize, usize), f32> = HashMap::new();
+                    let mut emb_similarity = vec![INFINITY; ((len * len) / 2) - len];
 
-                    for (i, this) in results.programs.iter().enumerate() {
-                        for (j, other) in results.programs.iter().skip(i + 1).enumerate() {
-                            match (&this.embeddings, &other.embeddings) {
-                                (Some(map1), Some(map2)) => {
-                                    let vec1 = map1.get(&emb.to_string());
-                                    let vec2 = map2.get(&emb.to_string());
+                    let s = emb.to_string();
 
-                                    if let (Some(v1), Some(v2)) = (vec1, vec2) {
-                                        emb_similarity.insert(
-                                            (i, j),
-                                            vector_similarity(v1, v2, VectorSimilarity::Euclidean),
-                                        );
+                    results
+                        .programs
+                        .par_iter()
+                        .enumerate()
+                        .for_each(|(i, this)| {
+                            results
+                                .programs
+                                .par_iter()
+                                .enumerate()
+                                .skip(i + 1)
+                                .for_each(|(j, other)| {
+                                    match (
+                                        &this.embeddings.unwrap().get(&s),
+                                        &other.embeddings.unwrap().get(&s),
+                                    ) {
+                                        (Some(vec1), Some(vec2)) => {
+                                            let idx = (len * (i - 1) - (((i - 2) * (i - 1)) / 2))
+                                                + (j - i);
+                                            emb_similarity[idx] = vector_similarity(
+                                                vec1,
+                                                vec2,
+                                                VectorSimilarity::Euclidean,
+                                            );
+                                        }
+                                        _ => {
+                                            panic!("we should have features here");
+                                        }
                                     }
-                                }
-                                _ => {
-                                    panic!("we should have embeddings here");
-                                }
-                            }
-                        }
-                    }
+                                });
+                        });
 
-                    emb_d.push(Distribution::from_sample(
-                        &emb_similarity
-                            .values()
-                            .cloned()
-                            .collect::<Vec<f32>>()
-                            .as_slice(),
-                    ));
+                    emb_d.push(Distribution::from_sample(&emb_similarity));
                     emb_c.push(emb_similarity);
                 }
 
@@ -392,9 +405,9 @@ impl GenerateInput {
                     let mut avg_total = 0.0;
                     let mut wavg_total = 0.0;
                     let mut chisq_total = 0.0;
-                    for (coord, sim) in embsim.iter() {
-                        let this = *sim;
-                        let other = *ast_similarity_scores.get(coord).unwrap();
+                    for (this, other) in embsim.iter().zip(ast_similarity_scores.iter()) {
+                        let this = *this;
+                        let other = *other;
                         let diff = (this - other).abs();
                         let sum = (this + other).abs();
 
