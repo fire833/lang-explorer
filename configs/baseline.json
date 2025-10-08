@@ -91,7 +91,7 @@
     "WLKernel": {
       "iterations": 5,
       "order": "ParentSelfChildrenOrdered",
-      "dedup": true,
+      "dedup": false,
       "sort": false
     }
   },

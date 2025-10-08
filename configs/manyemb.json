@@ -86,12 +86,12 @@
     ]
   },
   "karel": {},
-  "count": 0,
+  "count": 10000,
   "label_extraction": {
     "WLKernel": {
       "iterations": 5,
       "order": "ParentSelfChildrenOrdered",
-      "dedup": true,
+      "dedup": false,
       "sort": false
     }
   },

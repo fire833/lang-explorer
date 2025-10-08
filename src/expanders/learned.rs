@@ -87,7 +87,7 @@ impl Default for LabelExtractionStrategy {
         Self::WLKernel {
             iterations: 5,
             order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
-            dedup: true,
+            dedup: false,
             sort: false,
         }
     }
