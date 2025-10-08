@@ -784,6 +784,13 @@ impl GenerateOutput {
             serde_json::to_string_pretty(&self.options)?,
         )?;
 
+        if self.similarity_experiments.is_some() {
+            fs::write(
+                format!("{path}/{}/{exp_id}/experiments.json", self.language),
+                serde_json::to_string_pretty(&self.similarity_experiments)?,
+            )?;
+        }
+
         Ok(())
     }
 
