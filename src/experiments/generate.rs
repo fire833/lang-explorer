@@ -315,6 +315,7 @@ impl GenerateInput {
             if self.return_features && self.do_experiments {
                 let mut ast_similarity_scores: HashMap<(usize, usize), f32> = HashMap::new();
 
+                println!("computing ast similarity scores");
                 // For all experiments, we need to compute pairwise similarities between all ASTs.
                 for (i, this) in results.programs.iter().enumerate() {
                     for (j, other) in results.programs.iter().skip(i + 1).enumerate() {
@@ -345,6 +346,7 @@ impl GenerateInput {
 
                 // Now, go through all embeddings and compute the similarity matrix.
                 for emb in self.return_embeddings.iter() {
+                    println!("computing embedding similarity scores for {}", emb);
                     let mut emb_similarity: HashMap<(usize, usize), f32> = HashMap::new();
 
                     for (i, this) in results.programs.iter().enumerate() {
@@ -385,6 +387,8 @@ impl GenerateInput {
                 let mut similarity_results = vec![];
 
                 for embsim in emb_c.iter() {
+                    println!("computing similarity results for embedding");
+
                     let mut avg_total = 0.0;
                     let mut wavg_total = 0.0;
                     let mut chisq_total = 0.0;
