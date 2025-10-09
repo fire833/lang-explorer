@@ -16,8 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::BTreeMap;
-
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -33,7 +32,7 @@ pub enum VectorSimilarity {
 
 pub fn wl_test(vec1: &[Feature], vec2: &[Feature], similarity: VectorSimilarity) -> f32 {
     // Mapping between a feature and (self count, other count).
-    let mut set: BTreeMap<u64, (u32, u32)> = BTreeMap::new();
+    let mut set: FxHashMap<u64, (u32, u32)> = FxHashMap::default();
 
     vec1.iter().for_each(|f| {
         let entry = set.entry(*f).or_insert((0, 0));
