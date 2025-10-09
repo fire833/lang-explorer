@@ -21,7 +21,7 @@ use std::{
     f32::{consts::E, INFINITY},
     fmt::Display,
     fs,
-    sync::Arc,
+    sync::{Arc, Mutex},
     time::SystemTime,
 };
 
@@ -315,7 +315,8 @@ impl GenerateInput {
 
             if self.return_features && self.do_experiments {
                 let len = results.programs.len();
-                let ast_similarity_scores = Arc::new(vec![INFINITY; ((len * len) / 2) - len]);
+                let ast_similarity_scores =
+                    Arc::new(Mutex::new(vec![INFINITY; ((len * len) / 2) - len]));
 
                 println!("computing ast similarity scores");
 
@@ -325,11 +326,12 @@ impl GenerateInput {
                     .par_iter()
                     .enumerate()
                     .for_each(|(i, this)| {
-                        results.programs.par_iter().enumerate().skip(i + 1).map(
+                        let _ = results.programs.iter().enumerate().skip(i + 1).map(
                             |(j, other)| match (&this.features, &other.features) {
                                 (Some(vec1), Some(vec2)) => {
                                     let idx = (len * (i - 1) - (((i - 2) * (i - 1)) / 2)) + (j - i);
-                                    ast_similarity_scores.insert(
+                                    let ast = ast_similarity_scores.clone();
+                                    ast.lock().unwrap().insert(
                                         idx,
                                         wl_test(vec1, vec2, VectorSimilarity::Euclidean),
                                     );
@@ -339,7 +341,11 @@ impl GenerateInput {
                         );
                     });
 
-                let ast_distribution = Distribution::from_sample(ast_similarity_scores.as_slice());
+                let ast_scores = Arc::try_unwrap(ast_similarity_scores)
+                    .unwrap()
+                    .into_inner()
+                    .unwrap();
+                let ast_distribution = Distribution::from_sample(ast_scores.as_slice());
 
                 let mut emb_c = vec![];
                 let mut emb_d = vec![];
@@ -347,7 +353,8 @@ impl GenerateInput {
                 // Now, go through all embeddings and compute the similarity matrix.
                 for emb in self.return_embeddings.iter() {
                     println!("computing embedding similarity scores for {}", emb);
-                    let emb_similarity = Arc::new(vec![INFINITY; ((len * len) / 2) - len]);
+                    let emb_similarity =
+                        Arc::new(Mutex::new(vec![INFINITY; ((len * len) / 2) - len]));
 
                     let s = emb.to_string();
 
@@ -356,39 +363,42 @@ impl GenerateInput {
                         .par_iter()
                         .enumerate()
                         .for_each(|(i, this)| {
-                            results
-                                .programs
-                                .par_iter()
-                                .enumerate()
-                                .skip(i + 1)
-                                .for_each(|(j, other)| {
-                                    match (&this.embeddings.get(&s), &other.embeddings.get(&s)) {
-                                        (Some(vec1), Some(vec2)) => {
-                                            let idx = (len * (i - 1) - (((i - 2) * (i - 1)) / 2))
-                                                + (j - i);
-                                            emb_similarity.insert(
-                                                idx,
-                                                vector_similarity(
-                                                    vec1,
-                                                    vec2,
-                                                    VectorSimilarity::Euclidean,
-                                                ),
-                                            );
-                                        }
-                                        _ => {
-                                            panic!("we should have features here");
-                                        }
+                            results.programs.iter().enumerate().skip(i + 1).for_each(
+                                |(j, other)| match (
+                                    &this.embeddings.get(&s),
+                                    &other.embeddings.get(&s),
+                                ) {
+                                    (Some(vec1), Some(vec2)) => {
+                                        let idx =
+                                            (len * (i - 1) - (((i - 2) * (i - 1)) / 2)) + (j - i);
+                                        let embsim = emb_similarity.clone();
+                                        embsim.lock().unwrap().insert(
+                                            idx,
+                                            vector_similarity(
+                                                vec1,
+                                                vec2,
+                                                VectorSimilarity::Euclidean,
+                                            ),
+                                        );
                                     }
-                                });
+                                    _ => {
+                                        panic!("we should have features here");
+                                    }
+                                },
+                            );
                         });
 
-                    emb_d.push(Distribution::from_sample(&emb_similarity));
-                    emb_c.push(emb_similarity);
+                    let inner = Arc::try_unwrap(emb_similarity)
+                        .unwrap()
+                        .into_inner()
+                        .unwrap();
+                    emb_d.push(Distribution::from_sample(&inner));
+                    emb_c.push(inner);
                 }
 
                 let k = 3;
                 let gamma = 2.0;
-                let len = ast_similarity_scores.len() as f32;
+                let len = ast_scores.len() as f32;
 
                 let mut similarity_results = vec![];
 
@@ -398,7 +408,7 @@ impl GenerateInput {
                     let mut avg_total = 0.0;
                     let mut wavg_total = 0.0;
                     let mut chisq_total = 0.0;
-                    for (this, other) in embsim.iter().zip(ast_similarity_scores.iter()) {
+                    for (this, other) in embsim.iter().zip(ast_scores.iter()) {
                         let this = *this;
                         let other = *other;
                         let diff = (this - other).abs();
