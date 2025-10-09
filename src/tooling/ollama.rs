@@ -19,8 +19,8 @@
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use futures::{future, StreamExt};
-use reqwest::Client;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::{embedding::EmbeddingModel, errors::LangExplorerError};
@@ -54,44 +54,37 @@ pub(crate) async fn get_embedding_ollama(
 pub(crate) async fn get_embeddings_bulk_ollama(
     client: &Client,
     host: &String,
-    prompts: Vec<&String>,
+    prompts: &[String],
     model: EmbeddingModel,
     num_parallel_requests: usize,
 ) -> Result<Vec<Vec<f32>>, LangExplorerError> {
     let results: Arc<DashMap<usize, Vec<f32>>> = Arc::new(DashMap::new());
 
-    let _ = futures::stream::iter(prompts.iter().enumerate().map(
-        async |(idx, prompt)| -> Result<(usize, EmbeddingResult), LangExplorerError> {
-            let res = client
-                .post(format!("{host}/api/embeddings"))
-                .json(&serde_json::json!({
-                    "model": model,
-                    "prompt": prompt,
-                }))
-                .send()
-                .await?
-                .json::<EmbeddingResult>()
-                .await?;
+    let replies = futures::future::join_all(prompts.iter().map(async |prompt| {
+        let res = client
+            .post(format!("{host}/api/embeddings"))
+            .json(&serde_json::json!({
+                "model": model,
+                "prompt": prompt,
+            }))
+            .send()
+            .await
+            .expect("couldn't make request");
 
-            Ok((idx, res))
-        },
-    ))
-    .buffer_unordered(num_parallel_requests)
-    .for_each(|result| {
-        if let Ok(res) = result {
-            let data = results.clone();
-            data.insert(res.0, res.1.embedding);
+        if res.status() != StatusCode::OK {
+            panic!("error: invalid reply");
         }
 
-        future::ready(())
-    })
+        res.json::<EmbeddingResult>()
+            .await
+            .expect("couldn't deserialize response")
+    }))
     .await;
 
-    let mut results_final: Vec<Vec<f32>> = vec![vec![]; prompts.len()];
+    let vecs = replies
+        .par_iter()
+        .map(|reply| reply.embedding.clone())
+        .collect();
 
-    let _ = results
-        .iter_mut()
-        .map(|kv| results_final[*kv.key()] = kv.value().clone());
-
-    Ok(results_final)
+    Ok(vecs)
 }

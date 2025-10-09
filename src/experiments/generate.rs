@@ -20,7 +20,7 @@ use std::{
     collections::{HashMap, HashSet},
     f32::{consts::E, INFINITY},
     fmt::Display,
-    fs,
+    fs, mem,
     sync::Arc,
     time::SystemTime,
 };
@@ -57,7 +57,7 @@ use crate::{
     tooling::{
         d2v,
         dist::Distribution,
-        ollama::get_embedding_ollama,
+        ollama::get_embeddings_bulk_ollama,
         similarity::{vector_similarity, wl_test, VectorSimilarity},
     },
 };
@@ -616,37 +616,24 @@ impl GenerateOutput {
                     })
                     .collect();
 
-                for (idx, prog) in programs.iter().enumerate() {
-                    match get_embedding_ollama(&client, &ollama_host, prog, embedding.clone()).await
-                    {
-                        Ok(vec) => {
-                            let p = self.programs.get_mut(0).unwrap();
-                            p.set_embedding(emb_name.clone(), vec);
+                match get_embeddings_bulk_ollama(
+                    &client,
+                    &ollama_host,
+                    programs.as_slice(),
+                    embedding.clone(),
+                    12,
+                )
+                .await
+                {
+                    Ok(mut responses) => {
+                        for (idx, vec) in responses.iter_mut().enumerate() {
+                            let p = self.programs.get_mut(idx).unwrap();
+                            let new = mem::take(vec);
+                            p.set_embedding(emb_name.clone(), new);
                         }
-                        Err(e) => return Err(e),
                     }
-
-                    if idx % 100 == 0 {
-                        println!(
-                            "processed {} / {} prompts for embeddings",
-                            idx,
-                            programs.len()
-                        );
-                    }
+                    Err(e) => return Err(e),
                 }
-
-                // match get_embeddings_bulk_ollama(&client, &ollama_host, prompts, self.clone(), 7)
-                //     .await
-                // {
-                //     Ok(mut responses) => {
-                //         for (idx, vec) in responses.iter_mut().enumerate() {
-                //             let p = res.programs.get_mut(idx).unwrap();
-                //             let new = mem::take(vec);
-                //             p.set_embedding(emb_name.clone(), new);
-                //         }
-                //     }
-                //     Err(e) => return Err(e),
-                // }
             }
         };
 
