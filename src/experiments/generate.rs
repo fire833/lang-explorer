@@ -28,11 +28,7 @@ use std::{
 use bhtsne::tSNE;
 use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
 use dashmap::DashMap;
-use itertools::iproduct;
-use rayon::{
-    iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator},
-    vec,
-};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -319,7 +315,7 @@ impl GenerateInput {
 
             if self.return_features && self.do_experiments {
                 let len = results.programs.len();
-                let mut ast_similarity_scores = vec![INFINITY; ((len * len) / 2) - len];
+                let ast_similarity_scores = Arc::new(vec![INFINITY; ((len * len) / 2) - len]);
 
                 println!("computing ast similarity scores");
 
@@ -329,21 +325,18 @@ impl GenerateInput {
                     .par_iter()
                     .enumerate()
                     .for_each(|(i, this)| {
-                        results
-                            .programs
-                            .par_iter()
-                            .enumerate()
-                            .skip(i + 1)
-                            .for_each(|(j, other)| match (&this.features, &other.features) {
+                        results.programs.par_iter().enumerate().skip(i + 1).map(
+                            |(j, other)| match (&this.features, &other.features) {
                                 (Some(vec1), Some(vec2)) => {
                                     let idx = (len * (i - 1) - (((i - 2) * (i - 1)) / 2)) + (j - i);
-                                    ast_similarity_scores[idx] =
-                                        wl_test(vec1, vec2, VectorSimilarity::Euclidean);
+                                    ast_similarity_scores.insert(
+                                        idx,
+                                        wl_test(vec1, vec2, VectorSimilarity::Euclidean),
+                                    );
                                 }
-                                _ => {
-                                    panic!("we should have features here");
-                                }
-                            });
+                                _ => panic!("we should have features here"),
+                            },
+                        );
                     });
 
                 let ast_distribution = Distribution::from_sample(ast_similarity_scores.as_slice());
@@ -354,7 +347,7 @@ impl GenerateInput {
                 // Now, go through all embeddings and compute the similarity matrix.
                 for emb in self.return_embeddings.iter() {
                     println!("computing embedding similarity scores for {}", emb);
-                    let mut emb_similarity = vec![INFINITY; ((len * len) / 2) - len];
+                    let emb_similarity = Arc::new(vec![INFINITY; ((len * len) / 2) - len]);
 
                     let s = emb.to_string();
 
@@ -369,17 +362,17 @@ impl GenerateInput {
                                 .enumerate()
                                 .skip(i + 1)
                                 .for_each(|(j, other)| {
-                                    match (
-                                        &this.embeddings.unwrap().get(&s),
-                                        &other.embeddings.unwrap().get(&s),
-                                    ) {
+                                    match (&this.embeddings.get(&s), &other.embeddings.get(&s)) {
                                         (Some(vec1), Some(vec2)) => {
                                             let idx = (len * (i - 1) - (((i - 2) * (i - 1)) / 2))
                                                 + (j - i);
-                                            emb_similarity[idx] = vector_similarity(
-                                                vec1,
-                                                vec2,
-                                                VectorSimilarity::Euclidean,
+                                            emb_similarity.insert(
+                                                idx,
+                                                vector_similarity(
+                                                    vec1,
+                                                    vec2,
+                                                    VectorSimilarity::Euclidean,
+                                                ),
                                             );
                                         }
                                         _ => {
@@ -715,25 +708,23 @@ impl GenerateOutput {
             ))?;
 
             for (idx, prog) in self.programs.iter().enumerate() {
-                if let Some(map) = &prog.embeddings {
-                    if let Some(emb) = map.get(&embed_model.to_string()) {
-                        if idx == 0 {
-                            let mut vec = vec!["idx".to_string()];
-                            for i in 0..emb.len() {
-                                vec.push(format!("dim_{}", i));
-                            }
-
-                            embed_writer.write_record(vec)?;
+                if let Some(emb) = prog.embeddings.get(&embed_model.to_string()) {
+                    if idx == 0 {
+                        let mut vec = vec!["idx".to_string()];
+                        for i in 0..emb.len() {
+                            vec.push(format!("dim_{}", i));
                         }
 
-                        embed_writer.write_field(idx.to_string())?;
-
-                        for val in emb.iter() {
-                            embed_writer.write_field(val.to_string())?;
-                        }
-
-                        embed_writer.write_record(None::<&[u8]>)?;
+                        embed_writer.write_record(vec)?;
                     }
+
+                    embed_writer.write_field(idx.to_string())?;
+
+                    for val in emb.iter() {
+                        embed_writer.write_field(val.to_string())?;
+                    }
+
+                    embed_writer.write_record(None::<&[u8]>)?;
                 }
 
                 // Flush every once in a while.
@@ -815,10 +806,8 @@ impl GenerateOutput {
         let mut vecs = vec![];
 
         for prog in self.programs.iter() {
-            if let Some(map) = &prog.embeddings {
-                let emb = map.get(&embedding_name).unwrap();
-                vecs.push(emb.as_slice());
-            }
+            let emb = prog.embeddings.get(&embedding_name).unwrap();
+            vecs.push(emb.as_slice());
         }
 
         match tSNE::new(&vecs)
@@ -888,7 +877,7 @@ pub(crate) struct ProgramResult {
 
     /// If enabled, returns the embedding of the program.
     #[serde(alias = "embeddings")]
-    embeddings: Option<HashMap<String, Vec<f32>>>,
+    embeddings: HashMap<String, Vec<f32>>,
 
     /// If enabled, returns t-SNE embeddings for each embedding vector.
     #[serde(alias = "tsne_2d")]
@@ -910,7 +899,7 @@ impl ProgramResult {
             // program_internal: None,
             graphviz: None,
             features: None,
-            embeddings: None,
+            embeddings: HashMap::new(),
             tnse_2d: None,
             edge_list: None,
             is_partial: false,
@@ -938,8 +927,7 @@ impl ProgramResult {
     }
 
     pub(crate) fn set_embedding(&mut self, name: String, embedding: Vec<f32>) {
-        let map = self.embeddings.get_or_insert(HashMap::new());
-        map.insert(name, embedding);
+        self.embeddings.insert(name, embedding);
     }
 
     // pub(crate) fn set_internal_program(
