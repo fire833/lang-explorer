@@ -16,9 +16,6 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::sync::Arc;
-
-use dashmap::DashMap;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -58,8 +55,6 @@ pub(crate) async fn get_embeddings_bulk_ollama(
     model: EmbeddingModel,
     num_parallel_requests: usize,
 ) -> Result<Vec<Vec<f32>>, LangExplorerError> {
-    let results: Arc<DashMap<usize, Vec<f32>>> = Arc::new(DashMap::new());
-
     let replies = futures::future::join_all(prompts.iter().map(async |prompt| {
         let res = client
             .post(format!("{host}/api/embeddings"))
