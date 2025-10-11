@@ -66,22 +66,22 @@ pub(super) async fn start_server<B: Backend>(
     d2v_host: String,
     output_dir: String,
 ) {
-    let model_filter = warp::any().map(move || models_dir.clone());
-    let ollama_filter = warp::any().map(move || ollama_host.clone());
-    let d2v_filter = warp::any().map(move || d2v_host.clone());
-    let output_filter = warp::any().map(move || output_dir.clone());
+    let _model_filter = warp::any().map(move || models_dir.clone());
+    let _ollama_filter = warp::any().map(move || ollama_host.clone());
+    let _d2v_filter = warp::any().map(move || d2v_host.clone());
+    let _output_filter = warp::any().map(move || output_dir.clone());
 
-    let generate2 = warp::post()
-        .and(warp::path!(
-            "v2" / "generate" / LanguageWrapper / ExpanderWrapper
-        ))
-        .and(warp::path::end())
-        .and(warp::body::bytes())
-        .and(model_filter.clone())
-        .and(ollama_filter.clone())
-        .and(d2v_filter.clone())
-        .and(output_filter.clone())
-        .and_then(generate::<B>);
+    // let generate2 = warp::post()
+    //     .and(warp::path!(
+    //         "v2" / "generate" / LanguageWrapper / ExpanderWrapper
+    //     ))
+    //     .and(warp::path::end())
+    //     .and(warp::body::bytes())
+    //     .and(model_filter.clone())
+    //     .and(ollama_filter.clone())
+    //     .and(d2v_filter.clone())
+    //     .and(output_filter.clone())
+    //     .and_then(generate::<B>);
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -90,8 +90,8 @@ pub(super) async fn start_server<B: Backend>(
         .allow_header("User-Agent")
         .allow_methods(vec!["POST", "GET"]);
 
-    let routes = generate2
-        .or(health_handler())
+    let routes = health_handler()
+        // generate2
         .or(openapi_handler::<ExplorerAPIDocs>())
         .or(catchall_handler())
         .with(cors);
