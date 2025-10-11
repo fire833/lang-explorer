@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use futures::StreamExt;
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -55,31 +55,40 @@ pub(crate) async fn get_embeddings_bulk_ollama(
     model: EmbeddingModel,
     num_parallel_requests: usize,
 ) -> Result<Vec<Vec<f32>>, LangExplorerError> {
-    let replies = futures::future::join_all(prompts.iter().map(async |prompt| {
-        let res = client
-            .post(format!("{host}/api/embeddings"))
-            .json(&serde_json::json!({
-                "model": model,
-                "prompt": prompt,
-            }))
-            .send()
-            .await
-            .expect("couldn't make request");
+    let prompts = futures::stream::iter(prompts.iter());
+    let res = prompts
+        .map(async |prompt| make_request(client, host, &model, prompt).await)
+        .buffer_unordered(num_parallel_requests);
 
-        if res.status() != StatusCode::OK {
-            panic!("error: invalid reply");
-        }
+    let res = res.collect().await;
 
-        res.json::<EmbeddingResult>()
-            .await
-            .expect("couldn't deserialize response")
-    }))
-    .await;
+    Ok(res)
+}
 
-    let vecs = replies
-        .par_iter()
-        .map(|reply| reply.embedding.clone())
-        .collect();
+async fn make_request(
+    client: &Client,
+    host: &String,
+    model: &EmbeddingModel,
+    prompt: &String,
+) -> Vec<f32> {
+    let res = client
+        .post(format!("{host}/api/embeddings"))
+        .json(&serde_json::json!({
+            "model": model,
+            "prompt": prompt,
+        }))
+        .send()
+        .await
+        .expect("couldn't make request");
 
-    Ok(vecs)
+    if res.status() != StatusCode::OK {
+        panic!("error: invalid reply");
+    }
+
+    let emb = res
+        .json::<EmbeddingResult>()
+        .await
+        .expect("couldn't deserialize response");
+
+    emb.embedding
 }
