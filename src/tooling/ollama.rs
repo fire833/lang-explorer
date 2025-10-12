@@ -82,7 +82,7 @@ async fn make_request(
         .expect("couldn't make request");
 
     if res.status() != StatusCode::OK {
-        panic!("error: invalid reply");
+        panic!("invalid reply: {}", res.status());
     }
 
     let emb = res
