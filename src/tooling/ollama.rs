@@ -74,7 +74,7 @@ async fn make_request(
     let res = client
         .post(format!("{host}/api/embeddings"))
         .json(&serde_json::json!({
-            "model": model,
+            "model": model.to_string(),
             "prompt": prompt,
         }))
         .send()
@@ -82,7 +82,9 @@ async fn make_request(
         .expect("couldn't make request");
 
     if res.status() != StatusCode::OK {
-        panic!("invalid reply: {}", res.status());
+        let status = res.status();
+        let data = res.text().await.unwrap();
+        panic!("invalid reply: {} {}", status, data);
     }
 
     let emb = res
