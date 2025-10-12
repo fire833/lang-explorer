@@ -621,7 +621,7 @@ impl GenerateOutput {
                     &ollama_host,
                     programs.as_slice(),
                     embedding.clone(),
-                    12,
+                    20,
                 )
                 .await
                 {
