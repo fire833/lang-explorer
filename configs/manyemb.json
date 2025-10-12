@@ -4,7 +4,7 @@
   "return_embeddings": [
     "docvecgensim"
   ],
-  "do_experiments": true,
+  "do_similarity_experiments": true,
   "return_tsne2d": false,
   "return_tsne3d": false,
   "return_grammar": false,

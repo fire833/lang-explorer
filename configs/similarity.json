@@ -5,10 +5,9 @@
     "docvecgensim",
     "nomic-embed-text",
     "mxbai-embed-large",
-    "snowflake-arctic-embed:137m",
-    "snowflake-arctic-embed2"
+    "snowflake-arctic-embed:137m"
   ],
-  "do_experiments": true,
+  "do_similarity_experiments": true,
   "return_tsne2d": false,
   "return_tsne3d": false,
   "return_grammar": true,
@@ -147,7 +146,7 @@
   },
   "karel": {},
   "count": 1000,
-  "ollama_concurrent_requests": 40,
+  "ollama_concurrent_requests": 56,
   "label_extraction": {
     "WLKernel": {
       "iterations": 5,
