@@ -71,11 +71,18 @@ async fn make_request(
     model: &EmbeddingModel,
     prompt: &String,
 ) -> Vec<f32> {
+    let p = String::from(" ");
+    let mut final_prompt = prompt;
+
+    if prompt == "" {
+        final_prompt = &p;
+    }
+
     let res = client
         .post(format!("{host}/api/embeddings"))
         .json(&serde_json::json!({
             "model": model.to_string(),
-            "prompt": prompt,
+            "prompt": final_prompt,
         }))
         .send()
         .await
