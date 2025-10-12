@@ -141,6 +141,7 @@
   },
   "karel": {},
   "count": 100,
+  "ollama_concurrent_requests": 40,
   "label_extraction": {
     "WLKernel": {
       "iterations": 5,

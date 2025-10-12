@@ -138,6 +138,10 @@ pub struct GenerateInput {
     #[serde(rename = "count", default = "default_count")]
     count: u64,
 
+    /// Specify the number of concurrent ollama transactions to make.
+    #[serde(rename = "ollama_concurrent_requests", default = "default_ollama")]
+    concurrent_ollama_requests: u64,
+
     /// Specify the label extraction strategy for creating
     /// labels for each document program.
     #[serde(rename = "label_extraction", default)]
@@ -146,6 +150,10 @@ pub struct GenerateInput {
     /// General purpose training parameters for doing training runs.
     #[serde(flatten)]
     params: GeneralEmbeddingTrainingParams,
+}
+
+fn default_ollama() -> u64 {
+    40
 }
 
 fn default_count() -> u64 {
@@ -309,6 +317,7 @@ impl GenerateInput {
                         models_dir.clone(),
                         ollama_host.clone(),
                         d2v_host.clone(),
+                        self.concurrent_ollama_requests,
                     )
                     .await?;
             }
@@ -518,6 +527,7 @@ impl GenerateOutput {
         models_dir: String,
         ollama_host: String,
         d2v_host: String,
+        concurrent_requests: u64,
     ) -> Result<(), LangExplorerError> {
         let emb_name = embedding.to_string();
 
@@ -625,7 +635,7 @@ impl GenerateOutput {
                     &ollama_host,
                     programs.as_slice(),
                     embedding.clone(),
-                    20,
+                    concurrent_requests as usize,
                 )
                 .await
                 {
