@@ -21,6 +21,8 @@ use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Distribution {
+    name: String,
+
     /// The computed moments of the distribution.
     moments: Vec<f32>,
 
@@ -29,7 +31,7 @@ pub struct Distribution {
 }
 
 impl Distribution {
-    pub fn from_sample(value: &[f32]) -> Self {
+    pub fn from_sample(name: &str, value: &[f32]) -> Self {
         let len = value.len() as f32;
         let mut sum = 0.0_f32;
         let mut min = f32::INFINITY;
@@ -99,6 +101,7 @@ impl Distribution {
             / (sigma * sigma * sigma * sigma);
 
         Self {
+            name: name.to_string(),
             moments: vec![mean, variance, skewness, kurtosis],
             histogram: buckets,
         }

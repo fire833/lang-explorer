@@ -339,7 +339,8 @@ impl GenerateInput {
                     )
                     .collect();
 
-                let ast_distribution = Distribution::from_sample(ast_similarity_scores.as_slice());
+                let ast_distribution =
+                    Distribution::from_sample("ast_distribution", ast_similarity_scores.as_slice());
 
                 let mut emb_c = vec![];
                 let mut emb_d = vec![];
@@ -371,7 +372,10 @@ impl GenerateInput {
                         )
                         .collect();
 
-                    emb_d.push(Distribution::from_sample(emb_similarity_scores.as_slice()));
+                    emb_d.push(Distribution::from_sample(
+                        emb.to_string().as_str(),
+                        emb_similarity_scores.as_slice(),
+                    ));
                     emb_c.push(emb_similarity_scores);
                 }
 
