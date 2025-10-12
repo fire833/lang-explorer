@@ -49,12 +49,66 @@
   "nft": {},
   "spice": {},
   "spiral": {},
-  "taco_expr": {
+  "taco_expression": {
     "version": "contextfreev1",
-    "symbols": [],
-    "indices": []
+    "symbols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z"
+    ],
+    "indices": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+      "m",
+      "n",
+      "o",
+      "p",
+      "q",
+      "r",
+      "s",
+      "t",
+      "u",
+      "v",
+      "w",
+      "x",
+      "y",
+      "z"
+    ]
   },
-  "taco_sched": {
+  "taco_schedule": {
     "version": "contextfreev1",
     "index_variables": [
       "i",
@@ -92,7 +146,7 @@
   "label_extraction": {
     "WLKernel": {
       "iterations": 5,
-      "order": "ParentSelfChildrenOrdered",
+      "order": "parent_self_children",
       "dedup": false,
       "sort": false
     }
