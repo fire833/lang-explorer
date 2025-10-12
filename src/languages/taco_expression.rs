@@ -61,13 +61,23 @@ impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for TacoExpressi
 }
 
 /// Parameters for Taco Expression Language.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TacoExpressionLanguageParams {
     #[serde(alias = "version")]
     version: TacoExpressionLanguageVersion,
 
     symbols: Vec<char>,
     indices: Vec<char>,
+}
+
+impl Default for TacoExpressionLanguageParams {
+    fn default() -> Self {
+        Self {
+            version: Default::default(),
+            symbols: ('A'..='Z').collect(),
+            indices: ('a'..='z').collect(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

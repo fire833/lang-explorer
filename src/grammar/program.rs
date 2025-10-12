@@ -62,11 +62,11 @@ pub struct ProgramInstance<T: Terminal, I: NonTerminal> {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 pub enum WLKernelHashingOrder {
-    #[serde(alias = "self_children_parent")]
+    #[serde(rename = "self_children_parent")]
     SelfChildrenParentOrdered,
-    #[serde(alias = "parent_self_children")]
+    #[serde(rename = "parent_self_children")]
     ParentSelfChildrenOrdered,
-    #[serde(alias = "total_ordered")]
+    #[serde(rename = "total_ordered")]
     TotalOrdered,
 }
 

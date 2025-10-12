@@ -24,9 +24,9 @@ use crate::languages::Feature;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 pub enum VectorSimilarity {
-    #[serde(alias = "l2")]
+    #[serde(rename = "l2")]
     Euclidean,
-    #[serde(alias = "l1")]
+    #[serde(rename = "l1")]
     Manhattan,
 }
 

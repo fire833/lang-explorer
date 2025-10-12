@@ -68,79 +68,79 @@ use crate::{
 pub struct GenerateInput {
     /// Toggle whether to return WL-kernel extracted features
     /// along with each graph.
-    #[serde(alias = "return_features", default)]
+    #[serde(rename = "return_features", default)]
     return_features: bool,
 
     /// Toggle whether to return edge lists along with each graph.
-    #[serde(alias = "return_edge_lists", default)]
+    #[serde(rename = "return_edge_lists", default)]
     return_edge_lists: bool,
 
     /// Toggle which embeddings to return for each instance.
-    #[serde(alias = "return_embeddings", default)]
+    #[serde(rename = "return_embeddings", default)]
     return_embeddings: Vec<EmbeddingModel>,
 
     //// Toggle whether or not to run similarity experiments.
-    #[serde(alias = "do_similarity_experiments", default)]
+    #[serde(rename = "do_similarity_experiments", default)]
     do_experiments: bool,
 
     /// Toggle whether to return 2D t-SNE projections of each embedding.
-    #[serde(alias = "return_tsne2d", default)]
+    #[serde(rename = "return_tsne2d", default)]
     return_tsne2d: bool,
 
     /// Toggle whether to return 3D t-SNE projections of each embedding.
-    #[serde(alias = "return_tsne3d", default)]
+    #[serde(rename = "return_tsne3d", default)]
     return_tsne3d: bool,
 
     /// Toggle whether to return the grammar in BNF form that was
     /// used to generate programs.
-    #[serde(alias = "return_grammar", default)]
+    #[serde(rename = "return_grammar", default)]
     return_grammar: bool,
 
     /// Toggle whether to return graphviz graph representations of
     /// generated programs.
-    #[serde(alias = "return_graphviz", default)]
+    #[serde(rename = "return_graphviz", default)]
     return_graphviz: bool,
 
     /// Toggle whether or not to return partial graphs for each program
     /// that is generated.
-    #[serde(alias = "return_partial_graphs", default = "default_return_partials")]
+    #[serde(rename = "return_partial_graphs", default = "default_return_partials")]
     return_partial_graphs: bool,
 
     /// Parameters for CSS Language.
-    #[serde(alias = "css", default)]
+    #[serde(rename = "css", default)]
     css: CSSLanguageParameters,
 
     /// Parameters for NFTables language.
-    #[serde(alias = "nft", default)]
+    #[serde(rename = "nft", default)]
     nft: NFTRulesetParams,
 
     /// Parameters for SPICE language.
-    #[serde(alias = "spice", default)]
+    #[serde(rename = "spice", default)]
     spice: SpiceLanguageParams,
 
     /// Parameters for SPIRAL Language.
-    #[serde(alias = "spiral", default)]
+    #[serde(rename = "spiral", default)]
     spiral: SpiralLanguageParams,
 
     /// Parameters for Taco Expression Language.
-    #[serde(alias = "taco_expression", default)]
+    #[serde(rename = "taco_expression", default)]
     taco_expr: TacoExpressionLanguageParams,
 
     /// Parameters for Taco Schedule Language.
-    #[serde(alias = "taco_schedule", default)]
+    #[serde(rename = "taco_schedule", default)]
     taco_sched: TacoScheduleLanguageParams,
 
     /// Parameters for Karel DSL.
-    #[serde(alias = "karel", default)]
+    #[serde(rename = "karel", default)]
     karel: KarelLanguageParameters,
 
     /// Specify the number of programs to generate.
-    #[serde(alias = "count", default = "default_count")]
+    #[serde(rename = "count", default = "default_count")]
     count: u64,
 
     /// Specify the label extraction strategy for creating
     /// labels for each document program.
-    #[serde(alias = "label_extraction", default)]
+    #[serde(rename = "label_extraction", default)]
     label_extraction: LabelExtractionStrategy,
 
     /// General purpose training parameters for doing training runs.
@@ -436,25 +436,25 @@ impl GenerateInput {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct GenerateOutput {
     /// The list of programs that have been generated.
-    #[serde(alias = "programs")]
+    #[serde(rename = "programs")]
     programs: Vec<ProgramResult>,
 
     /// If enabled, returns a BNF copy of the grammar that was used
     /// to generate all programs within this batch.
-    #[serde(alias = "grammar")]
+    #[serde(rename = "grammar")]
     grammar: Option<String>,
 
     /// Return the params that were used to generate these programs.
     /// Mostly just for bookkeeping & keeping good records of experiments run.
-    #[serde(alias = "options")]
+    #[serde(rename = "options")]
     options: GenerateInput,
 
     /// Return similarity experiment results if any were run.
-    #[serde(alias = "similarity_experiments")]
+    #[serde(rename = "similarity_experiments")]
     similarity_experiments: Option<Vec<ExperimentResult>>,
 
     /// The language that was used to generate these programs.
-    #[serde(alias = "language")]
+    #[serde(rename = "language")]
     language: LanguageWrapper,
 }
 
@@ -831,7 +831,7 @@ impl GenerateOutput {
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub(crate) struct ProgramResult {
     /// If enabled, the string representation of the generated program.
-    #[serde(alias = "program")]
+    #[serde(rename = "program")]
     program: Option<String>,
 
     /// Internal representation of the generated program.
@@ -839,28 +839,28 @@ pub(crate) struct ProgramResult {
     // program_internal: Option<ProgramInstance<StringValue, StringValue>>,
 
     /// Optional graphviz representation for the generated program.
-    #[serde(alias = "graphviz")]
+    #[serde(rename = "graphviz")]
     graphviz: Option<String>,
 
     /// If enabled, returns a list of all features extracted from
     /// the program.
-    #[serde(alias = "features")]
+    #[serde(rename = "features")]
     features: Vec<Feature>,
 
     /// If enabled, returns the embedding of the program.
-    #[serde(alias = "embeddings")]
+    #[serde(rename = "embeddings")]
     embeddings: HashMap<String, Vec<f32>>,
 
     /// If enabled, returns t-SNE embeddings for each embedding vector.
-    #[serde(alias = "tsne_2d")]
+    #[serde(rename = "tsne_2d")]
     tnse_2d: Option<HashMap<String, Vec<f32>>>,
 
     /// If enabled, returns the program graph in edge-list format.
-    #[serde(alias = "edge_list")]
+    #[serde(rename = "edge_list")]
     edge_list: Option<Vec<(InstanceId, InstanceId)>>,
 
     /// Toggle whether or not the generated program is a partial program or not.
-    #[serde(alias = "is_partial")]
+    #[serde(rename = "is_partial")]
     is_partial: bool,
 }
 

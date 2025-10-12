@@ -261,19 +261,19 @@ pub(super) fn save_embeddings_as_csv<P: AsRef<Path>>(
 #[derive(Debug, Clone, ValueEnum, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum EmbeddingModel {
-    #[serde(alias = "doc2vecdbow")]
+    #[serde(rename = "doc2vecdbow")]
     Doc2VecDBOW,
-    #[serde(alias = "docvecgensim")]
+    #[serde(rename = "docvecgensim")]
     Doc2VecGensim,
-    #[serde(alias = "mxbai-embed-large")]
+    #[serde(rename = "mxbai-embed-large")]
     MXBAILarge,
-    #[serde(alias = "nomic-embed-text")]
+    #[serde(rename = "nomic-embed-text")]
     NomicEmbed,
-    #[serde(alias = "snowflake-arctic-embed:137m")]
+    #[serde(rename = "snowflake-arctic-embed:137m")]
     SnowflakeArctic137,
-    #[serde(alias = "snowflake-arctic-embed")]
+    #[serde(rename = "snowflake-arctic-embed")]
     SnowflakeArctic,
-    #[serde(alias = "snowflake-arctic-embed2")]
+    #[serde(rename = "snowflake-arctic-embed2")]
     SnowflakeArctic2,
 }
 
