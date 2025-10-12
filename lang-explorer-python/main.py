@@ -9,6 +9,7 @@ from src.commands.interact import interactive_tsne
 from src.commands.nearest import nearest_neighbors
 from src.commands.tsne_animation import animate
 from src.commands.nearest2 import nearest_neighbors2
+from src.commands.experiment_processing import process_experiment
 import matplotlib
 
 # %matplotlib qt
@@ -61,6 +62,11 @@ def main():
 	anim.add_argument("--input", default="results/temporal/vectors_*.csv", help="Specify the embeddings to use for visualization.")
 	anim.add_argument("--output", default="images/tsneanim.mp4", help="Images path.")
 	anim.set_defaults(func=animate)
+
+	process = sub.add_parser("expparse", help="Process Generate experiment results.")
+	process.add_argument("--input", type=str, help="Specify the input results to process.")
+	process.add_argument("--output", default="images/", help="Images path.")
+	process.set_defaults(func=process_experiment)
 
 	args = parser.parse_args(sys.argv[1:])
 	args.func(args)
