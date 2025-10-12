@@ -415,11 +415,11 @@ impl GenerateInput {
                     similarity_results.push((avg_total / len, wavg_total / len, chisq_total / len));
                 }
 
-                results.similarity_experiments = Some(vec![ExperimentResult {
+                results.similarity_experiments = Some(ExperimentResult {
                     ast_distribution,
                     embedding_distributions: emb_d,
                     similarity_results,
-                }]);
+                });
             }
         }
 
@@ -460,7 +460,7 @@ pub struct GenerateOutput {
 
     /// Return similarity experiment results if any were run.
     #[serde(rename = "similarity_experiments")]
-    similarity_experiments: Option<Vec<ExperimentResult>>,
+    similarity_experiments: Option<ExperimentResult>,
 
     /// The language that was used to generate these programs.
     #[serde(rename = "language")]
