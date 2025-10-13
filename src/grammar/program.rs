@@ -323,10 +323,15 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     }
 
     #[allow(unused)]
-    pub(crate) fn get_all_nodes_exclude_children(&self) -> Vec<&ProgramInstance<T, I>> {
-        let mut programs = vec![self];
+    pub(crate) fn get_all_nodes_exclude_children(self) -> Vec<ProgramInstance<T, I>> {
+        let mut programs = vec![self.clone()];
 
-        for node in self.get_all_nodes() {}
+        for node in self.get_all_nodes() {
+            programs.push(node.clone());
+            let mut node_empty = node.clone();
+            node_empty.children = vec![];
+            programs.push(node_empty);
+        }
 
         programs
     }
