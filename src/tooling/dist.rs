@@ -16,6 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -25,6 +26,9 @@ pub struct Distribution {
 
     /// The computed moments of the distribution.
     moments: Vec<f32>,
+
+    min: f32,
+    max: f32,
 
     /// A histogram representation of the distribution.
     histogram: Vec<(f32, usize)>,
@@ -47,6 +51,9 @@ impl Distribution {
                 max = x;
             }
         });
+
+        let fixedmin = min;
+        let fixedmax = max;
 
         max += 0.001 * (max - min);
         min -= 0.001 * (max - min);
@@ -102,8 +109,21 @@ impl Distribution {
 
         Self {
             name: name.to_string(),
+            min: fixedmin,
+            max: fixedmax,
             moments: vec![mean, variance, skewness, kurtosis],
             histogram: buckets,
         }
+    }
+
+    pub fn minmax_scale(&self, mut input: Vec<f32>) -> Vec<f32> {
+        let min = self.min;
+        let max = self.max;
+
+        input.par_iter_mut().for_each(|x| {
+            *x = (*x - min) / (max - min);
+        });
+
+        input
     }
 }
