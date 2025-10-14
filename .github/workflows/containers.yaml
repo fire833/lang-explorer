@@ -52,7 +52,7 @@ jobs:
     if: "inputs.ONLY == 'lang-explorer' || (inputs.ONLY == '' && !contains(inputs.SKIP, '/lang-explorer/'))"
     with:
       APP_NAME: lang-explorer
-      VERSION: v0.2.0
+      VERSION: v0.3.0
       DOCKERFILE_PATH: src/bin/explorer/Dockerfile
       # RUNNER: fire833-lang-explorer
 
