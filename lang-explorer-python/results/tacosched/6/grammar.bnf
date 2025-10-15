@@ -1,0 +1,24 @@
+<entrypoint> ::= 'ε' | <expansion> | <rule> ',' <expansion>
+
+<expansion> ::= <rule> ',' <expansion> | <rule>
+
+<fused_index_variable> ::= 'o' | 'p'
+
+<split_factor> ::= 'q' | 'r' | 's'
+
+<unroll_factor> ::= 'v' | 'w' | 'z'
+
+<divide_factor> ::= 't' | 'u'
+
+<index_variable> ::= 'i' | 'j' | 'k' | 'x' | 'y'
+
+<assemble_strategy> ::= 'Append' | 'Insert'
+
+<parallelize_races> ::= 'IgnoreRaces' | 'Temporary' | 'NoRaces' | 'ParallelReduction' | 'Atomics'
+
+<workspace_index_variable> ::= 'l' | 'm' | 'n'
+
+<parallelize_hw> ::= 'CPUThread' | 'CPUVector' | 'GPUWarp' | 'NotParallel'
+
+<rule> ::= 'fuse' '(' <index_variable> ',' <index_variable> ',' <fused_index_variable> ')' | 'split' '(' <index_variable> ',' <index_variable> ',' <split_factor> ')' | 'reorder' '(' <index_variable> ')' | 'divide' '(' <index_variable> ',' <index_variable> ',' <divide_factor> ')' | 'precompute' '(' <index_variable> ',' <workspace_index_variable> ')' | 'unroll' '(' <index_variable> ',' <unroll_factor> ')' | 'parallelize' '(' <index_variable> ',' <parallelize_hw> ',' <parallelize_races> ')'
+
