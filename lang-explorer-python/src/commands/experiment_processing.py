@@ -80,7 +80,7 @@ def generate_similarity_table(similarity_results, embedding_distributions):
     """
     print("\\begin{table}[h]")
     print("\\centering")
-    print("\\begin{tabular}{|l|c|c|c|}")
+    print("\\begin{tabular}{|l|c|c|c|c|c|}")
     print("\\hline")
     print("Distribution & Simple Average & Weighted Average & Chi-Squared Average & Normalized Simple Average & Normalized Chi-Squared Average \\\\")
     print("\\hline")
@@ -104,7 +104,9 @@ def process_experiment(args):
 	plot_histogram("AST", args.output, ast_data["histogram"], "")
 
 	for embedding in data["embedding_distributions"]:
-	    plot_histogram(embedding["name"], args.output, embedding["histogram"], "Embedding")
-    
-	generate_moments_table(data["ast_distribution"]["moments"], data["embedding_distributions"])
-	generate_similarity_table(data["similarity_results"], data["embedding_distributions"])
+		if args.plots:
+			plot_histogram(embedding["name"], args.output, embedding["histogram"], "Embedding")
+
+	if args.tables:
+	    generate_moments_table(data["ast_distribution"]["moments"], data["embedding_distributions"])
+	    generate_similarity_table(data["similarity_results"], data["embedding_distributions"])

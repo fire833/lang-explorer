@@ -66,6 +66,8 @@ def main():
 	process = sub.add_parser("expparse", help="Process Generate experiment results.")
 	process.add_argument("--input", type=str, help="Specify the input results to process.")
 	process.add_argument("--output", default="images/", help="Images path.")
+	process.add_argument("--plots", default=True, help="Toggle whether to plot histograms.")
+	process.add_argument("--tables", default=True, help="Toggle whether to generate LaTeX tables.")
 	process.set_defaults(func=process_experiment)
 
 	args = parser.parse_args(sys.argv[1:])
