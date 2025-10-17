@@ -37,7 +37,7 @@ def plot_histogram(name, directory, histogram_data, title_prefix=""):
     
     plt.xlabel("Value")
     plt.ylabel("Frequency")
-    plt.title(f"{name} {title_prefix} Distribution Histogram")
+    plt.title(f"{name} {title_prefix} Similarity Distribution Histogram")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
