@@ -35,9 +35,9 @@ def plot_histogram(lang, name, directory, histogram_data, title_prefix=""):
     plt.figure(figsize=(10, 6))
     plt.bar(centers, counts, width=np.diff(borders), align="center", edgecolor="black", alpha=0.7)
     
-    plt.xlabel("Value")
-    plt.ylabel("Frequency")
-    plt.title(f"{lang} {name} {title_prefix} Similarity Distribution Histogram")
+    plt.xlabel("Value", size=14)
+    plt.ylabel("Frequency", size=14)
+    plt.title(f"{lang} {name} {title_prefix} Similarity Histogram", size=16)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
