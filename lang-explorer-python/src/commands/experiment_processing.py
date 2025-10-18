@@ -26,7 +26,7 @@ def compute_bucket_borders(centers):
     return borders
 
 
-def plot_histogram(name, directory, histogram_data, title_prefix=""):
+def plot_histogram(lang, name, directory, histogram_data, title_prefix=""):
     centers = [item[0] for item in histogram_data]
     counts = [item[1] for item in histogram_data]
     
@@ -37,7 +37,7 @@ def plot_histogram(name, directory, histogram_data, title_prefix=""):
     
     plt.xlabel("Value")
     plt.ylabel("Frequency")
-    plt.title(f"{name} {title_prefix} Similarity Distribution Histogram")
+    plt.title(f"{lang} {name} {title_prefix} Similarity Distribution Histogram")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
@@ -99,13 +99,30 @@ def generate_similarity_table(similarity_results, embedding_distributions):
 def process_experiment(args):
 	f = open(args.input, "r")
 	data = json.load(f)
-	
+
+	# Extract language from input filename
+	lang = "unknown"
+	if "karel" in args.input.lower():
+		lang = "Karel"
+	elif "css" in args.input.lower():
+		lang = "CSS"
+	elif "tacosched" in args.input.lower():
+		lang = "TACO Schedule"
+	elif "tacoexpr" in args.input.lower():
+		lang = "TACO Expression"
+
 	ast_data = data["ast_distribution"]
-	plot_histogram("AST", args.output, ast_data["histogram"], "")
+
+	plot_histogram(lang, "AST", args.output, ast_data["histogram"], "" if "nopartials" not in args.output else "(No Partials)")
+
+	prefix = "Embedding"
+
+	if "nopartials" in args.output:
+		prefix = "(No Partials) Embedding"
 
 	for embedding in data["embedding_distributions"]:
 		if args.plots:
-			plot_histogram(embedding["name"], args.output, embedding["histogram"], "Embedding")
+			plot_histogram(lang, embedding["name"], args.output, embedding["histogram"], prefix)
 
 	if args.tables:
 	    generate_moments_table(data["ast_distribution"]["moments"], data["embedding_distributions"])
