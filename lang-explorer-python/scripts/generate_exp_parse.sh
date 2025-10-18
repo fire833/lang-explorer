@@ -1,11 +1,11 @@
 #!/bin/bash
 
-./main.py expparse --input results/tacosched/5/experiments.json --output images/tacosched
+./main.py expparse --input results/tacosched/6/experiments.json --output images/tacosched
 ./main.py expparse --input results/tacoexpr/3/experiments.json --output images/tacoexpr
 ./main.py expparse --input results/karel/4/experiments.json --output images/karel
 ./main.py expparse --input results/css/5/experiments.json --output images/css
 
-./main.py expparse --input results/tacosched/6/experiments.json --output images/tacosched/nopartials
+./main.py expparse --input results/tacosched/7/experiments.json --output images/tacosched/nopartials
 ./main.py expparse --input results/tacoexpr/4/experiments.json --output images/tacoexpr/nopartials
 ./main.py expparse --input results/karel/5/experiments.json --output images/karel/nopartials
 ./main.py expparse --input results/css/6/experiments.json --output images/css/nopartials
