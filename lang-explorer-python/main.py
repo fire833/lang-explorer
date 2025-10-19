@@ -4,6 +4,7 @@ from src.utils.client import GenerateParams, GenerateResults, CSSLanguageParamet
 from argparse import ArgumentParser	
 import sys
 from src.commands.viz import data_viz
+from src.commands.viz2 import data_viz2
 from src.commands.embeddings import generate_embeddings
 from src.commands.interact import interactive_tsne
 from src.commands.nearest import nearest_neighbors
@@ -40,6 +41,12 @@ def main():
 	viz.add_argument("--output", nargs="?", default="images", help="Images path.")
 	viz.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	viz.set_defaults(func=data_viz)
+
+	viz2 = sub.add_parser("dataviz2", help="Visualize embedding spaces with additional info.")
+	viz2.add_argument("--output", type=str, default="images/", help="Images path.")
+	viz2.add_argument("--lang", type=str, default="tacosched", help="Specify the language of the experiment.")
+	viz2.add_argument("--experiment-number", type=int, default=1, help="Specify the experiment number.")
+	viz2.set_defaults(func=data_viz2)
 
 	interactive = sub.add_parser("dataint", help="Interact with TSNE data.")
 	interactive.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
