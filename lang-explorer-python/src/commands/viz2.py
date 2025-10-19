@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
 from src.utils.strlen import strlen
+import json
 
 def data_viz2(args):
 	lang = args.lang
@@ -18,13 +19,17 @@ def data_viz2(args):
 	programs = pd.read_csv(programs)
 	gensim = pd.read_csv(gensimembed)
 
+	options = json.load(open(f"results/{lang}/{exp_number}/options.json", "r"))
+
 	data = pd.merge(programs, gensim, on="idx", how="inner")
 
 	psize = [len(str(x)) for x in data["program"]]
 	data["plen"] = data["program"].apply(strlen)
 	data = data.drop_duplicates()
 
+	print(options)
 	print(data.shape)
+	print(data.head())
 
 	embedding2 = TSNE(2).fit_transform(data.iloc[:,3:-1])
 	plt.title(f"t-SNE (2D) of {lang} dataset")

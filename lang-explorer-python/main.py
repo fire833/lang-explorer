@@ -7,6 +7,7 @@ from src.commands.viz import data_viz
 from src.commands.viz2 import data_viz2
 from src.commands.embeddings import generate_embeddings
 from src.commands.interact import interactive_tsne
+from src.commands.interact2 import interactive_tsne2
 from src.commands.nearest import nearest_neighbors
 from src.commands.tsne_animation import animate
 from src.commands.nearest2 import nearest_neighbors2
@@ -51,6 +52,11 @@ def main():
 	interactive = sub.add_parser("dataint", help="Interact with TSNE data.")
 	interactive.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	interactive.set_defaults(func=interactive_tsne)
+
+	interactive2 = sub.add_parser("dataint2", help="Interact with TSNE data.")
+	interactive2.add_argument("--lang", type=str, default="tacosched", help="Specify the language of the experiment.")
+	interactive2.add_argument("--experiment-number", type=int, default=1, help="Specify the experiment number.")
+	interactive2.set_defaults(func=interactive_tsne2)
 
 	neighbors = sub.add_parser("neigh", help="Get nearest neighbors for a particular set of neighbors")
 	neighbors.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
