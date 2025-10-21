@@ -175,6 +175,7 @@ impl GenerateInput {
         _output_dir: String,
     ) -> Result<GenerateOutput, LangExplorerError> {
         let res_copy = self.clone();
+        let exp_copy = self.clone();
 
         let grammar = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
@@ -323,134 +324,7 @@ impl GenerateInput {
             }
 
             if self.return_features && self.do_experiments {
-                let len = results.programs.len();
-
-                println!("computing indices");
-
-                let indices: Vec<(usize, usize)> = (0..len)
-                    .flat_map(|i| ((i + 1)..len).map(move |j| (i, j)))
-                    .collect();
-
-                println!("computing ast similarity scores");
-
-                // For all experiments, we need to compute pairwise similarities between all ASTs.
-                let ast_similarity_scores: Vec<f32> = indices
-                    .par_iter()
-                    .map(
-                        |(i, j)| match (results.programs.get(*i), results.programs.get(*j)) {
-                            (Some(p1), Some(p2)) => wl_test(
-                                &p1.features.as_slice(),
-                                &p2.features.as_slice(),
-                                VectorSimilarity::Euclidean,
-                            ),
-                            _ => panic!("we should have features here"),
-                        },
-                    )
-                    .collect();
-
-                let ast_distribution =
-                    Distribution::from_sample("ast_distribution", ast_similarity_scores.as_slice());
-
-                let normalized_ast_scores =
-                    ast_distribution.minmax_scale(ast_similarity_scores.clone());
-
-                let mut emb_c = vec![];
-                let mut emb_n = vec![];
-                let mut emb_d = vec![];
-
-                // Now, go through all embeddings and compute the similarity matrix.
-                for emb in self.return_embeddings.iter() {
-                    println!("computing embedding similarity scores for {}", emb);
-                    // let emb_similarity =
-                    //     Arc::new(Mutex::new(vec![INFINITY; ((len * len) / 2) - len]));
-
-                    let s = emb.to_string();
-
-                    let emb_similarity_scores: Vec<f32> = indices
-                        .par_iter()
-                        .map(
-                            |(i, j)| match (results.programs.get(*i), results.programs.get(*j)) {
-                                (Some(v1), Some(v2)) => {
-                                    match (v1.embeddings.get(&s), v2.embeddings.get(&s)) {
-                                        (Some(vec1), Some(vec2)) => vector_similarity(
-                                            vec1,
-                                            vec2,
-                                            VectorSimilarity::Euclidean,
-                                        ),
-                                        _ => INFINITY,
-                                    }
-                                }
-                                _ => panic!("we should have features here"),
-                            },
-                        )
-                        .collect();
-
-                    let emb_dist = Distribution::from_sample(
-                        emb.to_string().as_str(),
-                        emb_similarity_scores.as_slice(),
-                    );
-
-                    let normalized_emb_scores =
-                        emb_dist.minmax_scale(emb_similarity_scores.clone());
-
-                    emb_d.push(emb_dist);
-                    emb_c.push(emb_similarity_scores);
-                    emb_n.push(normalized_emb_scores);
-                }
-
-                let k = 3;
-                let gamma = 2.0;
-                let len = ast_similarity_scores.len() as f64;
-
-                let mut similarity_results = vec![];
-
-                for (embsim, normembsim) in emb_c.iter().zip(emb_n.iter()) {
-                    println!("computing similarity results for embedding");
-
-                    let mut avg_total: f64 = 0.0;
-                    let mut wavg_total: f64 = 0.0;
-                    let mut chisq_total: f64 = 0.0;
-                    let mut norm_avg_total: f64 = 0.0;
-                    let mut norm_chisq_total: f64 = 0.0;
-
-                    let simple_zip = embsim.iter().zip(ast_similarity_scores.iter());
-                    let norm_zip = normembsim.iter().zip(normalized_ast_scores.iter());
-
-                    for ((this, other), (norm_this, norm_other)) in simple_zip.zip(norm_zip) {
-                        let this = *this;
-                        let other = *other;
-                        let norm_this = *norm_this;
-                        let norm_other = *norm_other;
-
-                        let diff = (this - other).abs();
-                        let norm_diff = (norm_this - norm_other).abs();
-                        let sum = (this + other).abs();
-                        let chisq = (diff.powi((k / 2) - 1) * E.powf(-diff / 2.0))
-                            / (2.0_f32.powi(k / 2) * gamma);
-                        let norm_chisq = (norm_diff.powi((k / 2) - 1) * E.powf(-norm_diff / 2.0))
-                            / (2.0_f32.powi(k / 2) * gamma);
-
-                        avg_total += diff as f64;
-                        wavg_total += ((2.0 * diff) / sum) as f64;
-                        chisq_total += chisq as f64;
-                        norm_avg_total += norm_diff as f64;
-                        norm_chisq_total += norm_chisq as f64;
-                    }
-
-                    similarity_results.push((
-                        avg_total / len,
-                        wavg_total / len,
-                        chisq_total / len,
-                        norm_avg_total / len,
-                        norm_chisq_total / len,
-                    ));
-                }
-
-                results.similarity_experiments = Some(ExperimentResult {
-                    ast_distribution,
-                    embedding_distributions: emb_d,
-                    similarity_results,
-                });
+                results.do_experiments(&exp_copy)?;
             }
         }
 
@@ -507,6 +381,157 @@ impl Dataset<ProgramResult> for GenerateOutput {
 
     fn len(&self) -> usize {
         self.programs.len()
+    }
+}
+
+impl GenerateOutput {
+    pub async fn from_experiment_id<P: Display>(
+        path: P,
+        lang: &LanguageWrapper,
+        exp_id: usize,
+    ) -> Result<Self, LangExplorerError> {
+        let res = GenerateOutput {
+            grammar: None,
+            programs: vec![],
+            options: GenerateInput::default(),
+            similarity_experiments: None,
+            language: lang.clone(),
+        };
+
+        let base_path = format!("{path}/{lang}/{exp_id}/");
+        let _options_path = format!("{base_path}/options.json");
+        let _programs_path = format!("{base_path}/programs.csv");
+
+        Ok(res)
+    }
+
+    pub fn do_experiments(&mut self, input: &GenerateInput) -> Result<(), LangExplorerError> {
+        let len = self.programs.len();
+
+        println!("computing indices");
+
+        let indices: Vec<(usize, usize)> = (0..len)
+            .flat_map(|i| ((i + 1)..len).map(move |j| (i, j)))
+            .collect();
+
+        println!("computing ast similarity scores");
+
+        // For all experiments, we need to compute pairwise similarities between all ASTs.
+        let ast_similarity_scores: Vec<f32> = indices
+            .par_iter()
+            .map(
+                |(i, j)| match (self.programs.get(*i), self.programs.get(*j)) {
+                    (Some(p1), Some(p2)) => wl_test(
+                        &p1.features.as_slice(),
+                        &p2.features.as_slice(),
+                        VectorSimilarity::Euclidean,
+                    ),
+                    _ => panic!("we should have features here"),
+                },
+            )
+            .collect();
+
+        let ast_distribution =
+            Distribution::from_sample("ast_distribution", ast_similarity_scores.as_slice());
+
+        let normalized_ast_scores = ast_distribution.minmax_scale(ast_similarity_scores.clone());
+
+        let mut emb_c = vec![];
+        let mut emb_n = vec![];
+        let mut emb_d = vec![];
+
+        // Now, go through all embeddings and compute the similarity matrix.
+        for emb in input.return_embeddings.iter() {
+            println!("computing embedding similarity scores for {}", emb);
+            // let emb_similarity =
+            //     Arc::new(Mutex::new(vec![INFINITY; ((len * len) / 2) - len]));
+
+            let s = emb.to_string();
+
+            let emb_similarity_scores: Vec<f32> = indices
+                .par_iter()
+                .map(
+                    |(i, j)| match (self.programs.get(*i), self.programs.get(*j)) {
+                        (Some(v1), Some(v2)) => {
+                            match (v1.embeddings.get(&s), v2.embeddings.get(&s)) {
+                                (Some(vec1), Some(vec2)) => {
+                                    vector_similarity(vec1, vec2, VectorSimilarity::Euclidean)
+                                }
+                                _ => INFINITY,
+                            }
+                        }
+                        _ => panic!("we should have features here"),
+                    },
+                )
+                .collect();
+
+            let emb_dist = Distribution::from_sample(
+                emb.to_string().as_str(),
+                emb_similarity_scores.as_slice(),
+            );
+
+            let normalized_emb_scores = emb_dist.minmax_scale(emb_similarity_scores.clone());
+
+            emb_d.push(emb_dist);
+            emb_c.push(emb_similarity_scores);
+            emb_n.push(normalized_emb_scores);
+        }
+
+        let k = 3;
+        let gamma = 2.0;
+        let len = ast_similarity_scores.len() as f64;
+
+        let mut similarity_results = vec![];
+
+        for (embsim, normembsim) in emb_c.iter().zip(emb_n.iter()) {
+            println!("computing similarity results for embedding");
+
+            let mut avg_total: f64 = 0.0;
+            let mut wavg_total: f64 = 0.0;
+            let mut chisq_total: f64 = 0.0;
+            let mut norm_avg_total: f64 = 0.0;
+            let mut norm_chisq_total: f64 = 0.0;
+
+            let simple_zip = embsim.iter().zip(ast_similarity_scores.iter());
+            let norm_zip = normembsim.iter().zip(normalized_ast_scores.iter());
+
+            for ((this, other), (norm_this, norm_other)) in simple_zip.zip(norm_zip) {
+                let this = *this;
+                let other = *other;
+                let norm_this = *norm_this;
+                let norm_other = *norm_other;
+
+                let diff = (this - other).abs();
+                let norm_diff = (norm_this - norm_other).abs();
+                let sum = (this + other).abs();
+                let chisq =
+                    (diff.powi((k / 2) - 1) * E.powf(-diff / 2.0)) / (2.0_f32.powi(k / 2) * gamma);
+                let norm_chisq = (norm_diff.powi((k / 2) - 1) * E.powf(-norm_diff / 2.0))
+                    / (2.0_f32.powi(k / 2) * gamma);
+
+                avg_total += diff as f64;
+                wavg_total += ((2.0 * diff) / sum) as f64;
+                chisq_total += chisq as f64;
+                norm_avg_total += norm_diff as f64;
+                norm_chisq_total += norm_chisq as f64;
+            }
+
+            similarity_results.push((
+                avg_total / len,
+                wavg_total / len,
+                chisq_total / len,
+                norm_avg_total / len,
+                norm_chisq_total / len,
+            ));
+        }
+
+        self.similarity_experiments = Some(ExperimentResult {
+            ast_distribution,
+            embedding_distributions: emb_d,
+            similarity_results,
+        });
+
+        Ok(())
     }
 }
 
