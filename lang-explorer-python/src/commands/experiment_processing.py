@@ -80,15 +80,15 @@ def generate_similarity_table(similarity_results, embedding_distributions):
     """
     print("\\begin{table}[h]")
     print("\\centering")
-    print("\\begin{tabular}{|l|c|c|c|c|c|}")
+    print("\\begin{tabular}{|l|c|c|}")
     print("\\hline")
-    print("Distribution & Simple Average & Weighted Average & Chi-Squared Average & Normalized Simple Average & Normalized Chi-Squared Average \\\\")
+    print("Distribution & Simple Average & Normalized Simple Average \\\\")
     print("\\hline")
     
     for i, dist in enumerate(embedding_distributions):
         name = dist["name"]
         results = similarity_results[i]
-        print(f"{name} & {results[0]:.6f} & {results[1]:.6f} & {results[2]:.6f} & {results[3]:.6f} & {results[4]:.6f} \\\\")
+        print(f"{name} & {results[0]:.6f} & {results[3]:.6f} \\\\")
         print("\\hline")
     
     print("\\end{tabular}")
