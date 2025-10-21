@@ -116,6 +116,7 @@ pub(super) async fn start_server<B: Backend>(
         ("expander" = ExpanderWrapper, Path, description = "The expander to utilize."),
     )
 )]
+#[allow(unused)]
 async fn generate<B: Backend>(
     language: LanguageWrapper,
     expander: ExpanderWrapper,

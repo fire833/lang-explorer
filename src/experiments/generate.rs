@@ -400,18 +400,18 @@ impl GenerateInput {
 
                 let k = 3;
                 let gamma = 2.0;
-                let len = ast_similarity_scores.len() as f32;
+                let len = ast_similarity_scores.len() as f64;
 
                 let mut similarity_results = vec![];
 
                 for (embsim, normembsim) in emb_c.iter().zip(emb_n.iter()) {
                     println!("computing similarity results for embedding");
 
-                    let mut avg_total = 0.0;
-                    let mut wavg_total = 0.0;
-                    let mut chisq_total = 0.0;
-                    let mut norm_avg_total = 0.0;
-                    let mut norm_chisq_total = 0.0;
+                    let mut avg_total: f64 = 0.0;
+                    let mut wavg_total: f64 = 0.0;
+                    let mut chisq_total: f64 = 0.0;
+                    let mut norm_avg_total: f64 = 0.0;
+                    let mut norm_chisq_total: f64 = 0.0;
 
                     let simple_zip = embsim.iter().zip(ast_similarity_scores.iter());
                     let norm_zip = normembsim.iter().zip(normalized_ast_scores.iter());
@@ -430,11 +430,11 @@ impl GenerateInput {
                         let norm_chisq = (norm_diff.powi((k / 2) - 1) * E.powf(-norm_diff / 2.0))
                             / (2.0_f32.powi(k / 2) * gamma);
 
-                        avg_total += diff;
-                        wavg_total += (2.0 * diff) / sum;
-                        chisq_total += chisq;
-                        norm_avg_total += norm_diff;
-                        norm_chisq_total += norm_chisq;
+                        avg_total += diff as f64;
+                        wavg_total += ((2.0 * diff) / sum) as f64;
+                        chisq_total += chisq as f64;
+                        norm_avg_total += norm_diff as f64;
+                        norm_chisq_total += norm_chisq as f64;
                     }
 
                     similarity_results.push((
@@ -546,7 +546,7 @@ struct ExperimentResult {
     /// Distributions for embedding similarities.
     embedding_distributions: Vec<Distribution>,
     /// Average, weighted, and chi-square similarity results, normalized average, normalized chi square.
-    similarity_results: Vec<(f32, f32, f32, f32, f32)>,
+    similarity_results: Vec<(f64, f64, f64, f64, f64)>,
 }
 
 impl GenerateOutput {
