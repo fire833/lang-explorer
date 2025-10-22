@@ -22,7 +22,7 @@ use utoipa::ToSchema;
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
-    languages::GrammarExpansionChecker,
+    languages::GrammarMutator,
 };
 
 use super::{strings::StringValue, GrammarBuilder};
@@ -43,7 +43,7 @@ use super::{strings::StringValue, GrammarBuilder};
 pub struct NFTRulesetLanguage;
 
 pub struct NFTRulesetChecker;
-impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for NFTRulesetChecker {}
+impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for NFTRulesetChecker {}
 
 /// Parameters for NFTables language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
@@ -53,7 +53,7 @@ impl GrammarBuilder for NFTRulesetLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = NFTRulesetParams;
-    type Checker = NFTRulesetChecker;
+    type Mutator = NFTRulesetChecker;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
@@ -61,7 +61,7 @@ impl GrammarBuilder for NFTRulesetLanguage {
         todo!()
     }
 
-    fn new_checker() -> Self::Checker {
+    fn new_mutator() -> Self::Mutator {
         NFTRulesetChecker {}
     }
 }

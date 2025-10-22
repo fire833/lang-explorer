@@ -31,7 +31,7 @@ use crate::{
         rule::ProductionRule,
         NonTerminal, Terminal,
     },
-    languages::GrammarExpansionChecker,
+    languages::GrammarMutator,
 };
 
 use super::{
@@ -86,7 +86,7 @@ pub struct TacoScheduleLanguage;
 
 pub struct TacoScheduleLanguageChecker {}
 
-impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for TacoScheduleLanguageChecker {}
+impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for TacoScheduleLanguageChecker {}
 
 /// Parameters for Taco Schedule Language.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -108,7 +108,6 @@ pub enum TacoScheduleLanguageVersion {
     /// Generate schedules with the context free version of this grammar.
     /// Please note, this version can lead to syntactically incorrect programs.
     ContextFreeV1,
-    ContextSensitiveV1,
 }
 
 impl Default for TacoScheduleLanguageVersion {
@@ -156,7 +155,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = TacoScheduleLanguageParams;
-    type Checker = TacoScheduleLanguageChecker;
+    type Mutator = TacoScheduleLanguageChecker;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -351,13 +350,12 @@ impl GrammarBuilder for TacoScheduleLanguage {
                 ],
                 "tacosched".into(),
             ),
-            TacoScheduleLanguageVersion::ContextSensitiveV1 => todo!(),
         };
 
         Ok(grammar)
     }
 
-    fn new_checker() -> Self::Checker {
+    fn new_mutator() -> Self::Mutator {
         TacoScheduleLanguageChecker {}
     }
 }

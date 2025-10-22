@@ -37,7 +37,7 @@ use crate::{
             alphanumeric::{T_LO_A, T_LO_B, T_LO_C},
             nterminal_str, StringValue,
         },
-        GrammarBuilder, GrammarExpansionChecker,
+        GrammarBuilder, GrammarMutator,
     },
 };
 
@@ -51,7 +51,7 @@ nterminal_str!(Z, "Z");
 pub struct AnBnCnLanguage {}
 
 pub struct AnBnCnLanguageChecker;
-impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for AnBnCnLanguageChecker {}
+impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for AnBnCnLanguageChecker {}
 
 /// Parameters for AnBnCn language.
 #[derive(Default, Debug, Serialize, Deserialize, ToSchema)]
@@ -61,7 +61,7 @@ impl GrammarBuilder for AnBnCnLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = AnBnCnLanguageParams;
-    type Checker = AnBnCnLanguageChecker;
+    type Mutator = AnBnCnLanguageChecker;
 
     /// Spec
     ///     S   →   a   B   C
@@ -100,7 +100,7 @@ impl GrammarBuilder for AnBnCnLanguage {
         Ok(g)
     }
 
-    fn new_checker() -> Self::Checker {
+    fn new_mutator() -> Self::Mutator {
         AnBnCnLanguageChecker {}
     }
 }

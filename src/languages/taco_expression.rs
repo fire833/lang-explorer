@@ -35,7 +35,7 @@ use crate::{
             nterminal_str, StringValue, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN,
             STAR,
         },
-        GrammarBuilder, GrammarExpansionChecker,
+        GrammarBuilder, GrammarMutator,
     },
 };
 
@@ -50,13 +50,15 @@ pub struct TacoExpressionLanguage;
 
 pub struct TacoExpressionLanguageChecker {}
 
-impl<T: Terminal, I: NonTerminal> GrammarExpansionChecker<T, I> for TacoExpressionLanguageChecker {
-    fn check<'a>(
+impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for TacoExpressionLanguageChecker {
+    fn try_mutate<'a>(
         &mut self,
+        _grammar: &Grammar<T, I>,
         _context: &'a ProgramInstance<T, I>,
-        _production: &'a Production<T, I>,
-    ) -> bool {
-        true
+        _lhs: &'a ProductionLHS<T, I>,
+        _rule: &'a ProductionRule<T, I>,
+    ) -> Option<Grammar<T, I>> {
+        None
     }
 }
 
@@ -99,7 +101,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = TacoExpressionLanguageParams;
-    type Checker = TacoExpressionLanguageChecker;
+    type Mutator = TacoExpressionLanguageChecker;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -154,7 +156,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
         Ok(grammar)
     }
 
-    fn new_checker() -> Self::Checker {
+    fn new_mutator() -> Self::Mutator {
         TacoExpressionLanguageChecker {}
     }
 }

@@ -24,8 +24,10 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+use crate::grammar::lhs::ProductionLHS;
 use crate::grammar::prod::Production;
 use crate::grammar::program::ProgramInstance;
+use crate::grammar::rule::ProductionRule;
 use crate::{
     errors::LangExplorerError,
     evaluators::Evaluator,
@@ -65,7 +67,7 @@ pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
     type Params<'de>: Default + Serialize + Deserialize<'de> + ToSchema;
-    type Checker: GrammarExpansionChecker<Self::Term, Self::NTerm>;
+    type Mutator: GrammarMutator<Self::Term, Self::NTerm>;
 
     /// Method to actually construct a new grammar instance.
     /// Uses the input parameters to customize the grammar.
@@ -73,22 +75,23 @@ pub trait GrammarBuilder {
         params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
 
-    /// Create a new verifier for verifying that expansions are valid.
-    fn new_checker() -> Self::Checker;
+    /// Create a new mutator for modifying grammar productions at runtime.
+    fn new_mutator() -> Self::Mutator;
 }
 
-pub trait GrammarExpansionChecker<T: Terminal, I: NonTerminal> {
-    /// Check for whether or not a given rule is valid given
-    /// the context. This has originally been implemented for keeping
-    /// track of context in a more tractable way than with explicit
-    /// context in the grammar productions itself. Default implementation
-    /// is to always return true.
-    fn check<'a>(
+pub trait GrammarMutator<T: Terminal, I: NonTerminal> {
+    /// As a means for producing some grammars that are context-sensitive,
+    /// this method allows for mutating a grammar based on the current
+    /// program instance, LHS, and production rule being expanded.
+    /// If no mutation is to be performed, return None.
+    fn try_mutate<'a>(
         &mut self,
+        _grammar: &Grammar<T, I>,
         _context: &'a ProgramInstance<T, I>,
-        _production: &'a Production<T, I>,
-    ) -> bool {
-        true
+        _lhs: &'a ProductionLHS<T, I>,
+        _rule: &'a ProductionRule<T, I>,
+    ) -> Option<Grammar<T, I>> {
+        None
     }
 }
 

@@ -121,13 +121,13 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     /// Will automatically decide on the expansion regime depending on whether
     /// the grammar is context-free or context-sensitive.
     pub fn generate_program_instance(
-        grammar: &Self,
+        &self,
         expander: &mut Box<dyn GrammarExpander<T, I>>,
     ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
-        if !grammar.is_context_sensitive {
-            grammar.generate_program_instance_ctx_free(expander)
+        if !self.is_context_sensitive {
+            self.generate_program_instance_ctx_free(expander)
         } else {
-            grammar.generate_program_instance_ctx_sensitive(expander)
+            self.generate_program_instance_ctx_sensitive(expander)
         }
     }
 
