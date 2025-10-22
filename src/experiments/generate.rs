@@ -22,7 +22,7 @@ use std::{
     fmt::Display,
     fs, mem,
     sync::Arc,
-    time::SystemTime,
+    time::{Duration, SystemTime},
 };
 
 use bhtsne::tSNE;
@@ -142,6 +142,10 @@ pub struct GenerateInput {
     #[serde(rename = "ollama_concurrent_requests", default = "default_ollama")]
     concurrent_ollama_requests: u64,
 
+    /// Specify the tcp keepalive time (in seconds) for ollama requests.
+    #[serde(rename = "ollama_tcp_keepalive", default = "default_keepalive")]
+    ollama_tcp_keepalive: u32,
+
     /// Specify the label extraction strategy for creating
     /// labels for each document program.
     #[serde(rename = "label_extraction", default)]
@@ -154,6 +158,10 @@ pub struct GenerateInput {
 
 fn default_ollama() -> u64 {
     40
+}
+
+fn default_keepalive() -> u32 {
+    3600
 }
 
 fn default_count() -> u64 {
@@ -319,6 +327,7 @@ impl GenerateInput {
                         ollama_host.clone(),
                         d2v_host.clone(),
                         self.concurrent_ollama_requests,
+                        self.ollama_tcp_keepalive,
                     )
                     .await?;
             }
@@ -584,6 +593,7 @@ impl GenerateOutput {
         ollama_host: String,
         d2v_host: String,
         concurrent_requests: u64,
+        tcp_keepalive_secs: u32,
     ) -> Result<(), LangExplorerError> {
         let emb_name = embedding.to_string();
 
@@ -671,7 +681,8 @@ impl GenerateOutput {
             | EmbeddingModel::SnowflakeArctic2
             | EmbeddingModel::SnowflakeArctic137 => {
                 let client = ClientBuilder::new()
-                    .pool_max_idle_per_host(10)
+                    .pool_max_idle_per_host(50)
+                    .tcp_keepalive(Duration::from_secs(tcp_keepalive_secs as u64))
                     .build()
                     .unwrap();
 
