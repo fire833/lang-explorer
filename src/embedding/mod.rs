@@ -16,16 +16,12 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::fmt::Display;
 use std::hash::Hash;
 use std::path::Path;
 use std::str::FromStr;
-use std::time::SystemTime;
 
-use burn::backend::Autodiff;
-use burn::optim::AdamWConfig;
-use burn::prelude::Backend;
 use burn::record::{HalfPrecisionSettings, PrettyJsonFileRecorder};
 use burn::{
     config::Config,
@@ -35,15 +31,9 @@ use clap::ValueEnum;
 use rand::Rng;
 #[allow(unused)]
 use rand::SeedableRng;
-use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::embedding::doc2vecdbowns::{Doc2VecDBOWNSEmbedderParams, Doc2VecEmbedderDBOWNS};
-use crate::experiments::generate::GenerateOutput;
-use crate::languages::strings::StringValue;
-use crate::tooling::d2v;
-use crate::tooling::ollama::get_embedding_ollama;
 use crate::{
     errors::LangExplorerError,
     grammar::{grammar::Grammar, NonTerminal, Terminal},
