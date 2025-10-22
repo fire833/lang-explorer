@@ -64,7 +64,7 @@ use crate::{
 
 /// Parameters supplied to the API for generating one or more programs with the provided
 /// language and expander to create said program.
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct GenerateInput {
     /// Toggle whether to return WL-kernel extracted features
     /// along with each graph.
@@ -170,6 +170,34 @@ fn default_count() -> u64 {
 
 fn default_return_partials() -> bool {
     false
+}
+
+impl Default for GenerateInput {
+    fn default() -> Self {
+        Self {
+            return_features: false,
+            return_edge_lists: false,
+            return_embeddings: vec![],
+            do_experiments: false,
+            return_tsne2d: false,
+            return_tsne3d: false,
+            return_grammar: false,
+            return_graphviz: false,
+            return_partial_graphs: default_return_partials(),
+            css: CSSLanguageParameters::default(),
+            nft: NFTRulesetParams::default(),
+            spice: SpiceLanguageParams::default(),
+            spiral: SpiralLanguageParams::default(),
+            taco_expr: TacoExpressionLanguageParams::default(),
+            taco_sched: TacoScheduleLanguageParams::default(),
+            karel: KarelLanguageParameters::default(),
+            count: default_count(),
+            concurrent_ollama_requests: default_ollama(),
+            ollama_tcp_keepalive: default_keepalive(),
+            label_extraction: LabelExtractionStrategy::default(),
+            params: GeneralEmbeddingTrainingParams::default(),
+        }
+    }
 }
 
 impl GenerateInput {

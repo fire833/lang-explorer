@@ -142,6 +142,7 @@
   "karel": {},
   "count": 100,
   "ollama_concurrent_requests": 40,
+  "ollama_tcp_keepalive": 3600,
   "label_extraction": {
     "WLKernel": {
       "iterations": 5,
