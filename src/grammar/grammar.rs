@@ -40,10 +40,10 @@ use crate::{
 #[derive(Clone)]
 pub struct Grammar<T: Terminal, I: NonTerminal> {
     /// The root symbol of this grammar definition.
-    root: I,
+    pub(crate) root: I,
 
     /// The list of productions associated with this grammar.
-    productions: BTreeMap<ProductionLHS<T, I>, Production<T, I>>,
+    pub(crate) productions: BTreeMap<ProductionLHS<T, I>, Production<T, I>>,
 
     /// Whether or not the grammar is context sensitive. If false,
     /// it is assumed that the grammar is context-free.
@@ -51,7 +51,7 @@ pub struct Grammar<T: Terminal, I: NonTerminal> {
 
     /// Canonical name is the unique, human readable name that is
     /// given to this grammar.
-    canonical_name: String,
+    pub(crate) canonical_name: String,
 }
 
 impl<T: Terminal, I: NonTerminal> Grammar<T, I> {

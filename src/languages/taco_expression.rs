@@ -16,6 +16,8 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -42,7 +44,7 @@ use crate::{
 nterminal_str!(NT_ENTRY, "entrypoint");
 nterminal_str!(NT_EXPR, "expression");
 nterminal_str!(NT_ELEMENT, "element");
-nterminal_str!(SYMBOL, "symbol");
+nterminal_str!(TENSOR, "symbol");
 nterminal_str!(NT_INDEX, "nt_index");
 nterminal_str!(INDEX, "index");
 
@@ -53,11 +55,31 @@ pub struct TacoExpressionLanguageChecker {}
 impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for TacoExpressionLanguageChecker {
     fn try_mutate<'a>(
         &mut self,
-        _grammar: &Grammar<T, I>,
+        grammar: &Grammar<T, I>,
         _context: &'a ProgramInstance<T, I>,
-        _lhs: &'a ProductionLHS<T, I>,
-        _rule: &'a ProductionRule<T, I>,
+        lhs: &'a ProductionLHS<T, I>,
+        rule: &'a ProductionRule<T, I>,
     ) -> Option<Grammar<T, I>> {
+        if format!("{:?}", lhs.non_terminal) == "symbol" {
+            let mut production = grammar
+                .productions
+                .get(&lhs)
+                .expect("Production must exist for LHS")
+                .clone();
+
+            production
+                .items
+                .retain(|item| if item == rule { false } else { true });
+
+            let new_grammar = Grammar::new(
+                grammar.root.clone(),
+                vec![production],
+                grammar.canonical_name.clone(),
+            );
+
+            return Some(new_grammar);
+        }
+
         None
     }
 }
@@ -129,7 +151,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
                     ),
                     context_free_production!(
                         NT_ELEMENT,
-                        production_rule!(SYMBOL, LPAREN, NT_INDEX, RPAREN)
+                        production_rule!(TENSOR, LPAREN, NT_INDEX, RPAREN)
                     ),
                     context_free_production!(
                         NT_INDEX,
@@ -146,7 +168,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
                     ),
                     // Fused index variable
                     Production::new(ProductionLHS::new_context_free_elem(INDEX), indices),
-                    Production::new(ProductionLHS::new_context_free_elem(SYMBOL), symbols),
+                    Production::new(ProductionLHS::new_context_free_elem(TENSOR), symbols),
                 ],
                 "tacoexpr".into(),
             ),
