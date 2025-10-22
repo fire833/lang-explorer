@@ -28,7 +28,7 @@ use std::{
 use bhtsne::tSNE;
 use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
 use dashmap::DashMap;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -442,7 +442,10 @@ impl GenerateOutput {
         Ok(res)
     }
 
-    pub fn do_experiments(&mut self, input: &GenerateInput) -> Result<(), LangExplorerError> {
+    pub(crate) fn do_experiments(
+        &mut self,
+        input: &GenerateInput,
+    ) -> Result<(), LangExplorerError> {
         let len = self.programs.len();
 
         println!("computing indices");
@@ -477,12 +480,9 @@ impl GenerateOutput {
         let mut emb_n = vec![];
         let mut emb_d = vec![];
 
-        // Now, go through all embeddings and compute the similarity matrix.
+        // Now, go through all embeddings and compute the similarity matrix, among other things.
         for emb in input.return_embeddings.iter() {
             println!("computing embedding similarity scores for {}", emb);
-            // let emb_similarity =
-            //     Arc::new(Mutex::new(vec![INFINITY; ((len * len) / 2) - len]));
-
             let s = emb.to_string();
 
             let emb_similarity_scores: Vec<f32> = indices
@@ -508,6 +508,17 @@ impl GenerateOutput {
             );
 
             let normalized_emb_scores = emb_dist.minmax_scale(emb_similarity_scores.clone());
+
+            // // Get the nearest neighbors for each program.
+            // let nn = self.programs.par_iter().enumerate().map(|(idx, item)| {
+            //     let mut topk = vec![];
+
+            //     let itertop = (0..idx)
+            //         .map(|i| (i, idx))
+            //         .chain((idx..len).map(|j| (idx, j)));
+
+            //     for (i, j) in itertop {}
+            // });
 
             emb_d.push(emb_dist);
             emb_c.push(emb_similarity_scores);
