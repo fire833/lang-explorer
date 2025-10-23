@@ -2,7 +2,7 @@
 
 ./main.py expparse --input results/tacosched/6/experiments.json --output images/tacosched
 ./main.py expparse --input results/tacoexpr/3/experiments.json --output images/tacoexpr
-./main.py expparse --input results/karel/4/experiments.json --output images/karel
+./main.py expparse --input results/karel/6/experiments.json --output images/karel
 ./main.py expparse --input results/css/5/experiments.json --output images/css
 
 ./main.py expparse --input results/tacosched/7/experiments.json --output images/tacosched/nopartials
