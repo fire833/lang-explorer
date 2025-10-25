@@ -26,7 +26,9 @@ use std::{
 };
 
 use bhtsne::tSNE;
-use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
+use burn::{
+    backend::Autodiff, data::dataset::Dataset, module::Module, optim::AdamWConfig, prelude::Backend,
+};
 use dashmap::DashMap;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use reqwest::ClientBuilder;
@@ -479,6 +481,7 @@ impl GenerateOutput {
         let mut emb_c = vec![];
         let mut emb_n = vec![];
         let mut emb_d = vec![];
+        let mut emb_nn = vec![];
 
         // Now, go through all embeddings and compute the similarity matrix, among other things.
         for emb in input.return_embeddings.iter() {
@@ -509,20 +512,12 @@ impl GenerateOutput {
 
             let normalized_emb_scores = emb_dist.minmax_scale(emb_similarity_scores.clone());
 
-            // // Get the nearest neighbors for each program.
-            // let nn = self.programs.par_iter().enumerate().map(|(idx, item)| {
-            //     let mut topk = vec![];
-
-            //     let itertop = (0..idx)
-            //         .map(|i| (i, idx))
-            //         .chain((idx..len).map(|j| (idx, j)));
-
-            //     for (i, j) in itertop {}
-            // });
+            let nn = self.compute_nn(&emb_similarity_scores, 5);
 
             emb_d.push(emb_dist);
             emb_c.push(emb_similarity_scores);
             emb_n.push(normalized_emb_scores);
+            emb_nn.push(nn);
         }
 
         let k = 3;
@@ -580,6 +575,49 @@ impl GenerateOutput {
         });
 
         Ok(())
+    }
+
+    fn compute_nn(&self, similarity_scores: &Vec<f32>, topk_len: usize) -> Vec<Vec<u32>> {
+        let len = self.programs.len();
+
+        // Get the nearest neighbors for each program.
+        self.programs
+            .par_iter()
+            .enumerate()
+            .map(|(idx, _)| {
+                let mut topk: Vec<(f32, u32)> = vec![];
+
+                let itertop = (0..idx)
+                    .map(|i| (i, idx))
+                    .chain((idx..len).map(|j| (idx, j)));
+
+                for (i, j) in itertop {
+                    let idx = (i * len) - ((i * (i + 1)) / 2) + (j - i - 1);
+                    let other = similarity_scores[idx];
+                    let otheridx = if i == idx { j } else { i } as u32;
+                    let elem = (other, otheridx);
+
+                    let mut inserted = false;
+                    for (pos, (val, _)) in topk.iter().enumerate() {
+                        if other < *val {
+                            topk.insert(pos, elem);
+                            inserted = true;
+                            break;
+                        }
+                    }
+
+                    if !inserted {
+                        topk.push(elem);
+                    }
+
+                    if topk.len() > topk_len {
+                        topk.pop();
+                    }
+                }
+
+                topk.iter().map(|(_, idx)| *idx).collect::<Vec<u32>>()
+            })
+            .collect::<Vec<Vec<u32>>>()
     }
 }
 
@@ -795,6 +833,11 @@ impl GenerateOutput {
                 self.language, embed_model
             ))?;
 
+            let mut embed_nn_writer = csv::Writer::from_path(format!(
+                "{path}/{}/{exp_id}/embeddings_{}_nn.csv",
+                self.language, embed_model
+            ))?;
+
             for (idx, prog) in self.programs.iter().enumerate() {
                 if let Some(emb) = prog.embeddings.get(&embed_model.to_string()) {
                     if idx == 0 {
@@ -815,9 +858,29 @@ impl GenerateOutput {
                     embed_writer.write_record(None::<&[u8]>)?;
                 }
 
+                if let Some(nn) = prog.embeddings_nn.get(&embed_model.to_string()) {
+                    if idx == 0 {
+                        let mut vec = vec!["idx".to_string()];
+                        for i in 1..nn.len() {
+                            vec.push(format!("nn_{}", i));
+                        }
+
+                        embed_nn_writer.write_record(vec)?;
+                    }
+
+                    embed_nn_writer.write_field(idx.to_string())?;
+
+                    for val in nn.iter() {
+                        embed_nn_writer.write_field(val.to_string())?;
+                    }
+
+                    embed_nn_writer.write_record(None::<&[u8]>)?;
+                }
+
                 // Flush every once in a while.
                 if idx % 1000 == 0 {
                     embed_writer.flush()?;
+                    embed_nn_writer.flush()?;
                 }
             }
 
@@ -967,6 +1030,10 @@ pub(crate) struct ProgramResult {
     #[serde(rename = "embeddings")]
     embeddings: HashMap<String, Vec<f32>>,
 
+    /// If enabled, returns nearest-neighbor embeddings for each embedding vector.
+    #[serde(rename = "embeddings_nn")]
+    embeddings_nn: HashMap<String, Vec<usize>>,
+
     /// If enabled, returns t-SNE embeddings for each embedding vector.
     #[serde(rename = "tsne_2d")]
     tnse_2d: Option<HashMap<String, Vec<f32>>>,
@@ -988,6 +1055,7 @@ impl ProgramResult {
             graphviz: None,
             features: vec![],
             embeddings: HashMap::new(),
+            embeddings_nn: HashMap::new(),
             tnse_2d: None,
             edge_list: None,
             is_partial: false,
