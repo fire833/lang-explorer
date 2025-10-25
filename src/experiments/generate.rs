@@ -26,9 +26,7 @@ use std::{
 };
 
 use bhtsne::tSNE;
-use burn::{
-    backend::Autodiff, data::dataset::Dataset, module::Module, optim::AdamWConfig, prelude::Backend,
-};
+use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
 use dashmap::DashMap;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use reqwest::ClientBuilder;
@@ -472,6 +470,8 @@ impl GenerateOutput {
                 },
             )
             .collect();
+
+        let ast_nn = self.compute_nn(&ast_similarity_scores, 5);
 
         let ast_distribution =
             Distribution::from_sample("ast_distribution", ast_similarity_scores.as_slice());
@@ -1026,6 +1026,10 @@ pub(crate) struct ProgramResult {
     #[serde(rename = "features")]
     features: Vec<Feature>,
 
+    #[serde(rename = "ast_nn")]
+    /// If enabled, returns the nearest neighbors in the dataset of each AST.
+    ast_nn: Vec<u32>,
+
     /// If enabled, returns the embedding of the program.
     #[serde(rename = "embeddings")]
     embeddings: HashMap<String, Vec<f32>>,
@@ -1054,6 +1058,7 @@ impl ProgramResult {
             // program_internal: None,
             graphviz: None,
             features: vec![],
+            ast_nn: vec![],
             embeddings: HashMap::new(),
             embeddings_nn: HashMap::new(),
             tnse_2d: None,
@@ -1084,6 +1089,14 @@ impl ProgramResult {
 
     pub(crate) fn set_embedding(&mut self, name: String, embedding: Vec<f32>) {
         self.embeddings.insert(name, embedding);
+    }
+
+    pub(crate) fn set_embedding_nn(&mut self, name: String, nn: Vec<usize>) {
+        self.embeddings_nn.insert(name, nn);
+    }
+
+    pub(crate) fn set_ast_nn(&mut self, nn: Vec<u32>) {
+        self.ast_nn = nn;
     }
 
     // pub(crate) fn set_internal_program(
