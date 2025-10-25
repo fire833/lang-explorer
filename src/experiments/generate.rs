@@ -368,19 +368,19 @@ impl GenerateInput {
         Ok(results)
     }
 
-    pub async fn from_file(path: &str) -> Result<Self, LangExplorerError> {
+    pub fn from_file(path: &str) -> Result<Self, LangExplorerError> {
         let contents = fs::read_to_string(path)?;
         let config: GenerateInput = serde_json::from_str(&contents)?;
         Ok(config)
     }
 
-    pub async fn from_experiment_id<P: Display>(
+    pub fn from_experiment_id<P: Display>(
         path: P,
         lang: &LanguageWrapper,
         exp_id: usize,
     ) -> Result<Self, LangExplorerError> {
         let path = format!("{path}/{lang}/{exp_id}/options.json");
-        Self::from_file(&path).await
+        Self::from_file(&path)
     }
 }
 
@@ -427,17 +427,59 @@ impl GenerateOutput {
         lang: &LanguageWrapper,
         exp_id: usize,
     ) -> Result<Self, LangExplorerError> {
-        let res = GenerateOutput {
+        let base_path = format!("{path}/{lang}/{exp_id}/");
+        let programs_path = format!("{base_path}/programs.csv");
+        let options_path = format!("{base_path}/options.json");
+
+        let mut res = GenerateOutput {
             grammar: None,
             programs: vec![],
-            options: GenerateInput::default(),
+            options: GenerateInput::from_file(options_path.as_str())?,
             similarity_experiments: None,
             language: lang.clone(),
         };
 
-        let base_path = format!("{path}/{lang}/{exp_id}/");
-        let _options_path = format!("{base_path}/options.json");
-        let _programs_path = format!("{base_path}/programs.csv");
+        let mut reader = csv::Reader::from_path(programs_path)?;
+        for result in reader.deserialize() {
+            let record: ProgramRecord = result?;
+            res.programs.push(record.into());
+        }
+
+        let dir = fs::read_dir(base_path)?;
+        for entry in dir {
+            match entry {
+                Ok(entry) => {
+                    let fname = entry.file_name().into_string().unwrap();
+                    if fname.starts_with("embeddings_") && fname.ends_with(".csv") {
+                        let embed_name = fname
+                            .strip_prefix("embeddings_")
+                            .unwrap()
+                            .strip_suffix(".csv")
+                            .unwrap()
+                            .to_string();
+
+                        println!("found embedding file for model {}", embed_name);
+                        let mut reader = csv::Reader::from_path(entry.path())?;
+
+                        for result in reader.records() {
+                            let record = result?;
+                            let idx: usize = record.get(0).unwrap().parse().unwrap();
+                            let mut vec = vec![];
+
+                            for i in 1..record.len() {
+                                let val: f32 = record.get(i).unwrap().parse().unwrap();
+                                vec.push(val);
+                            }
+
+                            if let Some(prog) = res.programs.get_mut(idx) {
+                                prog.set_embedding(embed_name.clone(), vec);
+                            }
+                        }
+                    }
+                }
+                Err(e) => return Err(e.into()),
+            }
+        }
 
         Ok(res)
     }
@@ -1153,11 +1195,20 @@ impl ProgramResult {
     pub(crate) fn set_ast_nn(&mut self, nn: Vec<u32>) {
         self.ast_nn = nn;
     }
+}
 
-    // pub(crate) fn set_internal_program(
-    //     &mut self,
-    //     program: ProgramInstance<StringValue, StringValue>,
-    // ) {
-    //     self.program_internal = Some(program);
-    // }
+impl From<ProgramRecord> for ProgramResult {
+    fn from(value: ProgramRecord) -> Self {
+        ProgramResult {
+            program: Some(value.program),
+            graphviz: None,
+            features: vec![],
+            ast_nn: vec![],
+            embeddings: HashMap::new(),
+            embeddings_nn: HashMap::new(),
+            tnse_2d: None,
+            edge_list: None,
+            is_partial: value.is_partial,
+        }
+    }
 }

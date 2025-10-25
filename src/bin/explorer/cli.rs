@@ -72,10 +72,9 @@ impl LangExplorerArgs {
                             println!("using defaults");
                             GenerateInput::default()
                         }
-                        (None, Some(file)) => GenerateInput::from_file(file.as_str()).await?,
+                        (None, Some(file)) => GenerateInput::from_file(file.as_str())?,
                         (Some(idx), _) => {
-                            GenerateInput::from_experiment_id(&self.output_dir, language, *idx)
-                                .await?
+                            GenerateInput::from_experiment_id(&self.output_dir, language, *idx)?
                         }
                     };
 
