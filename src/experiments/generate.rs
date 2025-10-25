@@ -17,7 +17,7 @@
  */
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     f32::{consts::E, INFINITY},
     fmt::Display,
     fs, mem,
@@ -471,7 +471,10 @@ impl GenerateOutput {
             )
             .collect();
 
-        let ast_nn = self.compute_nn(&ast_similarity_scores, 5);
+        let mut ast_nn = self.compute_nn(&ast_similarity_scores, 5);
+        for prog in self.programs.iter_mut() {
+            prog.set_ast_nn(ast_nn.pop_front().unwrap());
+        }
 
         let ast_distribution =
             Distribution::from_sample("ast_distribution", ast_similarity_scores.as_slice());
@@ -512,7 +515,10 @@ impl GenerateOutput {
 
             let normalized_emb_scores = emb_dist.minmax_scale(emb_similarity_scores.clone());
 
-            let nn = self.compute_nn(&emb_similarity_scores, 5);
+            let mut nn = self.compute_nn(&emb_similarity_scores, 5);
+            for prog in self.programs.iter_mut() {
+                prog.set_embedding_nn(emb.to_string(), nn.pop_front().unwrap());
+            }
 
             emb_d.push(emb_dist);
             emb_c.push(emb_similarity_scores);
@@ -520,53 +526,14 @@ impl GenerateOutput {
             emb_nn.push(nn);
         }
 
-        let k = 3;
-        let gamma = 2.0;
-        let len = ast_similarity_scores.len() as f64;
-
-        let mut similarity_results = vec![];
-
-        for (embsim, normembsim) in emb_c.iter().zip(emb_n.iter()) {
-            println!("computing similarity results for embedding");
-
-            let mut avg_total: f64 = 0.0;
-            let mut wavg_total: f64 = 0.0;
-            let mut chisq_total: f64 = 0.0;
-            let mut norm_avg_total: f64 = 0.0;
-            let mut norm_chisq_total: f64 = 0.0;
-
-            let simple_zip = embsim.iter().zip(ast_similarity_scores.iter());
-            let norm_zip = normembsim.iter().zip(normalized_ast_scores.iter());
-
-            for ((this, other), (norm_this, norm_other)) in simple_zip.zip(norm_zip) {
-                let this = *this;
-                let other = *other;
-                let norm_this = *norm_this;
-                let norm_other = *norm_other;
-
-                let diff = (this - other).abs();
-                let norm_diff = (norm_this - norm_other).abs();
-                let sum = (this + other).abs();
-                let chisq =
-                    (diff.powi((k / 2) - 1) * E.powf(-diff / 2.0)) / (2.0_f32.powi(k / 2) * gamma);
-                let norm_chisq = (norm_diff.powi((k / 2) - 1) * E.powf(-norm_diff / 2.0))
-                    / (2.0_f32.powi(k / 2) * gamma);
-
-                avg_total += diff as f64;
-                wavg_total += ((2.0 * diff) / sum) as f64;
-                chisq_total += chisq as f64;
-                norm_avg_total += norm_diff as f64;
-                norm_chisq_total += norm_chisq as f64;
-            }
-
-            similarity_results.push((
-                avg_total / len,
-                wavg_total / len,
-                chisq_total / len,
-                norm_avg_total / len,
-                norm_chisq_total / len,
-            ));
-        }
+        let similarity_results = self.compute_similarity_results(
+            &emb_c,
+            &emb_n,
+            &ast_similarity_scores,
+            &normalized_ast_scores,
+            3,
+            1.0,
+        );
 
         self.similarity_experiments = Some(ExperimentResult {
             ast_distribution,
@@ -577,7 +544,7 @@ impl GenerateOutput {
         Ok(())
     }
 
-    fn compute_nn(&self, similarity_scores: &Vec<f32>, topk_len: usize) -> Vec<Vec<u32>> {
+    fn compute_nn(&self, similarity_scores: &Vec<f32>, topk_len: usize) -> VecDeque<Vec<u32>> {
         let len = self.programs.len();
 
         // Get the nearest neighbors for each program.
@@ -617,7 +584,65 @@ impl GenerateOutput {
 
                 topk.iter().map(|(_, idx)| *idx).collect::<Vec<u32>>()
             })
-            .collect::<Vec<Vec<u32>>>()
+            .collect::<VecDeque<Vec<u32>>>()
+    }
+
+    fn compute_similarity_results(
+        &self,
+        embedding_scores: &Vec<Vec<f32>>,
+        normalized_embedding_similarity_scores: &Vec<Vec<f32>>,
+        ast_scores: &Vec<f32>,
+        normalized_ast_scores: &Vec<f32>,
+        k: i32,
+        gamma: f32,
+    ) -> Vec<(f64, f64, f64, f64, f64)> {
+        let mut similarity_results = vec![];
+        let len = self.programs.len() as f64;
+
+        for (embsim, normembsim) in embedding_scores
+            .iter()
+            .zip(normalized_embedding_similarity_scores.iter())
+        {
+            let mut avg_total: f64 = 0.0;
+            let mut wavg_total: f64 = 0.0;
+            let mut chisq_total: f64 = 0.0;
+            let mut norm_avg_total: f64 = 0.0;
+            let mut norm_chisq_total: f64 = 0.0;
+
+            let simple_zip = embsim.iter().zip(ast_scores.iter());
+            let norm_zip = normembsim.iter().zip(normalized_ast_scores.iter());
+
+            for ((this, other), (norm_this, norm_other)) in simple_zip.zip(norm_zip) {
+                let this = *this;
+                let other = *other;
+                let norm_this = *norm_this;
+                let norm_other = *norm_other;
+
+                let diff = (this - other).abs();
+                let norm_diff = (norm_this - norm_other).abs();
+                let sum = (this + other).abs();
+                let chisq =
+                    (diff.powi((k / 2) - 1) * E.powf(-diff / 2.0)) / (2.0_f32.powi(k / 2) * gamma);
+                let norm_chisq = (norm_diff.powi((k / 2) - 1) * E.powf(-norm_diff / 2.0))
+                    / (2.0_f32.powi(k / 2) * gamma);
+
+                avg_total += diff as f64;
+                wavg_total += ((2.0 * diff) / sum) as f64;
+                chisq_total += chisq as f64;
+                norm_avg_total += norm_diff as f64;
+                norm_chisq_total += norm_chisq as f64;
+            }
+
+            similarity_results.push((
+                avg_total / len,
+                wavg_total / len,
+                chisq_total / len,
+                norm_avg_total / len,
+                norm_chisq_total / len,
+            ));
+        }
+
+        similarity_results
     }
 }
 
@@ -807,6 +832,9 @@ impl GenerateOutput {
         let mut program_writer =
             csv::Writer::from_path(format!("{path}/{}/{exp_id}/programs.csv", self.language))?;
 
+        let mut ast_nn_writer =
+            csv::Writer::from_path(format!("{path}/{}/{exp_id}/ast_nn.csv", self.language))?;
+
         println!(
             "writing {} programs to {path}/{}/{exp_id}/programs.csv",
             self.programs.len(),
@@ -818,9 +846,33 @@ impl GenerateOutput {
                 prog.program.clone().unwrap_or("".into()),
                 prog.is_partial,
             ))?;
+
+            if idx == 0 {
+                let mut vec = vec!["idx".to_string()];
+                for i in 1..prog.ast_nn.len() {
+                    vec.push(format!("nn_{}", i));
+                }
+
+                ast_nn_writer.write_record(vec)?;
+            }
+
+            ast_nn_writer.write_field(idx.to_string())?;
+
+            for val in prog.ast_nn.iter() {
+                ast_nn_writer.write_field(val.to_string())?;
+            }
+
+            ast_nn_writer.write_record(None::<&[u8]>)?;
+
+            // Flush every once in a while.
+            if idx % 1000 == 0 {
+                program_writer.flush()?;
+                ast_nn_writer.flush()?;
+            }
         }
 
         program_writer.flush()?;
+        ast_nn_writer.flush()?;
 
         // Need to clone to avoid immutable and mutable borrow downstream.
         for embed_model in self.options.return_embeddings.clone().iter() {
@@ -883,6 +935,9 @@ impl GenerateOutput {
                     embed_nn_writer.flush()?;
                 }
             }
+
+            embed_writer.flush()?;
+            embed_nn_writer.flush()?;
 
             if self.options.return_tsne2d {
                 println!(
@@ -1036,7 +1091,7 @@ pub(crate) struct ProgramResult {
 
     /// If enabled, returns nearest-neighbor embeddings for each embedding vector.
     #[serde(rename = "embeddings_nn")]
-    embeddings_nn: HashMap<String, Vec<usize>>,
+    embeddings_nn: HashMap<String, Vec<u32>>,
 
     /// If enabled, returns t-SNE embeddings for each embedding vector.
     #[serde(rename = "tsne_2d")]
@@ -1091,7 +1146,7 @@ impl ProgramResult {
         self.embeddings.insert(name, embedding);
     }
 
-    pub(crate) fn set_embedding_nn(&mut self, name: String, nn: Vec<usize>) {
+    pub(crate) fn set_embedding_nn(&mut self, name: String, nn: Vec<u32>) {
         self.embeddings_nn.insert(name, nn);
     }
 
