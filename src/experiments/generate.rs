@@ -1040,10 +1040,22 @@ impl GenerateOutput {
             serde_json::to_string_pretty(&self.options)?,
         )?;
 
-        if self.similarity_experiments.is_some() {
+        self.write_experiments(&path, exp_id)?;
+
+        Ok(())
+    }
+
+    /// Write out experiment results if any were run. This is refactored from the
+    /// main write method so I can save experiment results separately.
+    pub fn write_experiments<P: Display>(
+        &self,
+        path: P,
+        exp_id: usize,
+    ) -> Result<(), LangExplorerError> {
+        if let Some(experiments) = &self.similarity_experiments {
             fs::write(
                 format!("{path}/{}/{exp_id}/experiments.json", self.language),
-                serde_json::to_string_pretty(&self.similarity_experiments)?,
+                serde_json::to_string_pretty(&experiments)?,
             )?;
         }
 
