@@ -18,7 +18,9 @@
 
 use burn::backend::{Cuda, NdArray};
 use lang_explorer::{
-    errors::LangExplorerError, expanders::ExpanderWrapper, experiments::generate::GenerateInput,
+    errors::LangExplorerError,
+    expanders::ExpanderWrapper,
+    experiments::generate::{GenerateInput, GenerateOutput},
     languages::LanguageWrapper,
 };
 
@@ -102,7 +104,7 @@ impl LangExplorerArgs {
                             .await?
                     };
 
-                    res.write(self.output_dir.clone())?;
+                    res.write(self.output_dir.clone(), None)?;
 
                     Ok(())
                 }
@@ -128,6 +130,18 @@ impl LangExplorerArgs {
                         )
                         .await;
                     }
+                    Ok(())
+                }
+                Subcommand::RedoExperiments { language, redo } => {
+                    let input =
+                        GenerateInput::from_experiment_id(&self.output_dir, language, *redo)?;
+                    let mut res =
+                        GenerateOutput::from_experiment_id(&self.output_dir, language, *redo)
+                            .await?;
+
+                    res.do_experiments(&input)?;
+                    res.write(&self.output_dir, Some(*redo))?;
+
                     Ok(())
                 }
             },
@@ -172,6 +186,16 @@ enum Subcommand {
         /// Specify the port to listen on for the server.
         #[arg(short, long, default_value_t = default_port())]
         port: u16,
+    },
+
+    RedoExperiments {
+        /// Specify the language to redo experiments for.
+        #[arg(short, long, value_enum)]
+        language: LanguageWrapper,
+
+        /// Specify the experiment number fo load data in and recompute.
+        #[arg(short, long)]
+        redo: usize,
     },
 }
 

@@ -484,10 +484,7 @@ impl GenerateOutput {
         Ok(res)
     }
 
-    pub(crate) fn do_experiments(
-        &mut self,
-        input: &GenerateInput,
-    ) -> Result<(), LangExplorerError> {
+    pub fn do_experiments(&mut self, input: &GenerateInput) -> Result<(), LangExplorerError> {
         let len = self.programs.len();
 
         println!("computing indices");
@@ -865,8 +862,15 @@ impl GenerateOutput {
         Ok(())
     }
 
-    pub fn write<P: Display>(&self, path: P) -> Result<(), LangExplorerError> {
-        let exp_id = Self::get_experiment_id(&path, &self.language)?;
+    pub fn write<P: Display>(
+        &self,
+        path: P,
+        experiment_id: Option<usize>,
+    ) -> Result<(), LangExplorerError> {
+        let exp_id = match experiment_id {
+            Some(id) => id,
+            None => Self::get_experiment_id(&path, &self.language)?,
+        };
 
         // Fix, need to create directories here too
         fs::create_dir_all(format!("{path}/{}/{exp_id}", self.language))?;
