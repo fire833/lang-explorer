@@ -207,7 +207,7 @@ enum Subcommand {
 
         /// Toggle writing to a new experiment ID instead of overwriting
         /// the current experiment results.
-        #[arg(short, long)]
+        #[arg(short, long, default_value_t = false)]
         write_to_new: bool,
     },
 }
