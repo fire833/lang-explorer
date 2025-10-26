@@ -595,11 +595,11 @@ impl GenerateOutput {
 
                 let itertop = (0..idx)
                     .map(|i| (i, idx))
-                    .chain((idx..len).map(|j| (idx, j)));
+                    .chain(((idx + 1)..len).map(|j| (idx, j)));
 
                 for (i, j) in itertop {
-                    let idx = (i * len) - ((i * (i + 1)) / 2) + (j - i - 1);
-                    let other = similarity_scores[idx];
+                    let idxfinal = (i * len) - ((i * (i + 1)) / 2) + (j - i - 1);
+                    let other = similarity_scores[idxfinal];
                     let otheridx = if i == idx { j } else { i } as u32;
                     let elem = (other, otheridx);
 
@@ -895,7 +895,7 @@ impl GenerateOutput {
 
             if idx == 0 {
                 let mut vec = vec!["idx".to_string()];
-                for i in 1..prog.ast_nn.len() {
+                for i in 1..=prog.ast_nn.len() {
                     vec.push(format!("nn_{}", i));
                 }
 
@@ -959,7 +959,7 @@ impl GenerateOutput {
                 if let Some(nn) = prog.embeddings_nn.get(&embed_model.to_string()) {
                     if idx == 0 {
                         let mut vec = vec!["idx".to_string()];
-                        for i in 1..nn.len() {
+                        for i in 1..=nn.len() {
                             vec.push(format!("nn_{}", i));
                         }
 
