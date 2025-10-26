@@ -132,7 +132,11 @@ impl LangExplorerArgs {
                     }
                     Ok(())
                 }
-                Subcommand::RedoExperiments { language, redo } => {
+                Subcommand::RedoExperiments {
+                    language,
+                    redo,
+                    write_to_new,
+                } => {
                     let input =
                         GenerateInput::from_experiment_id(&self.output_dir, language, *redo)?;
                     let mut res =
@@ -140,7 +144,11 @@ impl LangExplorerArgs {
                             .await?;
 
                     res.do_experiments(&input)?;
-                    res.write(&self.output_dir, Some(*redo))?;
+                    if *write_to_new {
+                        res.write(&self.output_dir, None)?;
+                    } else {
+                        res.write(&self.output_dir, Some(*redo))?;
+                    }
 
                     Ok(())
                 }
@@ -193,9 +201,14 @@ enum Subcommand {
         #[arg(short, long, value_enum)]
         language: LanguageWrapper,
 
-        /// Specify the experiment number fo load data in and recompute.
+        /// Specify the experiment number to load data in and recompute.
         #[arg(short, long)]
         redo: usize,
+
+        /// Toggle writing to a new experiment ID instead of overwriting
+        /// the current experiment results.
+        #[arg(short, long)]
+        write_to_new: bool,
     },
 }
 
