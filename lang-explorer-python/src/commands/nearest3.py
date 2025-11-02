@@ -12,7 +12,7 @@ def nearest_neighbors3(args):
 	nn = f"results/{args.lang}/{args.experiment_number}/embeddings_{args.embedding_system}_nn.csv"
 
 	print("loading data...")
-	progdata = pd.read_csv(args.input, skiprows=0, delimiter=',')
+	progdata = pd.read_csv(programs, skiprows=0, delimiter=',')
 	nndata = pd.read_csv(nn, skiprows=0, delimiter=',')
 
 	indices = [int(i) for i in args.indices.split(",")]
