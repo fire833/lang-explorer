@@ -69,7 +69,7 @@ def main():
 	neighbors2 = sub.add_parser("neigh2", help="Get nearest neighbors for a particular set of neighbors")
 	neighbors2.add_argument("--input", default="embeddings.csv", help="Specify the embeddings to use for visualization.")
 	neighbors2.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
-	neighbors2.add_argument("--output", type=str, default="foo", help="Specify the name of the output.")
+	neighbors2.add_argument("--output", type=str, default="images/", help="Specify the name of the output.")
 	neighbors2.set_defaults(func=nearest_neighbors2)
 
 	neighbors3 = sub.add_parser("neigh3", help="Get nearest neighbors for a particular set of neighbors")
@@ -77,7 +77,7 @@ def main():
 	neighbors3.add_argument("--experiment-number", type=int, default=1, help="Specify the experiment number.")
 	neighbors3.add_argument("--embedding-system", type=str, default="doc2vecgensim", help="Specify the embedding system used.")
 	neighbors3.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
-	neighbors3.add_argument("--output", type=str, default="foo", help="Specify the name of the output.")
+	neighbors3.add_argument("--output", type=str, default="images/", help="Specify the name of the output.")
 	neighbors3.set_defaults(func=nearest_neighbors3)
 
 	anim = sub.add_parser("tsneanim", help="Animate tSNE over time.")
