@@ -11,6 +11,7 @@ from src.commands.interact2 import interactive_tsne2
 from src.commands.nearest import nearest_neighbors
 from src.commands.tsne_animation import animate
 from src.commands.nearest2 import nearest_neighbors2
+from src.commands.nearest3 import nearest_neighbors3
 from src.commands.experiment_processing import process_experiment
 import matplotlib
 
@@ -70,6 +71,14 @@ def main():
 	neighbors2.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
 	neighbors2.add_argument("--output", type=str, default="foo", help="Specify the name of the output.")
 	neighbors2.set_defaults(func=nearest_neighbors2)
+
+	neighbors3 = sub.add_parser("neigh3", help="Get nearest neighbors for a particular set of neighbors")
+	neighbors3.add_argument("--lang", type=str, default="tacosched", help="Specify the language of the experiment.")
+	neighbors3.add_argument("--experiment-number", type=int, default=1, help="Specify the experiment number.")
+	neighbors3.add_argument("--embedding-system", type=str, default="doc2vecgensim", help="Specify the embedding system used.")
+	neighbors3.add_argument("--indices", help="Comma separated list of indices that you want the nearest neighbors of.")
+	neighbors3.add_argument("--output", type=str, default="foo", help="Specify the name of the output.")
+	neighbors3.set_defaults(func=nearest_neighbors3)
 
 	anim = sub.add_parser("tsneanim", help="Animate tSNE over time.")
 	anim.add_argument("--input", default="results/temporal/vectors_*.csv", help="Specify the embeddings to use for visualization.")
