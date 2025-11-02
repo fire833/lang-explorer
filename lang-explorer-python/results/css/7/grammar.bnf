@@ -1,0 +1,56 @@
+<entrypoint> ::= 'ε' | <block> | <block> <entrypoint>
+
+<display_type> ::= 'inline' | 'block' | 'contents' | 'flex' | 'grid' | 'inline-block' | 'inline-flex' | 'inline-grid' | 'inline-table' | 'list-item' | 'run-in' | 'table' | 'table-caption' | 'table-column-group' | 'table-header-group' | 'table-footer-group' | 'table-row-group' | 'table-cell' | 'table-column' | 'table-row' | 'none' | 'initial' | 'inherit'
+
+<space_separated_html_elements> ::= <base_html_element> | <base_html_element> ' ' <space_separated_html_elements>
+
+<class> ::= 'buttons' | 'footers'
+
+<justify_items_type> ::= 'normal' | 'stretch' | 'start' | 'left' | 'center' | 'end' | 'right' | 'initial' | 'inherit'
+
+<html_element> ::= <base_html_element> ':' ':' <pseudo_element> | <base_html_element> ':' ':' <pseudo_element> ':' <pseudo_class> | <base_html_element> ':' <pseudo_class> | <base_html_element>
+
+<align_items_type> ::= 'normal' | 'stretch' | 'center' | 'flex-start' | 'flex-end' | 'start' | 'end' | 'baseline' | 'initial' | 'inherit'
+
+<justify_content_type> ::= 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly' | 'initial' | 'inherit'
+
+<properties> ::= 'ε' | <property> | <property> <property>
+
+<size> ::= <number> '%' | <number> <number> '%' | <number> <size_suffix> | <number> <number> <size_suffix> | <number> <number> <number> <size_suffix>
+
+<align_self_type> ::= 'auto' | 'stretch' | 'center' | 'flex-start' | 'flex-end' | 'baseline' | 'initial' | 'inherit'
+
+<number> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+
+<overflow_type> ::= 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' | 'initial' | 'inherit'
+
+<block> ::=  <selector> '{' <properties> '}'
+
+<float_type> ::= 'none' | 'left' | 'right' | 'initial' | 'inherit'
+
+<comma_separated_html_elements> ::= <base_html_element> | <base_html_element> ',' <comma_separated_html_elements>
+
+<pseudo_class> ::= 'link' | 'visited' | 'hover' | 'active'
+
+<selector> ::= <base_html_element> | <base_html_element> '>' <base_html_element> | <base_html_element> '+' <base_html_element> | <base_html_element> '-' <base_html_element> | <comma_separated_html_elements> | <space_separated_html_elements>
+
+<size_suffix> ::= 'c' 'm' | 'm' 'm' | 'i' 'n' | 'p' 'x' | 'p' 't' | 'p' 'c' | 'e' 'm' | 'e' 'x' | 'c' 'h' | 'r' 'e' 'm' | 'v' 'w' | 'v' 'h' | 'v' 'm' 'i' 'n' | 'v' 'm' 'a' 'x'
+
+<align_content_type> ::= 'stretch' | 'center' | 'flex-start' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly' | 'inherit'
+
+<pseudo_element> ::= 'first-letter' | 'first-line' | 'marker' | 'before' | 'after' | 'selection'
+
+<property> ::= 'align-content' ':' <align_content_type> ';' | 'align-items' ':' <align_items_type> ';' | 'align-self' ':' <align_self_type> ';' | 'background' ':' <color> ';' | 'border-bottom' ':' <size> ' ' <border_type> ' ' <color> ';' | 'border-bottom-color' ':' <color> ';' | 'border-bottom-left-radius' ':' <size> ';' | 'border-bottom-right-radius' ':' <size> ';' | 'border-bottom-style' ':' <border_type> ';' | 'border-bottom-width' ':' <size> ';' | 'border-color' ':' <color> ';' | 'border-image-width' ':' <size> ';' | 'border-left' ':' <size> ' ' <border_type> ' ' <color> ';' | 'border-left-color' ':' <color> ';' | 'border-left-style' ':' <border_type> ';' | 'border-left-width' ':' <size> ';' | 'border-radius' ':' ';' | 'border-right' ':' <size> ' ' <border_type> ' ' <color> ';' | 'border-right-color' ':' <color> ';' | 'border-right-style' ':' <border_type> ';' | 'border-right-width' ':' <size> ';' | 'border-spacing' ':' ';' | 'border-style' ':' ';' | 'border-top' ':' <size> ' ' <border_type> ' ' <color> ';' | 'border-top-color' ':' <color> ';' | 'border-top-left-radius' ':' <size> ';' | 'border-top-right-radius' ':' <size> ';' | 'border-top-style' ':' <border_type> ';' | 'border-top-width' ':' <size> ';' | 'border-width' ':' <size> ';' | 'color' ':' <color> ';' | 'column-width' ':' <size> ';' | 'display' ':' <display_type> ';' | 'float' ':' <float_type> ';' | 'font-size' ':' <size> ';' | 'height' ':' <size> ';' | 'justify-content' ':' <justify_content_type> ';' | 'justify-items' ':' <justify_items_type> ';' | 'justify-self' ':' <justify_self_type> ';' | 'left' ':' <size> ';' | 'line-height' ':' <size> ';' | 'list-style' ':' ';' | 'margin' ':' <size> ';' | 'margin-bottom' ':' <size> ';' | 'margin-left' ':' <size> ';' | 'margin-right' ':' <size> ';' | 'margin-top' ':' <size> ';' | 'max-height' ':' <size> ';' | 'max-width' ':' <size> ';' | 'min-height' ':' <size> ';' | 'min-width' ':' <size> ';' | 'outline-color' ':' <color> ';' | 'outline-style' ':' <border_type> ';' | 'outline-width' ':' <size> ';' | 'overflow' ':' <overflow_type> ';' | 'overflow-x' ':' <overflow_type> ';' | 'overflow-y' ':' <overflow_type> ';' | 'padding' ':' <size> ';' | 'padding-bottom' ':' <size> ';' | 'padding-left' ':' <size> ';' | 'padding-right' ':' <size> ';' | 'padding-top' ':' <size> ';' | 'right' ':' <size> ';' | 'scroll-margin' ':' <size> ';' | 'scroll-margin-block' ':' <size> ';' | 'scroll-margin-block-end' ':' <size> ';' | 'scroll-margin-block-start' ':' <size> ';' | 'scroll-margin-bottom' ':' <size> ';' | 'scroll-margin-inline' ':' <size> ';' | 'scroll-margin-inline-end' ':' <size> ';' | 'scroll-margin-inline-start' ':' <size> ';' | 'scroll-margin-left' ':' <size> ';' | 'scroll-margin-right' ':' <size> ';' | 'scroll-margin-top' ':' <size> ';' | 'scroll-padding' ':' <size> ';' | 'scroll-padding-block' ':' <size> ';' | 'scroll-padding-block-end' ':' <size> ';' | 'scroll-padding-block-start' ':' <size> ';' | 'scroll-padding-bottom' ':' <size> ';' | 'scroll-padding-inline' ':' <size> ';' | 'scroll-padding-inline-end' ':' <size> ';' | 'scroll-padding-inline-start' ':' <size> ';' | 'scroll-padding-left' ':' <size> ';' | 'scroll-padding-right' ':' <size> ';' | 'scroll-padding-top' ':' <size> ';' | 'tab-size' ':' <number> ';' | 'text-align' ':' <text_align_type> ';' | 'top' ':' <size> ';' | 'transition-delay' ':' <number> 's' ';' | 'transition-duration' ':' <number> 's' ';' | 'widows' ':' <number> ';' | 'width' ':' <size> ';' | 'word-spacing' ':' <size> ';' | 'z-index' ':' <number> ';'
+
+<justify_self_type> ::= 'auto' | 'normal' | 'stretch' | 'start' | 'left' | 'center' | 'end' | 'right' | 'initial' | 'inherit'
+
+<base_html_element> ::= 'a' | 'abbr' | 'address' | 'area' | 'article' | 'aside' | 'audio' | 'b' | 'base' | 'bdi' | 'bdo' | 'blockquote' | 'body' | 'br' | 'button' | 'canvas' | 'caption' | 'cite' | 'code' | 'col' | 'colgroup' | 'data' | 'datalist' | 'dd' | 'del' | 'details' | 'dfn' | 'dialog' | 'div' | 'dl' | 'dt' | 'em' | 'embed' | 'fieldset' | 'figcaption' | 'figure' | 'footer' | 'form' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'head' | 'header' | 'hgroup' | 'hr' | 'html' | 'i' | 'iframe' | 'img' | 'input' | 'ins' | 'kbd' | 'label' | 'legend' | 'li' | 'link' | 'main' | 'map' | 'mark' | 'meta' | 'meter' | 'nav' | 'noscript' | 'object' | 'ol' | 'optgroup' | 'option' | 'output' | 'p' | 'param' | 'picture' | 'pre' | 'progress' | 'q' | 'rp' | 'rt' | 'ruby' | 's' | 'samp' | 'script' | 'section' | 'select' | 'small' | 'source' | 'span' | 'strong' | 'style' | 'sub' | 'summary' | 'sup' | 'table' | 'tbody' | 'td' | 'template' | 'textarea' | 'tfoot' | 'th' | 'thead' | 'time' | 'title' | 'tr' | 'track' | 'u' | 'ul' | 'var' | 'video' | 'wbr'
+
+<text_align_type> ::= 'left' | 'right' | 'justify' | 'initial' | 'inherit'
+
+<color> ::= '#842d5b' | '#20b01c' | '#7d1dc1' | '#42a1dc' | '#da8454' | '#8ec5d2' | '#a69657' | '#a69657' | '#664ba3' | '#3b6a42' | 'rgb(39, 37, 193)' | 'rgb(37, 138, 166)' | 'rgb(84, 183, 126)' | 'rgb(104, 36, 170)' | 'rgb(207, 106, 144)' | 'rgb(203, 135, 198)' | 'rgb(231, 100, 187)' | 'rgb(143, 143, 143)' | 'rgb(68, 68, 68)' | 'rgb(160, 160, 160)' | 'rgb(141, 141, 141)' | 'rgb(95, 95, 95)'
+
+<border_type> ::= 'none' | 'hidden' | 'dotted' | 'dashed' | 'solid' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset' | 'initial' | 'inherit'
+
+<id> ::= 'content' | 'header' | 'btn'
+
