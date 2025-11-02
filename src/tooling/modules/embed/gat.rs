@@ -40,8 +40,12 @@ pub struct GraphAttentionNet<B: Backend> {
 }
 
 impl<B: Backend> GraphAttentionNet<B> {
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
-        todo!()
+    pub fn forward(&self, mut input: Tensor<B, 2, Float>) -> Tensor<B, 2, Float> {
+        for layer in self.layers.iter() {
+            input = layer.forward();
+        }
+
+        input
     }
 }
 
