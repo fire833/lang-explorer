@@ -22,7 +22,6 @@ use crate::{
     embedding::LanguageEmbedder,
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
-    languages::Feature,
 };
 
 pub struct GraphMAEEmbedder {}
@@ -33,27 +32,20 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     for GraphMAEEmbedder
 {
     type Document = ProgramInstance<T, I>;
-    type Word = Feature;
     type Params = GraphMAEEmbedderParams;
 
     fn new(_grammar: &Grammar<T, I>, _params: Self::Params, _device: Device<B>) -> Self {
         todo!()
     }
 
-    fn fit(
-        self,
-        _documents: &[(Self::Document, Vec<Self::Word>)],
-    ) -> Result<Self, LangExplorerError>
+    fn fit(self, _documents: &[Self::Document]) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
         todo!()
     }
 
-    fn embed(
-        &mut self,
-        _document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, 1>, LangExplorerError> {
+    fn embed(&mut self, _document: Self::Document) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }
 

@@ -47,7 +47,6 @@ pub mod graphmae;
 /// Main trait for creating embeddings of programs.
 pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     type Document;
-    type Word: PartialEq + PartialOrd;
     type Params;
 
     /// Initializes an Embedder system. This typically involves either
@@ -56,19 +55,13 @@ pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self;
 
     /// Trains the embedder on the provided corpus.
-    fn fit(
-        self,
-        documents: &[(Self::Document, Vec<Self::Word>)],
-    ) -> Result<Self, LangExplorerError>
+    fn fit(self, documents: &[Self::Document]) -> Result<Self, LangExplorerError>
     where
         Self: Sized;
 
     /// Creates an embedding given the current model on a new
     /// document and it's corresponding words.
-    fn embed(
-        &mut self,
-        document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, 1>, LangExplorerError>;
+    fn embed(&mut self, document: Self::Document) -> Result<Tensor<B, 1>, LangExplorerError>;
 
     /// Returns the embeddings of the documents that were trained on.
     fn get_embeddings(&self) -> Result<Vec<f32>, LangExplorerError>;

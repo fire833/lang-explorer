@@ -38,7 +38,11 @@ use rand_chacha::ChaCha8Rng;
 use crate::{
     embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder},
     errors::LangExplorerError,
-    grammar::{grammar::Grammar, NonTerminal, Terminal},
+    grammar::{
+        grammar::Grammar,
+        program::{ProgramInstance, WLKernelHashingOrder},
+        NonTerminal, Terminal,
+    },
     languages::Feature,
     tooling::modules::{
         embed::pvdm::{Doc2VecDM, Doc2VecDMConfig},
@@ -100,8 +104,7 @@ pub struct Doc2VecDMEmbedderParams {
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     for Doc2VecEmbedderDM<T, I, B>
 {
-    type Document = String;
-    type Word = Feature;
+    type Document = ProgramInstance<T, I>;
     type Params = Doc2VecDMEmbedderParams;
 
     fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
@@ -128,15 +131,19 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         }
     }
 
-    fn fit(
-        mut self,
-        documents: &[(Self::Document, Vec<Self::Word>)],
-    ) -> Result<Self, LangExplorerError> {
-        let mut wordset: BTreeMap<Self::Word, u32> = BTreeMap::new();
+    fn fit(mut self, documents: &[Self::Document]) -> Result<Self, LangExplorerError> {
+        let mut wordset: BTreeMap<Feature, u32> = BTreeMap::new();
 
         let mut counter: u32 = 0;
         documents.iter().for_each(|doc| {
-            doc.1.iter().for_each(|word| {
+            let words = &doc.extract_words_wl_kernel(
+                5,
+                WLKernelHashingOrder::ParentSelfChildrenOrdered,
+                false,
+                false,
+            );
+
+            words.iter().for_each(|word| {
                 if !wordset.contains_key(word) {
                     wordset.insert(*word, counter);
                     counter += 1;
@@ -163,7 +170,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
             }
 
             let mut counter = 0;
-            for (docidx, (_, words)) in documents.iter().enumerate() {
+            for (docidx, doc) in documents.iter().enumerate() {
+                let words = &doc.extract_words_wl_kernel(
+                    5,
+                    WLKernelHashingOrder::ParentSelfChildrenOrdered,
+                    false,
+                    false,
+                );
+
                 for (wordidx, _) in words.iter().enumerate() {
                     counter += 1;
                     let ctx_indices = get_context_indices(
@@ -204,10 +218,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         Ok(self)
     }
 
-    fn embed(
-        &mut self,
-        _document: (Self::Document, Vec<Self::Word>),
-    ) -> Result<Tensor<B, 1>, LangExplorerError> {
+    fn embed(&mut self, _document: Self::Document) -> Result<Tensor<B, 1>, LangExplorerError> {
         todo!()
     }
 

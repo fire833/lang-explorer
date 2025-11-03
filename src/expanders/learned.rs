@@ -173,21 +173,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
     ) -> &'a ProductionRule<T, I> {
         let doc = context.clone();
 
-        let words = match &self.label_extraction {
-            LabelExtractionStrategy::WLKernel {
-                iterations,
-                order,
-                dedup,
-                sort,
-            } => doc.extract_words_wl_kernel(*iterations, order.clone(), *dedup, *sort),
-            LabelExtractionStrategy::CodePaths {} => {
-                panic!("CodePaths label extraction not implemented yet")
-            }
-        };
-
         let embedding = self
             .embedder
-            .forward(doc, words)
+            .forward(doc)
             .expect("failed to create embedding");
 
         let out = self.production_decision.forward(
@@ -215,7 +203,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
         &mut self,
         _grammar: &'a Grammar<T, I>,
         _context: &'a ProgramInstance<T, I>,
-        lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
+        _lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
     ) -> (&'a ProductionLHS<T, I>, usize) {
         todo!()
     }

@@ -39,7 +39,11 @@ use rand_chacha::ChaCha8Rng;
 use crate::{
     embedding::{GeneralEmbeddingTrainingParams, LanguageEmbedder},
     errors::LangExplorerError,
-    grammar::{grammar::Grammar, NonTerminal, Terminal},
+    grammar::{
+        grammar::Grammar,
+        program::{ProgramInstance, WLKernelHashingOrder},
+        NonTerminal, Terminal,
+    },
     languages::Feature,
     tooling::modules::embed::pvdbow::{Doc2VecDBOWNS, Doc2VecDBOWNSConfig},
 };
@@ -96,8 +100,7 @@ pub struct Doc2VecDBOWNSEmbedderParams {
 impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     for Doc2VecEmbedderDBOWNS<T, I, B>
 {
-    type Document = String;
-    type Word = Feature;
+    type Document = ProgramInstance<T, I>;
     type Params = Doc2VecDBOWNSEmbedderParams;
 
     fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
@@ -149,16 +152,20 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         }
     }
 
-    fn fit(
-        mut self,
-        documents: &[(Self::Document, Vec<Self::Word>)],
-    ) -> Result<Self, LangExplorerError>
+    fn fit(mut self, documents: &[Self::Document]) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
         let mut counter: u32 = 0;
         documents.iter().for_each(|doc| {
-            doc.1.iter().for_each(|word| {
+            let words = &doc.extract_words_wl_kernel(
+                5,
+                WLKernelHashingOrder::ParentSelfChildrenOrdered,
+                false,
+                false,
+            );
+
+            words.iter().for_each(|word| {
                 if !self.word2idx.contains_key(word) {
                     self.word2idx.insert(*word, counter);
                     self.idx2word.insert(counter, *word);
@@ -185,7 +192,14 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 lr = self.params.gen_params.gen_params.min_learning_rate;
             }
 
-            for (docidx, (_, words)) in documents.iter().enumerate() {
+            for (docidx, doc) in documents.iter().enumerate() {
+                let words = &doc.extract_words_wl_kernel(
+                    5,
+                    WLKernelHashingOrder::ParentSelfChildrenOrdered,
+                    false,
+                    false,
+                );
+
                 let set = words.iter().cloned().collect::<HashSet<Feature>>();
                 for _ in words.iter().enumerate() {
                     counter += 1;
@@ -230,7 +244,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
 
     fn embed(
         &mut self,
-        document: (Self::Document, Vec<Self::Word>),
+        document: Self::Document,
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         let vec: Tensor<B, 1, Float> = Tensor::random(
             [self.params.gen_params.d_model],
@@ -241,7 +255,13 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         let batcher = ProgramBatcher::new();
         let mut lr: f64 = self.params.gen_params.get_learning_rate();
         let mut counter = 0;
-        let set = document.1.iter().cloned().collect::<HashSet<Feature>>();
+        let words = &document.extract_words_wl_kernel(
+            5,
+            WLKernelHashingOrder::ParentSelfChildrenOrdered,
+            false,
+            false,
+        );
+        let set = words.iter().cloned().collect::<HashSet<Feature>>();
 
         for _num in 0..5 {
             let mut items = vec![];
@@ -252,10 +272,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
                 lr = 0.000001;
             }
 
-            for _ in document.1.iter().enumerate() {
+            for _ in words.iter().enumerate() {
                 counter += 1;
                 let positive_indices =
-                    super::get_positive_indices(&self.word2idx, &document.1, 1, &mut self.rng);
+                    super::get_positive_indices(&self.word2idx, &words, 1, &mut self.rng);
 
                 let negative_indices = super::get_negative_indices(
                     &self.idx2word,

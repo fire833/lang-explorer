@@ -41,7 +41,10 @@ use crate::{
     },
     errors::LangExplorerError,
     expanders::{learned::LabelExtractionStrategy, ExpanderWrapper},
-    grammar::{grammar::Grammar, program::InstanceId},
+    grammar::{
+        grammar::Grammar,
+        program::{InstanceId, ProgramInstance},
+    },
     languages::{
         anbncn::{AnBnCnLanguage, AnBnCnLanguageParams},
         css::{CSSLanguage, CSSLanguageParameters},
@@ -746,7 +749,7 @@ impl GenerateOutput {
                 let mut documents = vec![];
 
                 for prog in self.programs.iter() {
-                    documents.push((prog.program.clone().unwrap(), prog.features.clone()));
+                    documents.push(prog.program_internal.clone().unwrap());
                     for word in prog.features.iter() {
                         set.insert(*word);
                     }
@@ -1127,8 +1130,8 @@ pub(crate) struct ProgramResult {
     program: Option<String>,
 
     /// Internal representation of the generated program.
-    // #[serde(skip_serializing, skip_deserializing)]
-    // program_internal: Option<ProgramInstance<StringValue, StringValue>>,
+    #[serde(skip_serializing, skip_deserializing)]
+    program_internal: Option<ProgramInstance<StringValue, StringValue>>,
 
     /// Optional graphviz representation for the generated program.
     #[serde(rename = "graphviz")]
@@ -1168,7 +1171,7 @@ impl ProgramResult {
     pub(crate) fn new() -> Self {
         Self {
             program: None,
-            // program_internal: None,
+            program_internal: None,
             graphviz: None,
             features: vec![],
             ast_nn: vec![],
@@ -1217,6 +1220,7 @@ impl From<ProgramRecord> for ProgramResult {
     fn from(value: ProgramRecord) -> Self {
         ProgramResult {
             program: Some(value.program),
+            program_internal: None,
             graphviz: None,
             features: vec![],
             ast_nn: vec![],

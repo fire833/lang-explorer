@@ -160,10 +160,9 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
     fn forward(
         &mut self,
         doc: ProgramInstance<T, I>,
-        words: Vec<Feature>,
     ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         match self {
-            EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed((doc.to_string(), words)),
+            EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed(doc),
         }
     }
 }
