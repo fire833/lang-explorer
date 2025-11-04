@@ -27,7 +27,10 @@ pub mod prod_decision_var;
 pub enum Activation {
     Sigmoid,
     ReLU,
-    LeakyReLU,
+    /// The additional parameter is the slope for negative inputs
+    /// (a multiple of 1/10000). This is a hack to get around the
+    /// Eq constraints of floats.
+    LeakyReLU(u32),
     TanH,
 }
 

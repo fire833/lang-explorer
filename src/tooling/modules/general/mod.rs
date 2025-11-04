@@ -72,7 +72,7 @@ impl<B: Backend> GeneralLinear<B> {
             // Apply activation function to all layers except the last
             x = match activation {
                 Activation::ReLU => relu(x),
-                Activation::LeakyReLU => leaky_relu(x, 0.01),
+                Activation::LeakyReLU(slope) => leaky_relu(x, (1.0 / 10000.0) * slope as f64),
                 Activation::Sigmoid => sigmoid(x),
                 Activation::TanH => tanh(x),
             };
