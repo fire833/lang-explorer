@@ -23,36 +23,35 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
-use crate::tooling::modules::{embed::gatconv::GATConv, expander::Activation};
+use crate::tooling::modules::embed::{
+    gat::{GraphAttentionNet, GraphAttentionNetConfig},
+    gcn::{GraphConvolutionNet, GraphConvolutionNetConfig},
+};
 
 #[derive(Debug, Config)]
-pub struct GraphAttentionNetConfig {
-    /// Number of graph attention layers.
-    pub n_layers: usize,
+pub enum GraphNeuralNetConfig {
+    GCN(GraphConvolutionNetConfig),
+    GAT(GraphAttentionNetConfig),
 }
 
-impl GraphAttentionNetConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> GraphAttentionNet<B> {
-        GraphAttentionNet { layers: vec![] }
+impl GraphNeuralNetConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GraphNeuralNet<B> {
+        match self {
+            GraphNeuralNetConfig::GCN(config) => GraphNeuralNet::GCN(config.init(device)),
+            GraphNeuralNetConfig::GAT(config) => GraphNeuralNet::GAT(config.init(device)),
+        }
     }
 }
 
 #[derive(Debug, Module)]
-pub struct GraphAttentionNet<B: Backend> {
-    layers: Vec<GATConv<B>>,
+pub enum GraphNeuralNet<B: Backend> {
+    GCN(GraphConvolutionNet<B>),
+    GAT(GraphAttentionNet<B>),
 }
 
-impl<B: Backend> GraphAttentionNet<B> {
-    pub fn forward(
-        &self,
-        mut input: Tensor<B, 3, Float>,
-        activation: Activation,
-    ) -> Tensor<B, 3, Float> {
-        for layer in self.layers.iter() {
-            input = layer.forward(input, activation.clone());
-        }
-
-        input
+impl<B: Backend> GraphNeuralNet<B> {
+    pub fn forward(&self) -> Tensor<B, 2, Float> {
+        todo!()
     }
 }
 

@@ -18,45 +18,70 @@
 
 use burn::{
     config::Config,
-    module::{Module, Param},
+    module::Module,
     nn::{Dropout, DropoutConfig},
     prelude::Backend,
     tensor::{Float, Tensor},
 };
 
+use crate::tooling::modules::{
+    expander::Activation,
+    general::{GeneralLinear, GeneralLinearConfig},
+};
+
 #[derive(Debug, Config)]
-pub struct GATConvConfig {}
+pub struct GATConvConfig {
+    /// Configuration for the fully connected layer.
+    /// An additional layer will be added to the front of size d_in.
+    pub fc_layers: Vec<usize>,
+
+    /// Dropout rate for the dropout modules.
+    pub dropout_rate: f32,
+
+    /// Dimension of node input features (h).
+    pub d_in: usize,
+    /// Dimension of node output features (h').
+    pub d_out: usize,
+}
 
 impl GATConvConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> GATConv<B> {
+        let mut layers = self.fc_layers.clone();
+        layers.insert(0, self.d_in);
+
         GATConv {
-            attn_l: Param::from_tensor(Tensor::random(
-                [4, 4],
-                burn::tensor::Distribution::Uniform(-1., 1.),
-                device,
-            )),
-            attn_r: Param::from_tensor(Tensor::random(
-                [4, 4],
-                burn::tensor::Distribution::Uniform(-1., 1.),
-                device,
-            )),
-            feat_drop: DropoutConfig::new(0.1).init(),
-            attn_drop: DropoutConfig::new(0.1).init(),
+            linear: GeneralLinearConfig::new(layers)
+                .with_bias(false)
+                .init(device),
+            attn_l: GeneralLinearConfig::new(vec![self.d_in, 1])
+                .with_bias(false)
+                .init(device),
+            attn_r: GeneralLinearConfig::new(vec![self.d_in, 1])
+                .with_bias(false)
+                .init(device),
+            feat_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
+            attn_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
         }
     }
 }
 
 #[derive(Debug, Module)]
 pub struct GATConv<B: Backend> {
-    attn_l: Param<Tensor<B, 2>>,
-    attn_r: Param<Tensor<B, 2>>,
+    linear: GeneralLinear<B>,
+
+    attn_l: GeneralLinear<B>,
+    attn_r: GeneralLinear<B>,
 
     feat_drop: Dropout,
     attn_drop: Dropout,
 }
 
 impl<B: Backend> GATConv<B> {
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
+    pub fn forward(
+        &self,
+        node_features: Tensor<B, 3, Float>,
+        activation: Activation,
+    ) -> Tensor<B, 3, Float> {
         todo!()
     }
 }

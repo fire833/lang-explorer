@@ -24,6 +24,7 @@ pub mod gat;
 mod gatconv;
 pub mod gcn;
 mod gcnconv;
+pub mod gnn;
 pub mod pvdbow;
 pub mod pvdm;
 pub mod wvcbow;
