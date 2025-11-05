@@ -56,19 +56,24 @@ impl ProductionDecisionVariableConfig {
         for (idx, production) in grammar.get_productions().iter().enumerate() {
             let module = match production.ml_config.model {
                 ProductionModelType::Linear1 => {
-                    GeneralLinearConfig::new(vec![self.d_embed, production.len()]).init(device)
-                }
-                ProductionModelType::Linear2 => {
-                    GeneralLinearConfig::new(vec![self.d_embed, 64, production.len()]).init(device)
-                }
-                ProductionModelType::Linear3 => {
-                    GeneralLinearConfig::new(vec![self.d_embed, 64, 64, production.len()])
+                    GeneralLinearConfig::new(vec![self.d_embed, production.len()], vec![false])
                         .init(device)
                 }
-                ProductionModelType::Linear4 => {
-                    GeneralLinearConfig::new(vec![self.d_embed, 64, 64, 64, production.len()])
-                        .init(device)
-                }
+                ProductionModelType::Linear2 => GeneralLinearConfig::new(
+                    vec![self.d_embed, 64, production.len()],
+                    vec![true, false],
+                )
+                .init(device),
+                ProductionModelType::Linear3 => GeneralLinearConfig::new(
+                    vec![self.d_embed, 64, 64, production.len()],
+                    vec![true, true, false],
+                )
+                .init(device),
+                ProductionModelType::Linear4 => GeneralLinearConfig::new(
+                    vec![self.d_embed, 64, 64, 64, production.len()],
+                    vec![true, true, true, false],
+                )
+                .init(device),
             };
 
             items.push(module);

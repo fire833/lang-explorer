@@ -34,6 +34,9 @@ pub struct GeneralLinearConfig {
     /// The sizes of each layer in the model.
     pub layers: Vec<usize>,
 
+    /// Whether to apply activation functions after each layer.
+    pub do_activations: Vec<bool>,
+
     /// Optionally toggle bias within the model.
     #[config(default = true)]
     pub bias: bool,
@@ -41,13 +44,13 @@ pub struct GeneralLinearConfig {
 
 impl GeneralLinearConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> GeneralLinear<B> {
-        let mut layers = vec![];
+        let mut layers: Vec<(Linear<B>, bool)> = vec![];
 
-        for item in self.layers.windows(2) {
+        for (item, do_activation) in self.layers.windows(2).zip(self.do_activations.iter()) {
             let layer = LinearConfig::new(item[0], item[1])
                 .with_bias(self.bias)
                 .init(device);
-            layers.push(layer);
+            layers.push((layer, *do_activation));
         }
 
         GeneralLinear { layers }
@@ -56,7 +59,7 @@ impl GeneralLinearConfig {
 
 #[derive(Debug, Module)]
 pub struct GeneralLinear<B: Backend> {
-    layers: Vec<Linear<B>>,
+    layers: Vec<(Linear<B>, bool)>,
 }
 
 impl<B: Backend> GeneralLinear<B> {
@@ -66,11 +69,11 @@ impl<B: Backend> GeneralLinear<B> {
         activation: Activation,
     ) -> Tensor<B, D, Float> {
         let mut x = input;
-        for (i, layer) in self.layers.iter().enumerate() {
-            x = layer.forward(x);
+        for layer in self.layers.iter() {
+            x = layer.0.forward(x);
 
             // Apply activation function to all layers except the last
-            if i < self.layers.len() - 1 {
+            if layer.1 {
                 x = match activation {
                     Activation::ReLU => relu(x),
                     Activation::LeakyReLU(slope) => leaky_relu(x, (1.0 / 10000.0) * slope as f64),

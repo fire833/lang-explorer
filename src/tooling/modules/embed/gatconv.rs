@@ -48,15 +48,16 @@ impl GATConvConfig {
     pub fn init<B: Backend>(&self, device: &B::Device) -> GATConv<B> {
         let mut layers = self.fc_layers.clone();
         layers.insert(0, self.d_in);
+        let no_activations = vec![false; layers.len() - 1];
 
         GATConv {
-            linear: GeneralLinearConfig::new(layers)
+            linear: GeneralLinearConfig::new(layers, no_activations)
                 .with_bias(false)
                 .init(device),
-            attn_l: GeneralLinearConfig::new(vec![self.d_in, 1])
+            attn_l: GeneralLinearConfig::new(vec![self.d_in, 1], vec![false])
                 .with_bias(false)
                 .init(device),
-            attn_r: GeneralLinearConfig::new(vec![self.d_in, 1])
+            attn_r: GeneralLinearConfig::new(vec![self.d_in, 1], vec![false])
                 .with_bias(false)
                 .init(device),
             feat_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
@@ -82,6 +83,8 @@ impl<B: Backend> GATConv<B> {
         node_features: Tensor<B, 3, Float>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
+        let transform = self.linear.forward(node_features, activation);
+
         todo!()
     }
 }
