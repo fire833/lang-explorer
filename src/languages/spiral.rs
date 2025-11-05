@@ -21,9 +21,40 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::{grammar::Grammar, NonTerminal, Terminal},
-    languages::{strings::StringValue, GrammarBuilder, GrammarMutator},
+    grammar::{
+        elem::GrammarElement,
+        grammar::Grammar,
+        lhs::ProductionLHS,
+        prod::{context_free_production, production_rule, Production},
+        rule::ProductionRule,
+        NonTerminal, Terminal,
+    },
+    languages::{
+        strings::{nterminal_str, terminal_str, StringValue, LPAREN, RPAREN},
+        GrammarBuilder, GrammarMutator,
+    },
 };
+
+nterminal_str!(SPL, "spl");
+nterminal_str!(GENERIC, "generic");
+nterminal_str!(SYMBOL, "symbol");
+nterminal_str!(TRANSFORM, "transform");
+nterminal_str!(OTIMESSPL, "otimesspl");
+nterminal_str!(OPLUSSPL, "oplusspl");
+nterminal_str!(DFT, "dft");
+nterminal_str!(WHT, "wht");
+terminal_str!(OTIMES, "\\otimes");
+terminal_str!(OPLUS, "\\oplus");
+terminal_str!(I_N, "I_n");
+terminal_str!(I_M, "I_m");
+terminal_str!(I_K, "I_k");
+terminal_str!(J_N, "J_n");
+terminal_str!(P_N, "P_n");
+terminal_str!(Q_N, "Q_n");
+terminal_str!(F2, "F_2");
+terminal_str!(L_N_K, "L_{n,k}");
+terminal_str!(T_N_M, "T_{n,m}");
+terminal_str!(R_ALPHA, "R_\\alpha");
 
 pub struct SpiralLanguage;
 
@@ -43,7 +74,55 @@ impl GrammarBuilder for SpiralLanguage {
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        todo!() // TODO: Do Veras' thing on the paper.
+        let grammar = Grammar::new(
+            "spl".into(),
+            vec![
+                context_free_production!(
+                    SPL,
+                    // production_rule!(GENERIC),
+                    production_rule!(SYMBOL),
+                    production_rule!(TRANSFORM),
+                    production_rule!(OTIMESSPL, OTIMES, OTIMESSPL),
+                    production_rule!(OPLUSSPL, OPLUS, OPLUSSPL)
+                ),
+                context_free_production!(
+                    OPLUSSPL,
+                    // production_rule!(GENERIC),
+                    production_rule!(SYMBOL),
+                    production_rule!(TRANSFORM),
+                    production_rule!(OPLUSSPL, OPLUS, OPLUSSPL)
+                ),
+                context_free_production!(
+                    OTIMESSPL,
+                    // production_rule!(GENERIC),
+                    production_rule!(SYMBOL),
+                    production_rule!(TRANSFORM),
+                    production_rule!(OTIMESSPL, OTIMES, OTIMESSPL)
+                ),
+                context_free_production!(
+                    SYMBOL,
+                    production_rule!(I_N),
+                    production_rule!(J_N),
+                    production_rule!(F2),
+                    production_rule!(L_N_K),
+                    production_rule!(R_ALPHA)
+                ),
+                context_free_production!(TRANSFORM, production_rule!(DFT), production_rule!(WHT)),
+                // context_free_production!(GENERIC),
+                context_free_production!(
+                    DFT,
+                    production_rule!(
+                        LPAREN, DFT, OTIMES, I_M, RPAREN, T_N_M, LPAREN, I_K, OTIMES, DFT, RPAREN,
+                        L_N_K
+                    ),
+                    production_rule!(P_N, LPAREN, DFT, OTIMES, DFT, RPAREN, Q_N),
+                    production_rule!(F2)
+                ),
+            ],
+            "spiral".into(),
+        );
+
+        Ok(grammar)
     }
 
     fn new_mutator() -> Self::Mutator {
