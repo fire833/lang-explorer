@@ -113,7 +113,7 @@ impl<B: Backend> ProductionDecisionVariable<B> {
                 )
                 .unwrap_or_else(|| panic!("could not find model for {:?}", prod));
 
-            let emb = inputs
+            let emb: Tensor<B, 3> = inputs
                 .clone()
                 .gather(0, Tensor::from_data([idx], &inputs.device()))
                 .unsqueeze();

@@ -60,11 +60,11 @@ pub struct GeneralLinear<B: Backend> {
 }
 
 impl<B: Backend> GeneralLinear<B> {
-    pub fn forward(
+    pub fn forward<const D: usize>(
         &self,
-        input: Tensor<B, 2, Float>,
+        input: Tensor<B, D, Float>,
         activation: Activation,
-    ) -> Tensor<B, 2, Float> {
+    ) -> Tensor<B, D, Float> {
         let mut x = input;
         for layer in self.layers.iter() {
             x = layer.forward(x);
