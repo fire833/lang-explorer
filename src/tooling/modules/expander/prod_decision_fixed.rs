@@ -68,7 +68,11 @@ impl ProductionDecisionFixedConfig {
 
         ProductionDecisionFixed {
             rule_embeddings: EmbeddingConfig::new(rule_count + 1, self.d_model).init(device),
-            linear: GeneralLinearConfig::new(vec![self.d_embed, 64, 64, self.d_model]).init(device),
+            linear: GeneralLinearConfig::new(
+                vec![self.d_embed, 64, 64, self.d_model],
+                vec![true, true, false],
+            )
+            .init(device),
             production_to_index: Ignored(map),
             config: Ignored(self.clone()),
             num_embeddings: Ignored(rule_count),
