@@ -118,6 +118,11 @@ impl GrammarBuilder for SpiralLanguage {
                     production_rule!(P_N, LPAREN, DFT, OTIMES, DFT, RPAREN, Q_N),
                     production_rule!(F2)
                 ),
+                context_free_production!(
+                    WHT,
+                    production_rule!(F2),
+                    production_rule!(F2, OTIMES, WHT)
+                ),
             ],
             "spiral".into(),
         );
