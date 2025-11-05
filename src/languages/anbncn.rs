@@ -30,14 +30,13 @@ use crate::{
             single_suffix_production, Production,
         },
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
     languages::{
         strings::{
             alphanumeric::{T_LO_A, T_LO_B, T_LO_C},
             nterminal_str, StringValue,
         },
-        GrammarBuilder, GrammarMutator,
+        GrammarBuilder, NOPGrammarState,
     },
 };
 
@@ -50,9 +49,6 @@ nterminal_str!(Z, "Z");
 
 pub struct AnBnCnLanguage {}
 
-pub struct AnBnCnLanguageChecker;
-impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for AnBnCnLanguageChecker {}
-
 /// Parameters for AnBnCn language.
 #[derive(Default, Debug, Serialize, Deserialize, ToSchema)]
 pub struct AnBnCnLanguageParams {}
@@ -61,7 +57,7 @@ impl GrammarBuilder for AnBnCnLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = AnBnCnLanguageParams;
-    type Mutator = AnBnCnLanguageChecker;
+    type State = NOPGrammarState;
 
     /// Spec
     ///     S   →   a   B   C
@@ -98,9 +94,5 @@ impl GrammarBuilder for AnBnCnLanguage {
         );
 
         Ok(g)
-    }
-
-    fn new_mutator() -> Self::Mutator {
-        AnBnCnLanguageChecker {}
     }
 }

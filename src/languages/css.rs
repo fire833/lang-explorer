@@ -27,7 +27,6 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
     languages::{
         strings::{
@@ -38,7 +37,7 @@ use crate::{
             nterminal_str, terminal_str, StringValue, COLON, COMMA, EPSILON, GREATER, LBRACKET,
             MINUS, PERCENT, PLUS, RBRACKET, SEMICOLON, SPACE,
         },
-        GrammarBuilder, GrammarMutator,
+        GrammarBuilder, NOPGrammarState,
     },
 };
 
@@ -491,9 +490,6 @@ terminal_str!(JUSTIFY, "justify");
 
 pub struct CSSLanguage;
 
-pub struct CSSLanguageChecker;
-impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for CSSLanguageChecker {}
-
 /// Parameters for CSS Language.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CSSLanguageParameters {
@@ -557,7 +553,7 @@ impl GrammarBuilder for CSSLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = CSSLanguageParameters;
-    type Mutator = CSSLanguageChecker;
+    type State = NOPGrammarState;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -1224,9 +1220,5 @@ impl GrammarBuilder for CSSLanguage {
         );
 
         Ok(grammar)
-    }
-
-    fn new_mutator() -> Self::Mutator {
-        todo!()
     }
 }

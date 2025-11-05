@@ -31,7 +31,7 @@ use crate::{
         rule::ProductionRule,
         NonTerminal, Terminal,
     },
-    languages::GrammarMutator,
+    languages::{GrammarState, NOPGrammarState},
 };
 
 use super::{
@@ -84,9 +84,23 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage;
 
-pub struct TacoScheduleLanguageChecker {}
+pub struct TacoScheduleState {}
 
-impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for TacoScheduleLanguageChecker {}
+impl Default for TacoScheduleState {
+    fn default() -> Self {
+        TacoScheduleState {}
+    }
+}
+
+impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for TacoScheduleState {
+    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+        None
+    }
+
+    fn update(&mut self, rule: &ProductionRule<T, I>) {
+        todo!()
+    }
+}
 
 /// Parameters for Taco Schedule Language.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -161,7 +175,7 @@ impl GrammarBuilder for TacoScheduleLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = TacoScheduleLanguageParams;
-    type Mutator = TacoScheduleLanguageChecker;
+    type State = NOPGrammarState;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -359,10 +373,6 @@ impl GrammarBuilder for TacoScheduleLanguage {
         };
 
         Ok(grammar)
-    }
-
-    fn new_mutator() -> Self::Mutator {
-        TacoScheduleLanguageChecker {}
     }
 }
 

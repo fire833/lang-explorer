@@ -31,7 +31,7 @@ use crate::{
     },
     languages::{
         strings::{nterminal_str, terminal_str, StringValue, LPAREN, RPAREN},
-        GrammarBuilder, GrammarMutator,
+        GrammarBuilder, GrammarState,
     },
 };
 
@@ -58,8 +58,23 @@ terminal_str!(R_ALPHA, "R_\\alpha");
 
 pub struct SpiralLanguage;
 
-pub struct SpiralLanguageChecker;
-impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for SpiralLanguageChecker {}
+pub struct SpiralState {}
+
+impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for SpiralState {
+    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+        todo!()
+    }
+
+    fn update(&mut self, rule: &ProductionRule<T, I>) {
+        todo!()
+    }
+}
+
+impl Default for SpiralState {
+    fn default() -> Self {
+        SpiralState {}
+    }
+}
 
 /// Parameters for SPIRAL Language.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
@@ -69,7 +84,7 @@ impl GrammarBuilder for SpiralLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = SpiralLanguageParams;
-    type Mutator = SpiralLanguageChecker;
+    type State = SpiralState;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
@@ -130,7 +145,7 @@ impl GrammarBuilder for SpiralLanguage {
         Ok(grammar)
     }
 
-    fn new_mutator() -> Self::Mutator {
-        SpiralLanguageChecker {}
+    fn new_state() -> Option<Self::State> {
+        Some(Default::default())
     }
 }

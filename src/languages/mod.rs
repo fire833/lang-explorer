@@ -24,9 +24,7 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::grammar::lhs::ProductionLHS;
 use crate::grammar::prod::Production;
-use crate::grammar::program::ProgramInstance;
 use crate::grammar::rule::ProductionRule;
 use crate::{
     errors::LangExplorerError,
@@ -67,7 +65,7 @@ pub trait GrammarBuilder {
     type Term: Terminal;
     type NTerm: NonTerminal;
     type Params<'de>: Default + Serialize + Deserialize<'de> + ToSchema;
-    type Mutator: GrammarMutator<Self::Term, Self::NTerm>;
+    type State: GrammarState<Self::Term, Self::NTerm>;
 
     /// Method to actually construct a new grammar instance.
     /// Uses the input parameters to customize the grammar.
@@ -75,24 +73,33 @@ pub trait GrammarBuilder {
         params: Self::Params<'de>,
     ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError>;
 
-    /// Create a new mutator for modifying grammar productions at runtime.
-    fn new_mutator() -> Self::Mutator;
-}
-
-pub trait GrammarMutator<T: Terminal, I: NonTerminal> {
-    /// As a means for producing some grammars that are context-sensitive,
-    /// this method allows for mutating a grammar based on the current
-    /// program instance, LHS, and production rule being expanded.
-    /// If no mutation is to be performed, return None.
-    fn try_mutate<'a>(
-        &mut self,
-        _grammar: &Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        _lhs: &'a ProductionLHS<T, I>,
-        _rule: &'a ProductionRule<T, I>,
-    ) -> Option<Grammar<T, I>> {
+    /// Specify whether the language needs a state mechanism for proper expansion.
+    fn new_state() -> Option<Self::State> {
         None
     }
+}
+
+/// A trait for objects that implement state management systems for
+/// context-sensitive grammars.
+pub trait GrammarState<T: Terminal, I: NonTerminal> {
+    /// At any given expansion decision, we have the option to update the set
+    /// of rules the expander can choose from based on the current production
+    /// and the current state.
+    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>>;
+
+    /// Depending on what production rule was chosen, we may want to update
+    /// the state.
+    fn update(&mut self, rule: &ProductionRule<T, I>);
+}
+
+/// A simple grammar state that does nothing.
+pub struct NOPGrammarState;
+impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for NOPGrammarState {
+    fn apply_context<'a>(&mut self, _prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+        None
+    }
+
+    fn update(&mut self, _rule: &ProductionRule<T, I>) {}
 }
 
 /// Enumeration of all supported languages currently within lang-explorer.

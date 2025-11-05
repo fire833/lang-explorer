@@ -27,9 +27,8 @@ use crate::{
         lhs::ProductionLHS,
         prod::{production_rule, Production},
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
-    languages::GrammarMutator,
+    languages::NOPGrammarState,
 };
 
 use super::{
@@ -43,9 +42,6 @@ terminal_str!(B, "b");
 
 pub struct ToyLanguage;
 
-pub struct ToyLanguageChecker;
-impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for ToyLanguageChecker {}
-
 #[derive(Debug, Clone, Default, Serialize, Deserialize, ToSchema)]
 pub struct ToyLanguageParams {}
 
@@ -53,7 +49,7 @@ impl GrammarBuilder for ToyLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = ToyLanguageParams;
-    type Mutator = ToyLanguageChecker;
+    type State = NOPGrammarState;
 
     fn generate_grammar<'de>(
         _params: Self::Params<'de>,
@@ -70,9 +66,5 @@ impl GrammarBuilder for ToyLanguage {
             )],
             "toy".into(),
         ))
-    }
-
-    fn new_mutator() -> Self::Mutator {
-        ToyLanguageChecker {}
     }
 }

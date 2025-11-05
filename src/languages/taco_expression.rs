@@ -16,7 +16,7 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use std::collections::BTreeMap;
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -28,7 +28,6 @@ use crate::{
         grammar::Grammar,
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
-        program::ProgramInstance,
         rule::ProductionRule,
         NonTerminal, Terminal,
     },
@@ -37,7 +36,7 @@ use crate::{
             nterminal_str, StringValue, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN,
             STAR,
         },
-        GrammarBuilder, GrammarMutator,
+        GrammarBuilder, GrammarState,
     },
 };
 
@@ -50,37 +49,42 @@ nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
 
-pub struct TacoExpressionLanguageChecker {}
+pub struct TacoExpressionState {
+    symbols: HashSet<GrammarElement<StringValue, StringValue>>,
 
-impl<T: Terminal, I: NonTerminal> GrammarMutator<T, I> for TacoExpressionLanguageChecker {
-    fn try_mutate<'a>(
-        &mut self,
-        grammar: &Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        lhs: &'a ProductionLHS<T, I>,
-        rule: &'a ProductionRule<T, I>,
-    ) -> Option<Grammar<T, I>> {
-        if format!("{:?}", lhs.non_terminal) == "symbol" {
-            let mut production = grammar
-                .productions
-                .get(&lhs)
-                .expect("Production must exist for LHS")
-                .clone();
+    in_tensor: bool,
+}
 
-            production
-                .items
-                .retain(|item| if item == rule { false } else { true });
+impl Default for TacoExpressionState {
+    fn default() -> Self {
+        TacoExpressionState {
+            symbols: HashSet::new(),
+            in_tensor: false,
+        }
+    }
+}
 
-            let new_grammar = Grammar::new(
-                grammar.root.clone(),
-                vec![production],
-                grammar.canonical_name.clone(),
-            );
+impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for TacoExpressionState {
+    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+        if format!("{:?}", prod.non_terminal.non_terminal) == "symbol" {
+            let mut prod = prod.clone();
+            // filter out production rules that are not in symbols
+            // prod.items
+            //     .retain(|rule| !self.symbols.contains(&rule.items[0]));
 
-            return Some(new_grammar);
+            self.in_tensor = true;
         }
 
+        self.in_tensor = false;
+
         None
+    }
+
+    fn update(&mut self, rule: &ProductionRule<T, I>) {
+        self.in_tensor = false;
+        // self.symbols.insert(rule.items[0].clone());
+
+        todo!()
     }
 }
 
@@ -123,7 +127,7 @@ impl GrammarBuilder for TacoExpressionLanguage {
     type Term = StringValue;
     type NTerm = StringValue;
     type Params<'de> = TacoExpressionLanguageParams;
-    type Mutator = TacoExpressionLanguageChecker;
+    type State = TacoExpressionState;
 
     fn generate_grammar<'de>(
         params: Self::Params<'de>,
@@ -176,9 +180,5 @@ impl GrammarBuilder for TacoExpressionLanguage {
         };
 
         Ok(grammar)
-    }
-
-    fn new_mutator() -> Self::Mutator {
-        TacoExpressionLanguageChecker {}
     }
 }
