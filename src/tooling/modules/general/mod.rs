@@ -66,16 +66,18 @@ impl<B: Backend> GeneralLinear<B> {
         activation: Activation,
     ) -> Tensor<B, D, Float> {
         let mut x = input;
-        for layer in self.layers.iter() {
+        for (i, layer) in self.layers.iter().enumerate() {
             x = layer.forward(x);
 
             // Apply activation function to all layers except the last
-            x = match activation {
-                Activation::ReLU => relu(x),
-                Activation::LeakyReLU(slope) => leaky_relu(x, (1.0 / 10000.0) * slope as f64),
-                Activation::Sigmoid => sigmoid(x),
-                Activation::TanH => tanh(x),
-            };
+            if i < self.layers.len() - 1 {
+                x = match activation {
+                    Activation::ReLU => relu(x),
+                    Activation::LeakyReLU(slope) => leaky_relu(x, (1.0 / 10000.0) * slope as f64),
+                    Activation::Sigmoid => sigmoid(x),
+                    Activation::TanH => tanh(x),
+                };
+            }
         }
 
         x
