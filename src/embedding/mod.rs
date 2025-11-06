@@ -140,7 +140,7 @@ impl GeneralEmbeddingTrainingParams {
 
 pub(super) fn get_positive_indices<R: Rng, W: Ord>(
     wordset: &BTreeMap<W, u32>,
-    doc_words: &Vec<W>,
+    doc_words: &[W],
     num_positive_samples: usize,
     rng: &mut R,
 ) -> Vec<usize> {

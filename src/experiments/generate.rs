@@ -18,7 +18,7 @@
 
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    f32::{consts::E, INFINITY},
+    f32::consts::E,
     fmt::Display,
     fs, mem,
     sync::Arc,
@@ -347,7 +347,7 @@ impl GenerateInput {
             );
 
             for embed in self.return_embeddings.iter() {
-                println!("creating embeddings with {} model", embed);
+                println!("creating embeddings with {embed} model");
                 results
                     .create_embeddings::<B>(
                         embed.clone(),
@@ -460,7 +460,7 @@ impl GenerateOutput {
                             .unwrap()
                             .to_string();
 
-                        println!("found embedding file for model {}", embed_name);
+                        println!("found embedding file for model {embed_name}");
                         let mut reader = csv::Reader::from_path(entry.path())?;
 
                         for result in reader.records() {
@@ -503,8 +503,8 @@ impl GenerateOutput {
             .map(
                 |(i, j)| match (self.programs.get(*i), self.programs.get(*j)) {
                     (Some(p1), Some(p2)) => wl_test(
-                        &p1.features.as_slice(),
-                        &p2.features.as_slice(),
+                        p1.features.as_slice(),
+                        p2.features.as_slice(),
                         VectorSimilarity::Euclidean,
                     ),
                     _ => panic!("we should have features here"),
@@ -529,7 +529,7 @@ impl GenerateOutput {
 
         // Now, go through all embeddings and compute the similarity matrix, among other things.
         for emb in input.return_embeddings.iter() {
-            println!("computing embedding similarity scores for {}", emb);
+            println!("computing embedding similarity scores for {emb}");
             let s = emb.to_string();
 
             let emb_similarity_scores: Vec<f32> = indices
@@ -541,7 +541,7 @@ impl GenerateOutput {
                                 (Some(vec1), Some(vec2)) => {
                                     vector_similarity(vec1, vec2, VectorSimilarity::Euclidean)
                                 }
-                                _ => INFINITY,
+                                _ => f32::INFINITY,
                             }
                         }
                         _ => panic!("we should have features here"),
@@ -585,7 +585,7 @@ impl GenerateOutput {
         Ok(())
     }
 
-    fn compute_nn(&self, similarity_scores: &Vec<f32>, topk_len: usize) -> VecDeque<Vec<u32>> {
+    fn compute_nn(&self, similarity_scores: &[f32], topk_len: usize) -> VecDeque<Vec<u32>> {
         let len = self.programs.len();
 
         // Get the nearest neighbors for each program.
@@ -630,10 +630,10 @@ impl GenerateOutput {
 
     fn compute_similarity_results(
         &self,
-        embedding_scores: &Vec<Vec<f32>>,
-        normalized_embedding_similarity_scores: &Vec<Vec<f32>>,
-        ast_scores: &Vec<f32>,
-        normalized_ast_scores: &Vec<f32>,
+        embedding_scores: &[Vec<f32>],
+        normalized_embedding_similarity_scores: &[Vec<f32>],
+        ast_scores: &[f32],
+        normalized_ast_scores: &[f32],
         k: i32,
         gamma: f32,
     ) -> Vec<(f64, f64, f64, f64, f64)> {
@@ -779,10 +779,9 @@ impl GenerateOutput {
                 let end = start.elapsed().unwrap();
 
                 println!(
-                    "trained {} doc (and {} word) embeddings with {} epochs in {} seconds.",
+                    "trained {} doc (and {} word) embeddings with {epochs} epochs in {} seconds.",
                     documents.len(),
                     set.len(),
-                    epochs,
                     end.as_secs()
                 );
 
@@ -894,7 +893,7 @@ impl GenerateOutput {
             if idx == 0 {
                 let mut vec = vec!["idx".to_string()];
                 for i in 1..=prog.ast_nn.len() {
-                    vec.push(format!("nn_{}", i));
+                    vec.push(format!("nn_{i}"));
                 }
 
                 ast_nn_writer.write_record(vec)?;
@@ -921,17 +920,17 @@ impl GenerateOutput {
         // Need to clone to avoid immutable and mutable borrow downstream.
         for embed_model in self.options.return_embeddings.clone().iter() {
             println!(
-                "writing embeddings for model {} to {path}/{}/{exp_id}/embeddings_{}.csv",
-                embed_model, self.language, embed_model
+                "writing embeddings for model {embed_model} to {path}/{}/{exp_id}/embeddings_{embed_model}.csv",
+                self.language, 
             );
             let mut embed_writer = csv::Writer::from_path(format!(
-                "{path}/{}/{exp_id}/embeddings_{}.csv",
-                self.language, embed_model
+                "{path}/{}/{exp_id}/embeddings_{embed_model}.csv",
+                self.language
             ))?;
 
             let mut embed_nn_writer = csv::Writer::from_path(format!(
-                "{path}/{}/{exp_id}/embeddings_{}_nn.csv",
-                self.language, embed_model
+                "{path}/{}/{exp_id}/embeddings_{embed_model}_nn.csv",
+                self.language
             ))?;
 
             for (idx, prog) in self.programs.iter().enumerate() {
@@ -939,7 +938,7 @@ impl GenerateOutput {
                     if idx == 0 {
                         let mut vec = vec!["idx".to_string()];
                         for i in 0..emb.len() {
-                            vec.push(format!("dim_{}", i));
+                            vec.push(format!("dim_{i}"));
                         }
 
                         embed_writer.write_record(vec)?;
@@ -958,7 +957,7 @@ impl GenerateOutput {
                     if idx == 0 {
                         let mut vec = vec!["idx".to_string()];
                         for i in 1..=nn.len() {
-                            vec.push(format!("nn_{}", i));
+                            vec.push(format!("nn_{i}"));
                         }
 
                         embed_nn_writer.write_record(vec)?;
@@ -985,8 +984,8 @@ impl GenerateOutput {
 
             if self.options.return_tsne2d {
                 println!(
-                    "creating 2D t-SNE projections for model {} to {path}/{}/{exp_id}/tsne2d.csv",
-                    embed_model, self.language
+                    "creating 2D t-SNE projections for model {embed_model} to {path}/{}/{exp_id}/tsne2d.csv",
+                     self.language
                 );
                 self.create_tsne(
                     embed_model.to_string(),
@@ -997,8 +996,8 @@ impl GenerateOutput {
 
             if self.options.return_tsne3d {
                 println!(
-                    "creating 3D t-SNE projections for model {} to {path}/{}/{exp_id}/tsne3d.csv",
-                    embed_model, self.language
+                    "creating 3D t-SNE projections for model {embed_model} to {path}/{}/{exp_id}/tsne3d.csv",
+                     self.language
                 );
                 self.create_tsne(
                     embed_model.to_string(),

@@ -130,7 +130,7 @@ impl<B: AutodiffBackend> LanguageEmbedder<B> for Doc2VecEmbedderDBOWNS<B> {
 
         Self {
             model,
-            device: device,
+            device,
             optim: params.ada_config.init(),
             rng: ChaCha8Rng::seed_from_u64(params.gen_params.get_seed()),
             params,
@@ -264,7 +264,7 @@ impl<B: AutodiffBackend> LanguageEmbedder<B> for Doc2VecEmbedderDBOWNS<B> {
             for _ in words.iter().enumerate() {
                 counter += 1;
                 let positive_indices =
-                    super::get_positive_indices(&self.word2idx, &words, 1, &mut self.rng);
+                    super::get_positive_indices(&self.word2idx, words, 1, &mut self.rng);
 
                 let negative_indices = super::get_negative_indices(
                     &self.idx2word,

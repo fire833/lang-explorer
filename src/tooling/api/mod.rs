@@ -100,11 +100,11 @@ pub fn invalid_authorization() -> Result<WithStatus<Json>, Rejection> {
 #[allow(unused)]
 pub fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json>, Infallible> {
     let code = StatusCode::BAD_REQUEST;
-    println!("invalid request made: {:?}", rej);
+    println!("invalid request made: {rej:?}");
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
-            format!("invalid request: {:?}", rej),
+            format!("invalid request: {rej:?}"),
         )),
         code,
     ))
@@ -112,11 +112,11 @@ pub fn invalid_request_rejection(rej: Rejection) -> Result<WithStatus<Json>, Inf
 
 pub fn invalid_request(err: String) -> Result<WithStatus<Json>, Rejection> {
     let code = StatusCode::BAD_REQUEST;
-    println!("invalid request made: {}", err);
+    println!("invalid request made: {err}");
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
-            format!("invalid request: {}", err),
+            format!("invalid request: {err}"),
         )),
         code,
     ))
@@ -128,7 +128,7 @@ pub fn internal_error(err: String) -> Result<WithStatus<Json>, Rejection> {
     Ok(warp::reply::with_status(
         warp::reply::json(&ErrorMessage::new_from_string(
             code.into(),
-            format!("unable to execute request: {}", err),
+            format!("unable to execute request: {err}"),
         )),
         code,
     ))

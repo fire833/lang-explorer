@@ -57,21 +57,16 @@ terminal_str!(R_ALPHA, "R_\\alpha");
 
 pub struct SpiralLanguage;
 
+#[derive(Debug, Default)]
 pub struct SpiralState {}
 
 impl GrammarState for SpiralState {
-    fn apply_context<'a>(&mut self, _prod: &'a Production) -> Option<Production> {
+    fn apply_context(&mut self, _prod: &Production) -> Option<Production> {
         todo!()
     }
 
     fn update(&mut self, _rule: &ProductionRule) {
         todo!()
-    }
-}
-
-impl Default for SpiralState {
-    fn default() -> Self {
-        SpiralState {}
     }
 }
 

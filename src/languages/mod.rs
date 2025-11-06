@@ -77,7 +77,7 @@ pub trait GrammarState {
     /// At any given expansion decision, we have the option to update the set
     /// of rules the expander can choose from based on the current production
     /// and the current state.
-    fn apply_context<'a>(&mut self, prod: &'a Production) -> Option<Production>;
+    fn apply_context(&mut self, prod: &Production) -> Option<Production>;
 
     /// Depending on what production rule was chosen, we may want to update
     /// the state.
@@ -87,7 +87,7 @@ pub trait GrammarState {
 /// A simple grammar state that does nothing.
 pub struct NOPGrammarState;
 impl GrammarState for NOPGrammarState {
-    fn apply_context<'a>(&mut self, _prod: &'a Production) -> Option<Production> {
+    fn apply_context(&mut self, _prod: &Production) -> Option<Production> {
         None
     }
 

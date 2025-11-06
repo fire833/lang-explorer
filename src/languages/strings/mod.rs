@@ -60,7 +60,7 @@ impl StringValue {
 impl Debug for StringValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(other) = &self.other {
-            return write!(f, "{}", other);
+            return write!(f, "{other}");
         }
 
         write!(f, "{}", self.s)

@@ -42,10 +42,10 @@ impl TacoCompileMode {
     #[allow(unused)]
     fn to_argument_directive(&self, file: String) -> String {
         match self {
-            TacoCompileMode::CompileComputeKernel => format!("-write-compute={}", file),
-            TacoCompileMode::CompileAssemblyKernel => format!("-write-assembly={}", file),
-            TacoCompileMode::CompileEvaluateKernel => format!("-write-evalute={}", file),
-            TacoCompileMode::CompileLibrary => format!("-write-source={}", file),
+            TacoCompileMode::CompileComputeKernel => format!("-write-compute={file}"),
+            TacoCompileMode::CompileAssemblyKernel => format!("-write-assembly={file}"),
+            TacoCompileMode::CompileEvaluateKernel => format!("-write-evalute={file}"),
+            TacoCompileMode::CompileLibrary => format!("-write-source={file}"),
         }
     }
 }
@@ -70,15 +70,15 @@ impl TacoCompiler {
     ) -> Result<(), LangExplorerError> {
         let mut fargs = vec![];
         for (tensor, format) in tensor_formats {
-            fargs.push(format!("-f={}:{}", tensor, format));
+            fargs.push(format!("-f={tensor}:{format}"));
         }
 
         match Command::new(executable)
             .arg(input_expression)
-            .arg(format!("-s=\"{}\"", schedule))
+            .arg(format!("-s=\"{schedule}\""))
             .arg(mode.to_argument_directive(outfile))
             .args(fargs)
-            .arg(format!("-nthreads={}", threads))
+            .arg(format!("-nthreads={threads}"))
             .output()
         {
             Ok(_) => Ok(()),

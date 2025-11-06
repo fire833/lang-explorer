@@ -48,9 +48,9 @@ pub enum Terminal {
 impl Display for Terminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::String(s) => write!(f, "\"{}\"", s),
-            Self::ConstStr(s) => write!(f, "\"{}\"", s),
-            Self::Byte(b) => write!(f, "{:#04x}", b),
+            Self::String(s) => write!(f, "\"{s}\""),
+            Self::ConstStr(s) => write!(f, "\"{s}\""),
+            Self::Byte(b) => write!(f, "{b:#04x}"),
         }
     }
 }
@@ -102,7 +102,7 @@ pub enum NonTerminal {
 impl Display for NonTerminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ConstStr(s) => write!(f, "{}", s),
+            Self::ConstStr(s) => write!(f, "{s}"),
         }
     }
 }

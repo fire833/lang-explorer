@@ -260,7 +260,7 @@ impl Grammar {
                         Ok(instance) => children.push(instance),
                         Err(e) => return Err(e),
                 },
-                None => return Err(format!("non-terminal {:?} not found in productions", nt).into()),
+                None => return Err(format!("non-terminal {nt:?} not found in productions").into()),
             }
                 }
                 GrammarElement::Epsilon | GrammarElement::Terminal(_) => children.push(
@@ -305,10 +305,10 @@ impl Grammar {
         let mut hash = Sha256::new();
 
         self.productions.iter().for_each(|(k, v)| {
-            let _ = hash.write(format!("{:?}", k).as_bytes());
+            let _ = hash.write(format!("{k:?}").as_bytes());
 
             v.items.iter().for_each(|prod| {
-                let _ = hash.write(format!("{:?}", prod).as_bytes());
+                let _ = hash.write(format!("{prod:?}").as_bytes());
             });
         });
 
@@ -332,7 +332,7 @@ impl Debug for Grammar {
         writeln!(f, "Entry Symbol: {:?}", self.root)?;
 
         for (nt, rules) in self.productions.iter() {
-            writeln!(f, "{:?}: {:?}", nt, rules)?;
+            writeln!(f, "{nt:?}: {rules:?}")?;
         }
 
         Ok(())
@@ -347,14 +347,14 @@ impl Display for Grammar {
             if nt.non_terminal != self.root {
                 continue;
             }
-            writeln!(f, "<{:?}> ::= {}\n", nt, rules)?;
+            writeln!(f, "<{nt:?}> ::= {rules}\n")?;
         }
 
         for (nt, rules) in self.productions.iter() {
             if nt.non_terminal == self.root {
                 continue;
             }
-            writeln!(f, "<{:?}> ::= {}\n", nt, rules)?;
+            writeln!(f, "<{nt:?}> ::= {rules}\n")?;
         }
 
         Ok(())

@@ -45,27 +45,19 @@ nterminal_str!(INDEX, "index");
 
 pub struct TacoExpressionLanguage;
 
+#[derive(Default, Debug)]
 pub struct TacoExpressionState {
     symbols: HashSet<GrammarElement>,
     in_tensor: bool,
 }
 
-impl Default for TacoExpressionState {
-    fn default() -> Self {
-        TacoExpressionState {
-            symbols: HashSet::new(),
-            in_tensor: false,
-        }
-    }
-}
-
 impl GrammarState for TacoExpressionState {
-    fn apply_context<'a>(&mut self, prod: &'a Production) -> Option<Production> {
+    fn apply_context(&mut self, prod: &Production) -> Option<Production> {
         if format!("{:?}", prod.non_terminal.non_terminal) == "symbol" {
-            let mut _prod = prod.clone();
+            let mut prod = prod.clone();
             // filter out production rules that are not in symbols
-            // prod.items
-            //     .retain(|rule| !self.symbols.contains(&rule.items[0]));
+            prod.items
+                .retain(|rule| !self.symbols.contains(&rule.items[0]));
 
             self.in_tensor = true;
         }

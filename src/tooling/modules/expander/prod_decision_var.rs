@@ -116,7 +116,7 @@ impl<B: Backend> ProductionDecisionVariable<B> {
                         .cloned()
                         .unwrap(),
                 )
-                .unwrap_or_else(|| panic!("could not find model for {:?}", prod));
+                .unwrap_or_else(|| panic!("could not find model for {prod:?}"));
 
             let emb: Tensor<B, 3> = inputs
                 .clone()

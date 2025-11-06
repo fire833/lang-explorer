@@ -170,9 +170,9 @@ enum ProductionDecisionWrapper<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionWrapper<B> {
-    fn forward<'a>(
+    fn forward(
         &self,
-        productions: Vec<&'a Production>,
+        productions: Vec<&Production>,
         inputs: Tensor<B, 2, Float>,
         normalization: NormalizationStrategy,
         sampling: SamplingStrategy,

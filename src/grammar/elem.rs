@@ -45,8 +45,8 @@ impl From<NonTerminal> for GrammarElement {
 impl Display for GrammarElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Terminal(t) => write!(f, "'{:?}'", t),
-            Self::NonTerminal(nt) => write!(f, "<{:?}>", nt),
+            Self::Terminal(t) => write!(f, "'{t:?}'"),
+            Self::NonTerminal(nt) => write!(f, "<{nt:?}>"),
             Self::Epsilon => write!(f, "'ε'"),
         }
     }
@@ -56,8 +56,8 @@ impl Debug for GrammarElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Epsilon => write!(f, "ε"),
-            Self::NonTerminal(nt) => write!(f, "{:?}", nt),
-            Self::Terminal(t) => write!(f, "{:?}", t),
+            Self::NonTerminal(nt) => write!(f, "{nt:?}"),
+            Self::Terminal(t) => write!(f, "{t:?}"),
         }
     }
 }

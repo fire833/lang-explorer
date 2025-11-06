@@ -60,7 +60,7 @@ impl LangExplorerArgs {
                 Subcommand::DefaultConfig => {
                     let default_config = GenerateInput::default();
                     let config_str = serde_json::to_string_pretty(&default_config)?;
-                    println!("{}", config_str);
+                    println!("{config_str}");
                     Ok(())
                 }
                 Subcommand::Generate {

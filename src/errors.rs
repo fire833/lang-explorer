@@ -43,23 +43,23 @@ pub enum LangExplorerError {
 impl Display for LangExplorerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::General(e) => write!(f, "{}", e),
-            Self::IOError(e) => write!(f, "io: {}", e),
-            Self::CCError(e) => write!(f, "cc: {}", e),
-            Self::FromUtf8Error(e) => write!(f, "utf8: {}", e),
-            Self::RecorderError(e) => write!(f, "recorder: {}", e),
-            Self::SendError(e) => write!(f, "sender: {}", e),
-            Self::DataError(e) => write!(f, "data: {:?}", e),
-            Self::CSVError(e) => write!(f, "csv: {}", e),
-            Self::ReqwestError(e) => write!(f, "req: {}", e),
-            Self::SerdeJSONError(e) => write!(f, "json: {}", e),
+            Self::General(e) => write!(f, "{e}"),
+            Self::IOError(e) => write!(f, "io: {e}"),
+            Self::CCError(e) => write!(f, "cc: {e}"),
+            Self::FromUtf8Error(e) => write!(f, "utf8: {e}"),
+            Self::RecorderError(e) => write!(f, "recorder: {e}"),
+            Self::SendError(e) => write!(f, "sender: {e}"),
+            Self::DataError(e) => write!(f, "data: {e:?}"),
+            Self::CSVError(e) => write!(f, "csv: {e}"),
+            Self::ReqwestError(e) => write!(f, "req: {e}"),
+            Self::SerdeJSONError(e) => write!(f, "json: {e}"),
         }
     }
 }
 
 impl Debug for LangExplorerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 

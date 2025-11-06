@@ -83,10 +83,10 @@ impl<B: Backend> Code2Vec<B> {
         let start_emb = self.terminals.forward(start_terminals);
         let end_emb = self.terminals.forward(end_terminals);
         let path_emb = self.paths.forward(paths);
-        println!("path_emb: {}", path_emb);
+        println!("path_emb: {path_emb}");
 
         let concat = Tensor::cat(vec![start_emb, path_emb, end_emb], 2);
-        println!("concat: {}", concat);
+        println!("concat: {concat}");
 
         let num_context_vectors = concat.shape().dims[1];
 

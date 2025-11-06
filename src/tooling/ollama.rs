@@ -91,7 +91,7 @@ async fn make_request(
     if res.status() != StatusCode::OK {
         let status = res.status();
         let data = res.text().await.unwrap();
-        panic!("invalid reply: {} {}", status, data);
+        panic!("invalid reply: {status} {data}");
     }
 
     let emb = res

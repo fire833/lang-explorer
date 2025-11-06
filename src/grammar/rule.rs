@@ -58,9 +58,9 @@ impl Display for ProductionRule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
-                write!(f, "{}", item)?;
+                write!(f, "{item}")?;
             } else {
-                write!(f, "{} ", item)?;
+                write!(f, "{item} ")?;
             }
         }
 
@@ -71,7 +71,7 @@ impl Display for ProductionRule {
 impl Debug for ProductionRule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for item in self.items.iter() {
-            write!(f, "{:?}", item)?;
+            write!(f, "{item:?}")?;
         }
 
         Ok(())

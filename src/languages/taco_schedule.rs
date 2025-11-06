@@ -83,16 +83,11 @@ terminal_str!(PARALLELIZE_RACE_PREDUCE, "ParallelReduction");
 
 pub struct TacoScheduleLanguage;
 
+#[derive(Default, Debug)]
 pub struct TacoScheduleState {}
 
-impl Default for TacoScheduleState {
-    fn default() -> Self {
-        TacoScheduleState {}
-    }
-}
-
 impl GrammarState for TacoScheduleState {
-    fn apply_context<'a>(&mut self, _prod: &'a Production) -> Option<Production> {
+    fn apply_context(&mut self, _prod: &Production) -> Option<Production> {
         None
     }
 

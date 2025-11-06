@@ -259,7 +259,7 @@ impl ProgramInstance {
         match &self.node {
             GrammarElement::Terminal(t) => t.serialize(),
             // Hacky as all molasses, but works for now.
-            GrammarElement::NonTerminal(nt) => Vec::from(format!("{:?}", nt).as_bytes()),
+            GrammarElement::NonTerminal(nt) => Vec::from(format!("{nt:?}").as_bytes()),
             GrammarElement::Epsilon => Vec::from(b"epsilon"),
         }
     }
