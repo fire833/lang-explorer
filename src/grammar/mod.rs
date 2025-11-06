@@ -23,7 +23,7 @@ pub mod prod;
 pub mod program;
 pub mod rule;
 
-use std::{fmt::Debug, hash::Hash};
+use std::fmt::Display;
 
 use crate::grammar::elem::GrammarElement;
 
@@ -37,11 +37,78 @@ pub trait BinarySerialize {
     fn serialize_into(&self, output: &mut Vec<u8>);
 }
 
-/// Wrapper trait for all terminal elements to implement.
-pub trait Terminal:
-    Sized + Clone + Debug + Hash + Eq + PartialEq + Send + Sync + BinarySerialize
-{
+/// Wrapper for all terminal elements.
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum Terminal {
+    String(String),
+    ConstStr(&'static str),
+    Byte(u8),
 }
 
-/// Wrapper trait for all non-terminal elements to implement.
-pub trait NonTerminal: Sized + Clone + Debug + Hash + Eq + PartialEq + Send + Sync {}
+impl Display for Terminal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::String(s) => write!(f, "\"{}\"", s),
+            Self::ConstStr(s) => write!(f, "\"{}\"", s),
+            Self::Byte(b) => write!(f, "{:#04x}", b),
+        }
+    }
+}
+
+impl From<&'static str> for Terminal {
+    fn from(value: &'static str) -> Self {
+        Self::ConstStr(value)
+    }
+}
+
+impl From<String> for Terminal {
+    fn from(value: String) -> Self {
+        Self::String(value.clone())
+    }
+}
+
+impl<'a> From<&'a String> for Terminal {
+    fn from(value: &'a String) -> Self {
+        Self::String(value.clone())
+    }
+}
+
+impl From<u8> for Terminal {
+    fn from(value: u8) -> Self {
+        Self::Byte(value)
+    }
+}
+
+impl BinarySerialize for Terminal {
+    fn serialize(&self) -> Vec<u8> {
+        match self {
+            Terminal::String(s) => s.as_bytes().to_vec(),
+            Terminal::ConstStr(s) => s.as_bytes().to_vec(),
+            Terminal::Byte(b) => vec![*b],
+        }
+    }
+
+    fn serialize_into(&self, output: &mut Vec<u8>) {
+        output.append(&mut self.serialize());
+    }
+}
+
+/// Wrapper for all non-terminal elements.
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum NonTerminal {
+    ConstStr(&'static str),
+}
+
+impl Display for NonTerminal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ConstStr(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+impl From<&'static str> for NonTerminal {
+    fn from(value: &'static str) -> Self {
+        Self::ConstStr(value)
+    }
+}

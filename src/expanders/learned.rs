@@ -35,7 +35,6 @@ use crate::{
         prod::Production,
         program::{ProgramInstance, WLKernelHashingOrder},
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
     tooling::{
         modules::expander::{
@@ -93,9 +92,9 @@ impl Default for LabelExtractionStrategy {
     }
 }
 
-pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
+pub struct LearnedExpander<B: AutodiffBackend> {
     /// Model for embedding partial programs.
-    embedder: EmbedderWrapper<T, I, B>,
+    embedder: EmbedderWrapper<B>,
 
     /// Wrapper for production decision model.
     production_decision: ProductionDecisionWrapper<B>,
@@ -114,10 +113,8 @@ pub struct LearnedExpander<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     activation: Activation,
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
-    for LearnedExpander<T, I, B>
-{
-    fn init(grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
+impl<B: AutodiffBackend> GrammarExpander for LearnedExpander<B> {
+    fn init(grammar: &Grammar, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
@@ -167,10 +164,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
     fn expand_rule<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
-        context: &'a ProgramInstance<T, I>,
-        production: &'a Production<T, I>,
-    ) -> &'a ProductionRule<T, I> {
+        _grammar: &'a Grammar,
+        context: &'a ProgramInstance,
+        production: &'a Production,
+    ) -> &'a ProductionRule {
         let doc = context.clone();
 
         let embedding = self
@@ -201,10 +198,10 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> GrammarExpander<T, I>
 
     fn choose_lhs_and_slot<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        _lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
-    ) -> (&'a ProductionLHS<T, I>, usize) {
+        _grammar: &'a Grammar,
+        _context: &'a ProgramInstance,
+        _lhs_location_matrix: &[(&'a ProductionLHS, Vec<usize>)],
+    ) -> (&'a ProductionLHS, usize) {
         todo!()
     }
 

@@ -18,9 +18,7 @@
 
 use std::{
     collections::{BTreeMap, HashSet},
-    fs,
-    marker::PhantomData,
-    mem,
+    fs, mem,
     time::SystemTime,
 };
 
@@ -42,17 +40,12 @@ use crate::{
     grammar::{
         grammar::Grammar,
         program::{ProgramInstance, WLKernelHashingOrder},
-        NonTerminal, Terminal,
     },
     languages::Feature,
     tooling::modules::embed::pvdbow::{Doc2VecDBOWNS, Doc2VecDBOWNSConfig},
 };
 
-pub struct Doc2VecEmbedderDBOWNS<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    // Some bullcrap.
-    d1: PhantomData<T>,
-    d2: PhantomData<I>,
-
+pub struct Doc2VecEmbedderDBOWNS<B: AutodiffBackend> {
     model: Doc2VecDBOWNS<B>,
 
     device: Device<B>,
@@ -72,8 +65,8 @@ pub struct Doc2VecEmbedderDBOWNS<T: Terminal, I: NonTerminal, B: AutodiffBackend
     idx2word: BTreeMap<u32, Feature>,
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
-    TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedderDBOWNS<T, I, B>
+impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>>
+    for Doc2VecEmbedderDBOWNS<B>
 {
     fn step(&self, item: ProgramBatch<B>) -> TrainOutput<Tensor<B, 1, Float>> {
         let loss = self
@@ -97,13 +90,11 @@ pub struct Doc2VecDBOWNSEmbedderParams {
     pub model_dir: String,
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
-    for Doc2VecEmbedderDBOWNS<T, I, B>
-{
-    type Document = ProgramInstance<T, I>;
+impl<B: AutodiffBackend> LanguageEmbedder<B> for Doc2VecEmbedderDBOWNS<B> {
+    type Document = ProgramInstance;
     type Params = Doc2VecDBOWNSEmbedderParams;
 
-    fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
+    fn new(grammar: &Grammar, params: Self::Params, device: Device<B>) -> Self {
         B::seed(params.gen_params.get_seed());
 
         let model_location = format!(
@@ -138,8 +129,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         };
 
         Self {
-            d1: PhantomData,
-            d2: PhantomData,
             model,
             device: device,
             optim: params.ada_config.init(),
@@ -309,7 +298,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDBOWNS<T, I, B> {
+impl<B: AutodiffBackend> Doc2VecEmbedderDBOWNS<B> {
     fn train_batch(&mut self, batch: ProgramBatch<B>, counter: usize, learning_rate: f64) {
         let start = SystemTime::now();
 

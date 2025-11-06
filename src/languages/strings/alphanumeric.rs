@@ -18,10 +18,13 @@
 
 use crate::{
     grammar::{
-        elem::GrammarElement, lhs::ProductionLHS, prod::production_rule, prod::Production,
+        elem::GrammarElement,
+        lhs::ProductionLHS,
+        prod::{production_rule, Production},
         rule::ProductionRule,
+        NonTerminal,
     },
-    languages::strings::{terminal_str, StringValue},
+    languages::strings::terminal_str,
 };
 
 terminal_str!(pub, T_LO_A, "a");
@@ -87,7 +90,7 @@ terminal_str!(pub, T_7, "7");
 terminal_str!(pub, T_8, "8");
 terminal_str!(pub, T_9, "9");
 
-fn productions_alpha_lower() -> Vec<ProductionRule<StringValue, StringValue>> {
+fn productions_alpha_lower() -> Vec<ProductionRule> {
     vec![
         production_rule!(T_LO_A),
         production_rule!(T_LO_B),
@@ -118,7 +121,7 @@ fn productions_alpha_lower() -> Vec<ProductionRule<StringValue, StringValue>> {
     ]
 }
 
-fn productions_alpha_upper() -> Vec<ProductionRule<StringValue, StringValue>> {
+fn productions_alpha_upper() -> Vec<ProductionRule> {
     vec![
         production_rule!(T_UP_A),
         production_rule!(T_UP_B),
@@ -149,7 +152,7 @@ fn productions_alpha_upper() -> Vec<ProductionRule<StringValue, StringValue>> {
     ]
 }
 
-fn productions_digits() -> Vec<ProductionRule<StringValue, StringValue>> {
+fn productions_digits() -> Vec<ProductionRule> {
     vec![
         production_rule!(T_0),
         production_rule!(T_1),
@@ -164,9 +167,7 @@ fn productions_digits() -> Vec<ProductionRule<StringValue, StringValue>> {
     ]
 }
 
-pub fn alphanumeric_character_production_context_free(
-    root: StringValue,
-) -> Production<StringValue, StringValue> {
+pub fn alphanumeric_character_production_context_free(root: NonTerminal) -> Production {
     let mut productions = vec![];
 
     productions.append(&mut productions_alpha_lower());
@@ -176,9 +177,7 @@ pub fn alphanumeric_character_production_context_free(
     Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
-pub fn alpha_character_production_context_free(
-    root: StringValue,
-) -> Production<StringValue, StringValue> {
+pub fn alpha_character_production_context_free(root: NonTerminal) -> Production {
     let mut productions = vec![];
 
     productions.append(&mut productions_alpha_lower());
@@ -187,9 +186,7 @@ pub fn alpha_character_production_context_free(
     Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
-pub fn alpha_lower_character_production_context_free(
-    root: StringValue,
-) -> Production<StringValue, StringValue> {
+pub fn alpha_lower_character_production_context_free(root: NonTerminal) -> Production {
     let mut productions = vec![];
 
     productions.append(&mut productions_alpha_lower());
@@ -197,9 +194,7 @@ pub fn alpha_lower_character_production_context_free(
     Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
-pub fn alpha_upper_character_production_context_free(
-    root: StringValue,
-) -> Production<StringValue, StringValue> {
+pub fn alpha_upper_character_production_context_free(root: NonTerminal) -> Production {
     let mut productions = vec![];
 
     productions.append(&mut productions_alpha_upper());
@@ -207,9 +202,7 @@ pub fn alpha_upper_character_production_context_free(
     Production::new(ProductionLHS::new_context_free(root), productions)
 }
 
-pub fn numeric_character_production_context_free(
-    root: StringValue,
-) -> Production<StringValue, StringValue> {
+pub fn numeric_character_production_context_free(root: NonTerminal) -> Production {
     let mut productions = vec![];
 
     productions.append(&mut productions_digits());
@@ -218,9 +211,9 @@ pub fn numeric_character_production_context_free(
 }
 
 pub fn alphanumeric_string_production_context_free(
-    root: StringValue,
-    iterator: GrammarElement<StringValue, StringValue>,
-) -> Production<StringValue, StringValue> {
+    root: NonTerminal,
+    iterator: GrammarElement,
+) -> Production {
     let mut productions = vec![
         production_rule!(iterator.clone(), iterator.clone()),
         production_rule!(iterator.clone()),
@@ -234,9 +227,9 @@ pub fn alphanumeric_string_production_context_free(
 }
 
 pub fn alpha_string_production_context_free(
-    root: StringValue,
-    iterator: GrammarElement<StringValue, StringValue>,
-) -> Production<StringValue, StringValue> {
+    root: NonTerminal,
+    iterator: GrammarElement,
+) -> Production {
     let mut productions = vec![
         production_rule!(iterator.clone(), iterator.clone()),
         production_rule!(iterator.clone()),
@@ -249,9 +242,9 @@ pub fn alpha_string_production_context_free(
 }
 
 pub fn lowercase_string_production_context_free(
-    root: StringValue,
-    iterator: GrammarElement<StringValue, StringValue>,
-) -> Production<StringValue, StringValue> {
+    root: NonTerminal,
+    iterator: GrammarElement,
+) -> Production {
     let mut productions = vec![
         production_rule!(iterator.clone(), iterator.clone()),
         production_rule!(iterator.clone()),
@@ -263,9 +256,9 @@ pub fn lowercase_string_production_context_free(
 }
 
 pub fn uppercase_string_production_context_free(
-    root: StringValue,
-    iterator: GrammarElement<StringValue, StringValue>,
-) -> Production<StringValue, StringValue> {
+    root: NonTerminal,
+    iterator: GrammarElement,
+) -> Production {
     let mut productions = vec![
         production_rule!(iterator.clone(), iterator.clone()),
         production_rule!(iterator.clone()),

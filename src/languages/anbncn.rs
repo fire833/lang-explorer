@@ -27,14 +27,13 @@ use crate::{
         lhs::ProductionLHS,
         prod::{
             context_free_production, production_rule, single_prefix_production,
-            single_suffix_production, Production,
+            single_suffix_production,
         },
-        rule::ProductionRule,
     },
     languages::{
         strings::{
             alphanumeric::{T_LO_A, T_LO_B, T_LO_C},
-            nterminal_str, StringValue,
+            nterminal_str,
         },
         GrammarBuilder, NOPGrammarState,
     },
@@ -54,8 +53,6 @@ pub struct AnBnCnLanguage {}
 pub struct AnBnCnLanguageParams {}
 
 impl GrammarBuilder for AnBnCnLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = AnBnCnLanguageParams;
     type State = NOPGrammarState;
 
@@ -70,9 +67,7 @@ impl GrammarBuilder for AnBnCnLanguage {
     /// b   B   →   b   b
     /// b   C   →   b   c
     /// c   C   →   c   c
-    fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar<'de>(_params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
         let g = Grammar::new(
             "S".into(),
             vec![

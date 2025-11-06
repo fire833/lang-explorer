@@ -29,13 +29,9 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
     languages::{
-        strings::{
-            nterminal_str, StringValue, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN,
-            STAR,
-        },
+        strings::{nterminal_str, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN, STAR},
         GrammarBuilder, GrammarState,
     },
 };
@@ -50,8 +46,7 @@ nterminal_str!(INDEX, "index");
 pub struct TacoExpressionLanguage;
 
 pub struct TacoExpressionState {
-    symbols: HashSet<GrammarElement<StringValue, StringValue>>,
-
+    symbols: HashSet<GrammarElement>,
     in_tensor: bool,
 }
 
@@ -64,10 +59,10 @@ impl Default for TacoExpressionState {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for TacoExpressionState {
-    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+impl GrammarState for TacoExpressionState {
+    fn apply_context<'a>(&mut self, prod: &'a Production) -> Option<Production> {
         if format!("{:?}", prod.non_terminal.non_terminal) == "symbol" {
-            let mut prod = prod.clone();
+            let mut _prod = prod.clone();
             // filter out production rules that are not in symbols
             // prod.items
             //     .retain(|rule| !self.symbols.contains(&rule.items[0]));
@@ -80,7 +75,7 @@ impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for TacoExpressionState {
         None
     }
 
-    fn update(&mut self, rule: &ProductionRule<T, I>) {
+    fn update(&mut self, _rule: &ProductionRule) {
         self.in_tensor = false;
         // self.symbols.insert(rule.items[0].clone());
 
@@ -124,22 +119,18 @@ impl Default for TacoExpressionLanguageVersion {
 }
 
 impl GrammarBuilder for TacoExpressionLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = TacoExpressionLanguageParams;
     type State = TacoExpressionState;
 
-    fn generate_grammar<'de>(
-        params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        let mut symbols: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+    fn generate_grammar<'de>(params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
+        let mut symbols: Vec<ProductionRule> = vec![];
         for var in params.symbols.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(String::from(*var).into());
             symbols.push(production_rule!(term));
         }
 
-        let mut indices: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut indices: Vec<ProductionRule> = vec![];
         for var in params.indices.iter() {
             let term = GrammarElement::Terminal(String::from(*var).into());
             indices.push(production_rule!(term));

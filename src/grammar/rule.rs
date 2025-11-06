@@ -21,26 +21,26 @@ use std::{
     hash::{DefaultHasher, Hash, Hasher},
 };
 
-use crate::grammar::{elem::GrammarElement, NonTerminal, Terminal};
+use crate::grammar::elem::GrammarElement;
 
 /// A production rule to use for grammar expansion. Contains a list of
 /// GrammarElements that are expanded usually using DFS until only a list of
 /// non-terminals remains.
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub struct ProductionRule<T: Terminal, I: NonTerminal> {
-    pub items: Vec<GrammarElement<T, I>>,
+pub struct ProductionRule {
+    pub items: Vec<GrammarElement>,
     pub logit: Option<u64>,
 }
 
-impl<T: Terminal, I: NonTerminal> ProductionRule<T, I> {
-    pub const fn new(elements: Vec<GrammarElement<T, I>>) -> Self {
+impl ProductionRule {
+    pub const fn new(elements: Vec<GrammarElement>) -> Self {
         Self {
             items: elements,
             logit: None,
         }
     }
 
-    pub const fn new_with_logit(elements: Vec<GrammarElement<T, I>>, logit: u64) -> Self {
+    pub const fn new_with_logit(elements: Vec<GrammarElement>, logit: u64) -> Self {
         Self {
             items: elements,
             logit: Some(logit),
@@ -54,7 +54,7 @@ impl<T: Terminal, I: NonTerminal> ProductionRule<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Display for ProductionRule<T, I> {
+impl Display for ProductionRule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
@@ -68,7 +68,7 @@ impl<T: Terminal, I: NonTerminal> Display for ProductionRule<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Debug for ProductionRule<T, I> {
+impl Debug for ProductionRule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for item in self.items.iter() {
             write!(f, "{:?}", item)?;

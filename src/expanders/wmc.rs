@@ -24,7 +24,7 @@ use crate::{
     expanders::GrammarExpander,
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
-        rule::ProductionRule, NonTerminal, Terminal,
+        rule::ProductionRule,
     },
 };
 
@@ -43,8 +43,8 @@ impl WeightedMonteCarloExpander {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloExpander {
-    fn init(_grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
+impl GrammarExpander for WeightedMonteCarloExpander {
+    fn init(_grammar: &Grammar, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
@@ -53,10 +53,10 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
 
     fn expand_rule<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        production: &'a Production<T, I>,
-    ) -> &'a ProductionRule<T, I> {
+        _grammar: &'a Grammar,
+        _context: &'a ProgramInstance,
+        production: &'a Production,
+    ) -> &'a ProductionRule {
         let mut sum = 0;
         let mut count = 0;
 
@@ -123,10 +123,10 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for WeightedMonteCarloEx
 
     fn choose_lhs_and_slot<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
-    ) -> (&'a ProductionLHS<T, I>, usize) {
+        _grammar: &'a Grammar,
+        _context: &'a ProgramInstance,
+        lhs_location_matrix: &[(&'a ProductionLHS, Vec<usize>)],
+    ) -> (&'a ProductionLHS, usize) {
         // For now, copy mc
         let idx = self.rng.random::<u64>() as usize % lhs_location_matrix.len();
         let (lhs, indices) = lhs_location_matrix

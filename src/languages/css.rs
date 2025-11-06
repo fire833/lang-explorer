@@ -34,8 +34,8 @@ use crate::{
                 numeric_character_production_context_free, T_LO_A, T_LO_C, T_LO_E, T_LO_H, T_LO_I,
                 T_LO_M, T_LO_N, T_LO_P, T_LO_R, T_LO_S, T_LO_T, T_LO_V, T_LO_W, T_LO_X,
             },
-            nterminal_str, terminal_str, StringValue, COLON, COMMA, EPSILON, GREATER, LBRACKET,
-            MINUS, PERCENT, PLUS, RBRACKET, SEMICOLON, SPACE,
+            nterminal_str, terminal_str, COLON, COMMA, EPSILON, GREATER, LBRACKET, MINUS, PERCENT,
+            PLUS, RBRACKET, SEMICOLON, SPACE,
         },
         GrammarBuilder, NOPGrammarState,
     },
@@ -550,29 +550,25 @@ impl Default for CSSLanguageParameters {
 }
 
 impl GrammarBuilder for CSSLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = CSSLanguageParameters;
     type State = NOPGrammarState;
 
-    fn generate_grammar<'de>(
-        params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        let mut classes: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+    fn generate_grammar<'de>(params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
+        let mut classes: Vec<ProductionRule> = vec![];
         for var in params.classes.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.into());
             classes.push(production_rule!(term));
         }
 
-        let mut ids: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut ids: Vec<ProductionRule> = vec![];
         for var in params.ids.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.into());
             ids.push(production_rule!(term));
         }
 
-        let mut colors: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut colors: Vec<ProductionRule> = vec![];
         for var in params.colors.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.into());

@@ -20,7 +20,7 @@ use std::fmt::Debug;
 
 pub mod alphanumeric;
 
-use crate::grammar::{elem::GrammarElement, BinarySerialize, NonTerminal, Terminal};
+use crate::grammar::{elem::GrammarElement, BinarySerialize};
 
 /// A generic terminal or non-terminal type which wraps a standard String.
 /// This is generally the base atomic types that are going to be referenced within
@@ -34,12 +34,6 @@ pub struct StringValue {
     /// For dynamic values, allow the string to be heap allocated.
     other: Option<String>,
 }
-
-/// StringValue is a valid terminal.
-impl Terminal for StringValue {}
-
-/// StringValue is a valid non-terminal.
-impl NonTerminal for StringValue {}
 
 impl BinarySerialize for StringValue {
     fn serialize(&self) -> Vec<u8> {
@@ -102,13 +96,13 @@ impl From<String> for StringValue {
 macro_rules! terminal_str {
     ($v:vis, $i:ident, $s:literal) => {
         #[allow(unused)]
-        $v const $i: GrammarElement<StringValue, StringValue> =
-            GrammarElement::Terminal(StringValue::from_static_str($s));
+        $v const $i: GrammarElement =
+            GrammarElement::Terminal(crate::grammar::Terminal::ConstStr($s));
     };
     ($i:ident, $s:literal) => {
         #[allow(unused)]
-        const $i: GrammarElement<StringValue, StringValue> =
-            GrammarElement::Terminal(StringValue::from_static_str($s));
+        const $i: GrammarElement =
+            GrammarElement::Terminal(crate::grammar::Terminal::ConstStr($s));
     };
 }
 
@@ -117,20 +111,20 @@ pub(crate) use terminal_str;
 macro_rules! nterminal_str {
     ($v:vis, $i:ident, $s:literal) => {
         #[allow(unused)]
-        $v fn $i: GrammarElement<StringValue, StringValue> =
-            GrammarElement::NonTerminal(StringValue::from_static_str($s));
+        $v fn $i: GrammarElement =
+            GrammarElement::NonTerminal(crate::grammar::NonTerminal::ConstStr($s));
     };
     ($i:ident, $s:literal) => {
         #[allow(unused)]
-        const $i: GrammarElement<StringValue, StringValue> =
-            GrammarElement::NonTerminal(StringValue::from_static_str($s));
+        const $i: GrammarElement =
+            GrammarElement::NonTerminal(crate::grammar::NonTerminal::ConstStr($s));
     }
 }
 
 pub(crate) use nterminal_str;
 
 // Some common terminals/tokens that you can import for other grammars.
-pub const EPSILON: GrammarElement<StringValue, StringValue> = GrammarElement::Epsilon;
+pub const EPSILON: GrammarElement = GrammarElement::Epsilon;
 
 terminal_str!(pub, COMMA, ",");
 terminal_str!(pub, DOT, ".");

@@ -36,7 +36,7 @@ use utoipa::ToSchema;
 
 use crate::{
     errors::LangExplorerError,
-    grammar::{grammar::Grammar, NonTerminal, Terminal},
+    grammar::grammar::Grammar,
     tooling::{modules::embed::AggregationMethod, training::TrainingParams},
 };
 
@@ -45,14 +45,14 @@ pub mod doc2vecdm;
 pub mod graphmae;
 
 /// Main trait for creating embeddings of programs.
-pub trait LanguageEmbedder<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
+pub trait LanguageEmbedder<B: AutodiffBackend> {
     type Document;
     type Params;
 
     /// Initializes an Embedder system. This typically involves either
     /// initializing a new model, or retrieving an already trained model
     /// instance from disk.
-    fn new(grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self;
+    fn new(grammar: &Grammar, params: Self::Params, device: Device<B>) -> Self;
 
     /// Trains the embedder on the provided corpus.
     fn fit(self, documents: &[Self::Document]) -> Result<Self, LangExplorerError>

@@ -21,7 +21,7 @@ use utoipa::ToSchema;
 
 use crate::{errors::LangExplorerError, grammar::grammar::Grammar, languages::NOPGrammarState};
 
-use super::{strings::StringValue, GrammarBuilder};
+use super::GrammarBuilder;
 
 // nterminal_str!(NT_TABLE, "nt_table");
 // nterminal_str!(NT_CHAIN, "nt_chain");
@@ -43,14 +43,10 @@ pub struct NFTRulesetLanguage;
 pub struct NFTRulesetParams {}
 
 impl GrammarBuilder for NFTRulesetLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = NFTRulesetParams;
     type State = NOPGrammarState;
 
-    fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar<'de>(_params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
         todo!()
     }
 }

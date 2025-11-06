@@ -21,18 +21,18 @@ use crate::{
     expanders::GrammarExpander,
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
-        rule::ProductionRule, NonTerminal, Terminal,
+        rule::ProductionRule,
     },
 };
 
 pub struct ExhaustiveExpander;
 
-impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
+impl GrammarExpander for ExhaustiveExpander {
     /// We may need to initialize the expander depending on the type of grammar
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init(_grammar: &Grammar<T, I>, _seed: u64) -> Result<Self, LangExplorerError>
+    fn init(_grammar: &Grammar, _seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized,
     {
@@ -43,10 +43,10 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     /// make a decision on what the next expansion should be.
     fn expand_rule<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        _production: &'a Production<T, I>,
-    ) -> &'a ProductionRule<T, I> {
+        _grammar: &'a Grammar,
+        _context: &'a ProgramInstance,
+        _production: &'a Production,
+    ) -> &'a ProductionRule {
         todo!()
     }
 
@@ -57,10 +57,10 @@ impl<T: Terminal, I: NonTerminal> GrammarExpander<T, I> for ExhaustiveExpander {
     /// decision on our behalf as well.
     fn choose_lhs_and_slot<'a>(
         &mut self,
-        _grammar: &'a Grammar<T, I>,
-        _context: &'a ProgramInstance<T, I>,
-        _lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
-    ) -> (&'a ProductionLHS<T, I>, usize) {
+        _grammar: &'a Grammar,
+        _context: &'a ProgramInstance,
+        _lhs_location_matrix: &[(&'a ProductionLHS, Vec<usize>)],
+    ) -> (&'a ProductionLHS, usize) {
         todo!()
     }
 

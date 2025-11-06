@@ -31,7 +31,7 @@ use burn::{
 
 use crate::{
     expanders::learned::{NormalizationStrategy, SamplingStrategy},
-    grammar::{grammar::Grammar, prod::Production, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, prod::Production},
     tooling::modules::{
         expander::Activation,
         general::{GeneralLinear, GeneralLinearConfig},
@@ -48,9 +48,9 @@ pub struct ProductionDecisionFixedConfig {
 }
 
 impl ProductionDecisionFixedConfig {
-    pub fn init<T: Terminal, I: NonTerminal, B: Backend>(
+    pub fn init<B: Backend>(
         &self,
-        grammar: &Grammar<T, I>,
+        grammar: &Grammar,
         device: &B::Device,
     ) -> ProductionDecisionFixed<B> {
         let prods = grammar.get_productions();
@@ -109,9 +109,9 @@ impl<B: Backend> ProductionDecisionFixed<B> {
     /// - rules: `[batch_size, k]`
     /// - inputs: `[batch_size, d_embedding]`
     /// - output: `[batch_size, k]`
-    pub fn forward<T: Terminal, I: NonTerminal>(
+    pub fn forward(
         &self,
-        productions: Vec<&Production<T, I>>,
+        productions: Vec<&Production>,
         inputs: Tensor<B, 2, Float>,
         activation: Activation,
         normalization: NormalizationStrategy,
@@ -168,16 +168,13 @@ impl<B: Backend> ProductionDecisionFixed<B> {
 
 #[test]
 fn test_forward() {
-    use crate::languages::{
-        strings::StringValue, taco_schedule::TacoScheduleLanguage, GrammarBuilder,
-    };
+    use crate::languages::{taco_schedule::TacoScheduleLanguage, GrammarBuilder};
     use burn::backend::NdArray;
 
     let tacosched = TacoScheduleLanguage::generate_grammar(Default::default()).unwrap();
 
     let dev = Default::default();
-    let model = ProductionDecisionFixedConfig::new(5, 5)
-        .init::<StringValue, StringValue, NdArray>(&tacosched, &dev);
+    let model = ProductionDecisionFixedConfig::new(5, 5).init::<NdArray>(&tacosched, &dev);
 
     let prods = tacosched.get_productions();
     let len = prods.len();

@@ -29,13 +29,12 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
     languages::{GrammarState, NOPGrammarState},
 };
 
 use super::{
-    strings::{nterminal_str, terminal_str, StringValue, COMMA, EPSILON, LPAREN, RPAREN},
+    strings::{nterminal_str, terminal_str, COMMA, EPSILON, LPAREN, RPAREN},
     GrammarBuilder,
 };
 
@@ -92,12 +91,12 @@ impl Default for TacoScheduleState {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for TacoScheduleState {
-    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+impl GrammarState for TacoScheduleState {
+    fn apply_context<'a>(&mut self, _prod: &'a Production) -> Option<Production> {
         None
     }
 
-    fn update(&mut self, rule: &ProductionRule<T, I>) {
+    fn update(&mut self, _rule: &ProductionRule) {
         todo!()
     }
 }
@@ -172,46 +171,42 @@ impl TacoScheduleLanguageParams {
 }
 
 impl GrammarBuilder for TacoScheduleLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = TacoScheduleLanguageParams;
     type State = NOPGrammarState;
 
-    fn generate_grammar<'de>(
-        params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
-        let mut index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+    fn generate_grammar<'de>(params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
+        let mut index_productions: Vec<ProductionRule> = vec![];
         for var in params.index_variables.iter() {
             // Store this variable in the heap.
             let term = GrammarElement::Terminal(var.into());
             index_productions.push(production_rule!(term));
         }
 
-        let mut workspace_index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut workspace_index_productions: Vec<ProductionRule> = vec![];
         for var in params.workspace_index_variables.iter() {
             let term = GrammarElement::Terminal(var.into());
             workspace_index_productions.push(production_rule!(term));
         }
 
-        let mut fused_index_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut fused_index_productions: Vec<ProductionRule> = vec![];
         for var in params.fused_index_variables.iter() {
             let term = GrammarElement::Terminal(var.into());
             fused_index_productions.push(production_rule!(term));
         }
 
-        let mut split_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut split_factor_productions: Vec<ProductionRule> = vec![];
         for var in params.split_factor_variables.iter() {
             let term = GrammarElement::Terminal(var.into());
             split_factor_productions.push(production_rule!(term));
         }
 
-        let mut divide_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut divide_factor_productions: Vec<ProductionRule> = vec![];
         for var in params.divide_factor_variables.iter() {
             let term = GrammarElement::Terminal(var.into());
             divide_factor_productions.push(production_rule!(term));
         }
 
-        let mut unroll_factor_productions: Vec<ProductionRule<StringValue, StringValue>> = vec![];
+        let mut unroll_factor_productions: Vec<ProductionRule> = vec![];
         for var in params.unroll_factor_variables.iter() {
             let term = GrammarElement::Terminal(var.into());
             unroll_factor_productions.push(production_rule!(term));

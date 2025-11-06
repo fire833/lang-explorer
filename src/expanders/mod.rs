@@ -37,9 +37,8 @@ use crate::{
     },
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
-        rule::ProductionRule, NonTerminal, Terminal,
+        rule::ProductionRule,
     },
-    languages::Feature,
     tooling::modules::expander::{
         frontier_decision::FrontierDecisionAttention,
         prod_decision_attn::ProductionDecisionAttention,
@@ -59,12 +58,12 @@ pub mod wmc;
 /// that should be utilized from the list of possible production
 /// rules that are implemented by this production.
 #[async_trait]
-pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
+pub trait GrammarExpander: Send {
     /// We may need to initialize the expander depending on the type of grammar
     /// we are using. For example, with my ML based example, the internal models of
     /// the expander may change completely depending on the rules of the grammar
     /// I want to expand.
-    fn init(grammar: &Grammar<T, I>, seed: u64) -> Result<Self, LangExplorerError>
+    fn init(grammar: &Grammar, seed: u64) -> Result<Self, LangExplorerError>
     where
         Self: Sized;
 
@@ -72,10 +71,10 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
     /// make a decision on what the next expansion should be.
     fn expand_rule<'a>(
         &mut self,
-        grammar: &'a Grammar<T, I>,
-        context: &'a ProgramInstance<T, I>,
-        production: &'a Production<T, I>,
-    ) -> &'a ProductionRule<T, I>;
+        grammar: &'a Grammar,
+        context: &'a ProgramInstance,
+        production: &'a Production,
+    ) -> &'a ProductionRule;
 
     /// For context sensitive grammars, we could be in a situation where we have
     /// multiple left-hand sides that match some point on the frontier, along with
@@ -84,10 +83,10 @@ pub trait GrammarExpander<T: Terminal, I: NonTerminal>: Send {
     /// decision on our behalf as well.
     fn choose_lhs_and_slot<'a>(
         &mut self,
-        grammar: &'a Grammar<T, I>,
-        context: &'a ProgramInstance<T, I>,
-        lhs_location_matrix: &[(&'a ProductionLHS<T, I>, Vec<usize>)],
-    ) -> (&'a ProductionLHS<T, I>, usize);
+        grammar: &'a Grammar,
+        context: &'a ProgramInstance,
+        lhs_location_matrix: &[(&'a ProductionLHS, Vec<usize>)],
+    ) -> (&'a ProductionLHS, usize);
 
     /// Whenever a program has finished being generated, this method will be called
     /// to reset/update internal state in the expander. This is mostly going to be used
@@ -110,11 +109,11 @@ pub enum ExpanderWrapper {
 }
 
 impl ExpanderWrapper {
-    pub fn get_expander<T: Terminal, I: NonTerminal>(
+    pub fn get_expander(
         &self,
-        grammar: &Grammar<T, I>,
+        grammar: &Grammar,
         seed: u64,
-    ) -> Result<Box<dyn GrammarExpander<T, I>>, LangExplorerError> {
+    ) -> Result<Box<dyn GrammarExpander>, LangExplorerError> {
         match self {
             ExpanderWrapper::MonteCarlo => Ok(Box::new(MonteCarloExpander::init(grammar, seed)?)),
             ExpanderWrapper::WeightedMonteCarlo => {
@@ -152,15 +151,12 @@ impl Display for ExpanderWrapper {
 }
 
 /// Another hack to allow us to use multiple embedders.
-enum EmbedderWrapper<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    Doc2Vec(Doc2VecEmbedderDBOWNS<T, I, B>),
+enum EmbedderWrapper<B: AutodiffBackend> {
+    Doc2Vec(Doc2VecEmbedderDBOWNS<B>),
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> EmbedderWrapper<T, I, B> {
-    fn forward(
-        &mut self,
-        doc: ProgramInstance<T, I>,
-    ) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
+impl<B: AutodiffBackend> EmbedderWrapper<B> {
+    fn forward(&mut self, doc: ProgramInstance) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         match self {
             EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed(doc),
         }
@@ -174,9 +170,9 @@ enum ProductionDecisionWrapper<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionWrapper<B> {
-    fn forward<'a, T: Terminal, I: NonTerminal>(
+    fn forward<'a>(
         &self,
-        productions: Vec<&'a Production<T, I>>,
+        productions: Vec<&'a Production>,
         inputs: Tensor<B, 2, Float>,
         normalization: NormalizationStrategy,
         sampling: SamplingStrategy,

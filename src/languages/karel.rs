@@ -25,13 +25,12 @@ use crate::{
         elem::GrammarElement,
         grammar::Grammar,
         lhs::ProductionLHS,
-        prod::{context_free_production, production_rule, Production},
-        rule::ProductionRule,
+        prod::{context_free_production, production_rule},
     },
     languages::{
         strings::{
             alphanumeric::{T_1, T_2, T_3, T_4, T_5, T_6, T_7, T_8, T_9},
-            nterminal_str, terminal_str, StringValue, COLON, LPAREN, RPAREN, SEMICOLON, SPACE,
+            nterminal_str, terminal_str, COLON, LPAREN, RPAREN, SEMICOLON, SPACE,
         },
         GrammarBuilder, NOPGrammarState,
     },
@@ -79,14 +78,10 @@ pub struct KarelLanguage;
 pub struct KarelLanguageParameters {}
 
 impl GrammarBuilder for KarelLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = KarelLanguageParameters;
     type State = NOPGrammarState;
 
-    fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar<'de>(_params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
         Ok(Grammar::new(
             "program".into(),
             vec![

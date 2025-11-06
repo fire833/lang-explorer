@@ -21,20 +21,18 @@ use burn::tensor::{backend::AutodiffBackend, Device, Tensor};
 use crate::{
     embedding::LanguageEmbedder,
     errors::LangExplorerError,
-    grammar::{grammar::Grammar, program::ProgramInstance, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, program::ProgramInstance},
 };
 
 pub struct GraphMAEEmbedder {}
 
 pub struct GraphMAEEmbedderParams {}
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
-    for GraphMAEEmbedder
-{
-    type Document = ProgramInstance<T, I>;
+impl<B: AutodiffBackend> LanguageEmbedder<B> for GraphMAEEmbedder {
+    type Document = ProgramInstance;
     type Params = GraphMAEEmbedderParams;
 
-    fn new(_grammar: &Grammar<T, I>, _params: Self::Params, _device: Device<B>) -> Self {
+    fn new(_grammar: &Grammar, _params: Self::Params, _device: Device<B>) -> Self {
         todo!()
     }
 
