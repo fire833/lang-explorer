@@ -22,28 +22,28 @@ use std::{
 };
 
 use crate::{
-    grammar::{lhs::ProductionLHS, rule::ProductionRule, NonTerminal, Terminal},
+    grammar::{lhs::ProductionLHS, rule::ProductionRule},
     tooling::modules::expander::ProductionConfiguration,
 };
 
 /// Represents all the expansion rules for a particular non-terminal
 /// identifier.
 #[derive(Clone, PartialEq, Eq)]
-pub struct Production<T: Terminal, I: NonTerminal> {
+pub struct Production {
     /// Reference to the non-terminal that we are using here.
-    pub non_terminal: ProductionLHS<T, I>,
+    pub non_terminal: ProductionLHS,
 
     /// The list of all production rules (ie vectors of vectors of symbols
     /// that can be expanded upon in the grammar expansion process).
-    pub items: Vec<ProductionRule<T, I>>,
+    pub items: Vec<ProductionRule>,
 
     /// Configuration for LearnedExpander to build a model for predicting this
     /// production.
     pub ml_config: ProductionConfiguration,
 }
 
-impl<T: Terminal, I: NonTerminal> Production<T, I> {
-    pub const fn new(non_terminal: ProductionLHS<T, I>, items: Vec<ProductionRule<T, I>>) -> Self {
+impl Production {
+    pub const fn new(non_terminal: ProductionLHS, items: Vec<ProductionRule>) -> Self {
         Self {
             items,
             non_terminal,
@@ -52,12 +52,12 @@ impl<T: Terminal, I: NonTerminal> Production<T, I> {
     }
 
     /// Get the left-hand size value for this production.
-    pub fn lhs(&self) -> ProductionLHS<T, I> {
+    pub fn lhs(&self) -> ProductionLHS {
         self.non_terminal.clone()
     }
 
     /// Wrapper to return an iterator for all production rules in this production.
-    pub fn iter(&self) -> impl Iterator<Item = &ProductionRule<T, I>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &ProductionRule> + '_ {
         self.items.iter()
     }
 
@@ -71,7 +71,7 @@ impl<T: Terminal, I: NonTerminal> Production<T, I> {
     }
 
     /// Wrapper to return a specific rule.
-    pub fn get(&self, i: usize) -> Option<&ProductionRule<T, I>> {
+    pub fn get(&self, i: usize) -> Option<&ProductionRule> {
         self.items.get(i)
     }
 
@@ -82,7 +82,7 @@ impl<T: Terminal, I: NonTerminal> Production<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Display for Production<T, I> {
+impl Display for Production {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
@@ -98,7 +98,7 @@ impl<T: Terminal, I: NonTerminal> Display for Production<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Debug for Production<T, I> {
+impl Debug for Production {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, item) in self.items.iter().enumerate() {
             if i == self.items.len() - 1 {
@@ -114,7 +114,7 @@ impl<T: Terminal, I: NonTerminal> Debug for Production<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Hash for Production<T, I> {
+impl Hash for Production {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.non_terminal.hash(state);
         self.items.hash(state);
@@ -124,11 +124,11 @@ impl<T: Terminal, I: NonTerminal> Hash for Production<T, I> {
 macro_rules! production_rule {
     ($logit:literal, $($x:expr),+) => {
         // Create a production rule with logits.
-        ProductionRule::new_with_logit(vec![$($x),+], $logit as u64)
+        crate::grammar::rule::ProductionRule::new_with_logit(vec![$($x),+], $logit as u64)
     };
     ($($x:expr),+) => {
         // Create a production rule withot logits.
-        ProductionRule::new(vec![$($x),+])
+        crate::grammar::rule::ProductionRule::new(vec![$($x),+])
     }
 }
 
@@ -136,7 +136,7 @@ pub(crate) use production_rule;
 
 macro_rules! context_free_production {
     ($nt:expr, $($rules:expr),+) => {
-        Production::new(ProductionLHS::new_context_free_elem($nt), vec![$($rules),+])
+        crate::grammar::prod::Production::new(ProductionLHS::new_context_free_elem($nt), vec![$($rules),+])
     };
     // ($nt:expr, $rules:expr) => {
     //     Production::new(
@@ -150,13 +150,13 @@ pub(crate) use context_free_production;
 
 macro_rules! single_prefix_production {
     ($prefix: expr, $nt: expr, $($rules:expr),+) => {
-        Production::new(ProductionLHS::new_with_prefix_single($prefix, $nt), vec![$($rules),+])
+        crate::grammar::prod::Production::new(ProductionLHS::new_with_prefix_single($prefix, $nt), vec![$($rules),+])
     };
 }
 
 macro_rules! single_suffix_production {
     ($nt: expr, $suffix: expr, $($rules:expr),+) => {
-        Production::new(ProductionLHS::new_with_suffix_single($suffix, $nt), vec![$($rules),+])
+        crate::grammar::prod::Production::new(ProductionLHS::new_with_suffix_single($suffix, $nt), vec![$($rules),+])
     };
 }
 
@@ -166,7 +166,7 @@ pub(crate) use single_suffix_production;
 #[allow(unused)]
 macro_rules! context_sensitive_production {
     (($($prefix:expr),*) / ($nt:expr) / ($($suffix:expr),*) / ($($rules:expr),+)) => {
-        Production::new(ProductionLHS::new_with_prefix_and_suffix(vec![$($prefix),+], $nt, vec![$($suffix),+]), vec![$($rules),+])
+        crate::grammar::prod::Production::new(ProductionLHS::new_with_prefix_and_suffix(vec![$($prefix),+], $nt, vec![$($suffix),+]), vec![$($rules),+])
     };
 }
 

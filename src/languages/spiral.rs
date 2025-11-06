@@ -27,10 +27,9 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
-        NonTerminal, Terminal,
     },
     languages::{
-        strings::{nterminal_str, terminal_str, StringValue, LPAREN, RPAREN},
+        strings::{nterminal_str, terminal_str, LPAREN, RPAREN},
         GrammarBuilder, GrammarState,
     },
 };
@@ -60,12 +59,12 @@ pub struct SpiralLanguage;
 
 pub struct SpiralState {}
 
-impl<T: Terminal, I: NonTerminal> GrammarState<T, I> for SpiralState {
-    fn apply_context<'a>(&mut self, prod: &'a Production<T, I>) -> Option<Production<T, I>> {
+impl GrammarState for SpiralState {
+    fn apply_context<'a>(&mut self, _prod: &'a Production) -> Option<Production> {
         todo!()
     }
 
-    fn update(&mut self, rule: &ProductionRule<T, I>) {
+    fn update(&mut self, _rule: &ProductionRule) {
         todo!()
     }
 }
@@ -81,14 +80,10 @@ impl Default for SpiralState {
 pub struct SpiralLanguageParams {}
 
 impl GrammarBuilder for SpiralLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = SpiralLanguageParams;
     type State = SpiralState;
 
-    fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar<'de>(_params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
         let grammar = Grammar::new(
             "spl".into(),
             vec![

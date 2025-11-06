@@ -26,13 +26,12 @@ use crate::{
         grammar::Grammar,
         lhs::ProductionLHS,
         prod::{production_rule, Production},
-        rule::ProductionRule,
     },
     languages::NOPGrammarState,
 };
 
 use super::{
-    strings::{nterminal_str, terminal_str, StringValue, EPSILON},
+    strings::{nterminal_str, terminal_str, EPSILON},
     GrammarBuilder,
 };
 
@@ -46,14 +45,10 @@ pub struct ToyLanguage;
 pub struct ToyLanguageParams {}
 
 impl GrammarBuilder for ToyLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = ToyLanguageParams;
     type State = NOPGrammarState;
 
-    fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar<'de>(_params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
         Ok(Grammar::new(
             "S".into(),
             vec![Production::new(

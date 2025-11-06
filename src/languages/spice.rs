@@ -22,7 +22,7 @@ use utoipa::ToSchema;
 use crate::{
     errors::LangExplorerError,
     grammar::grammar::Grammar,
-    languages::{strings::StringValue, GrammarBuilder, NOPGrammarState},
+    languages::{GrammarBuilder, NOPGrammarState},
 };
 
 pub struct SpiceLanguage;
@@ -32,14 +32,10 @@ pub struct SpiceLanguage;
 pub struct SpiceLanguageParams {}
 
 impl GrammarBuilder for SpiceLanguage {
-    type Term = StringValue;
-    type NTerm = StringValue;
     type Params<'de> = SpiceLanguageParams;
     type State = NOPGrammarState;
 
-    fn generate_grammar<'de>(
-        _params: Self::Params<'de>,
-    ) -> Result<Grammar<Self::Term, Self::NTerm>, LangExplorerError> {
+    fn generate_grammar<'de>(_params: Self::Params<'de>) -> Result<Grammar, LangExplorerError> {
         todo!()
     }
 }

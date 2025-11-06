@@ -18,7 +18,6 @@
 
 use std::{
     collections::{BTreeMap, HashSet},
-    marker::PhantomData,
     mem,
     time::SystemTime,
     vec,
@@ -41,7 +40,6 @@ use crate::{
     grammar::{
         grammar::Grammar,
         program::{ProgramInstance, WLKernelHashingOrder},
-        NonTerminal, Terminal,
     },
     languages::Feature,
     tooling::modules::{
@@ -50,11 +48,7 @@ use crate::{
     },
 };
 
-pub struct Doc2VecEmbedderDM<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
-    // Some bullcrap.
-    d1: PhantomData<T>,
-    d2: PhantomData<I>,
-
+pub struct Doc2VecEmbedderDM<B: AutodiffBackend> {
     /// The model itself.
     model: Doc2VecDM<B>,
     loss: NegativeSampling<B>,
@@ -69,9 +63,7 @@ pub struct Doc2VecEmbedderDM<T: Terminal, I: NonTerminal, B: AutodiffBackend> {
     params: GeneralEmbeddingTrainingParams,
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend>
-    TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedderDM<T, I, B>
-{
+impl<B: AutodiffBackend> TrainStep<ProgramBatch<B>, Tensor<B, 1, Float>> for Doc2VecEmbedderDM<B> {
     fn step(&self, item: ProgramBatch<B>) -> TrainOutput<Tensor<B, 1, Float>> {
         let logits = self
             .model
@@ -101,13 +93,11 @@ pub struct Doc2VecDMEmbedderParams {
     pub gen_params: GeneralEmbeddingTrainingParams,
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
-    for Doc2VecEmbedderDM<T, I, B>
-{
-    type Document = ProgramInstance<T, I>;
+impl<B: AutodiffBackend> LanguageEmbedder<B> for Doc2VecEmbedderDM<B> {
+    type Document = ProgramInstance;
     type Params = Doc2VecDMEmbedderParams;
 
-    fn new(_grammar: &Grammar<T, I>, params: Self::Params, device: Device<B>) -> Self {
+    fn new(_grammar: &Grammar, params: Self::Params, device: Device<B>) -> Self {
         // let _uuid = grammar.generate_uuid();
         B::seed(params.gen_params.get_seed());
 
@@ -120,8 +110,6 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
         let loss = NegativeSamplingConfig::new().init(&device);
 
         Self {
-            d1: PhantomData,
-            d2: PhantomData,
             model,
             device,
             loss,
@@ -227,7 +215,7 @@ impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> LanguageEmbedder<T, I, B>
     }
 }
 
-impl<T: Terminal, I: NonTerminal, B: AutodiffBackend> Doc2VecEmbedderDM<T, I, B> {
+impl<B: AutodiffBackend> Doc2VecEmbedderDM<B> {
     fn train_batch(mut self, batch: ProgramBatch<B>, counter: usize, learning_rate: f64) -> Self {
         let start = SystemTime::now();
 

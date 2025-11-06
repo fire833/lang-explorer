@@ -30,7 +30,7 @@ use burn::{
 
 use crate::{
     expanders::learned::{NormalizationStrategy, SamplingStrategy},
-    grammar::{grammar::Grammar, prod::Production, NonTerminal, Terminal},
+    grammar::{grammar::Grammar, prod::Production},
     tooling::modules::{
         expander::ProductionModelType,
         general::{GeneralLinear, GeneralLinearConfig},
@@ -45,9 +45,9 @@ pub struct ProductionDecisionVariableConfig {
 }
 
 impl ProductionDecisionVariableConfig {
-    pub fn init<T: Terminal, I: NonTerminal, B: Backend>(
+    pub fn init<B: Backend>(
         &self,
-        grammar: &Grammar<T, I>,
+        grammar: &Grammar,
         device: &B::Device,
     ) -> ProductionDecisionVariable<B> {
         let mut map = HashMap::new();
@@ -99,9 +99,9 @@ pub struct ProductionDecisionVariable<B: Backend> {
 }
 
 impl<B: Backend> ProductionDecisionVariable<B> {
-    pub fn forward<T: Terminal, I: NonTerminal>(
+    pub fn forward(
         &self,
-        productions: Vec<&Production<T, I>>,
+        productions: Vec<&Production>,
         inputs: Tensor<B, 2, Float>,
     ) -> Tensor<B, 2, Int> {
         let mut outputs: Vec<Tensor<B, 1, Int>> = vec![];

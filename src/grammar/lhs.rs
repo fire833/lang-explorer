@@ -22,21 +22,21 @@ use std::{
     vec,
 };
 
-use crate::grammar::{elem::GrammarElement, program::ProgramInstance, NonTerminal, Terminal};
+use crate::grammar::{elem::GrammarElement, program::ProgramInstance, NonTerminal};
 
 /// A wrapper type for left-hand sides of grammars, which can include grammars that are
 /// context-sensitive. This type allows you to provide optional prefix and suffix
 /// grammar elements around the non-terminal as context for the expander.
 #[derive(Clone, PartialEq, Eq)]
-pub struct ProductionLHS<T: Terminal, I: NonTerminal> {
+pub struct ProductionLHS {
     /// optional prefix context for the rule.
-    pub prefix: Vec<GrammarElement<T, I>>,
+    pub prefix: Vec<GrammarElement>,
 
     /// non-terminal for the rule.
-    pub non_terminal: I,
+    pub non_terminal: NonTerminal,
 
     /// optional suffix context for the rule.
-    pub suffix: Vec<GrammarElement<T, I>>,
+    pub suffix: Vec<GrammarElement>,
 
     /// the entire token list for this LHS, compute it once
     /// on init since this will have to be used quite often.
@@ -44,11 +44,11 @@ pub struct ProductionLHS<T: Terminal, I: NonTerminal> {
     /// And make it optional as a cheap way of checking whether
     /// this LHS is context free. If empty, then this LHS can be
     /// considered to be context-free.
-    full_token_list: Vec<GrammarElement<T, I>>,
+    full_token_list: Vec<GrammarElement>,
 }
 
-impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
-    pub fn new_context_free_elem(non_terminal: GrammarElement<T, I>) -> Self {
+impl ProductionLHS {
+    pub fn new_context_free_elem(non_terminal: GrammarElement) -> Self {
         if let GrammarElement::NonTerminal(nt) = non_terminal {
             Self::new_context_free(nt)
         } else {
@@ -58,7 +58,7 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
 
     /// Create a new ProductionLHS with no context, only provide a non-terminal
     /// for expansion.
-    pub fn new_context_free(non_terminal: I) -> Self {
+    pub fn new_context_free(non_terminal: NonTerminal) -> Self {
         Self {
             prefix: vec![],
             non_terminal: non_terminal.clone(),
@@ -67,12 +67,12 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
         }
     }
 
-    pub fn new_with_prefix_single(prefix: GrammarElement<T, I>, non_terminal: I) -> Self {
+    pub fn new_with_prefix_single(prefix: GrammarElement, non_terminal: NonTerminal) -> Self {
         Self::new_with_prefix_list(vec![prefix], non_terminal)
     }
 
     /// Create a new ProductionLHS with prefix context.
-    pub fn new_with_prefix_list(prefix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
+    pub fn new_with_prefix_list(prefix: Vec<GrammarElement>, non_terminal: NonTerminal) -> Self {
         let mut tokens = prefix.clone();
         tokens.push(GrammarElement::NonTerminal(non_terminal.clone()));
 
@@ -84,12 +84,12 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
         }
     }
 
-    pub fn new_with_suffix_single(suffix: GrammarElement<T, I>, non_terminal: I) -> Self {
+    pub fn new_with_suffix_single(suffix: GrammarElement, non_terminal: NonTerminal) -> Self {
         Self::new_with_suffix_list(vec![suffix], non_terminal)
     }
 
     /// Create a new ProductionLHS with suffix context.
-    pub fn new_with_suffix_list(suffix: Vec<GrammarElement<T, I>>, non_terminal: I) -> Self {
+    pub fn new_with_suffix_list(suffix: Vec<GrammarElement>, non_terminal: NonTerminal) -> Self {
         let mut tokens = vec![GrammarElement::NonTerminal(non_terminal.clone())];
         tokens.append(&mut suffix.clone());
 
@@ -103,9 +103,9 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
 
     /// Create a new ProductionLHS with both prefix and suffix context.
     pub fn new_with_prefix_and_suffix(
-        prefix: Vec<GrammarElement<T, I>>,
-        non_terminal: I,
-        suffix: Vec<GrammarElement<T, I>>,
+        prefix: Vec<GrammarElement>,
+        non_terminal: NonTerminal,
+        suffix: Vec<GrammarElement>,
     ) -> Self {
         let mut tokens = prefix.clone();
         tokens.push(GrammarElement::NonTerminal(non_terminal.clone()));
@@ -121,7 +121,7 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
 
     pub(super) fn get_all_context_instances(
         &self,
-        frontier: &[&mut ProgramInstance<T, I>],
+        frontier: &[&mut ProgramInstance],
     ) -> Vec<usize> {
         let mut instances = vec![];
         let tokens = &self.full_token_list;
@@ -144,7 +144,7 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
     }
 
     /// Check if an LHS contains a particular element.
-    pub fn contains(&self, elem: &GrammarElement<T, I>) -> bool {
+    pub fn contains(&self, elem: &GrammarElement) -> bool {
         let mut contains = false;
         self.full_token_list
             .iter()
@@ -160,7 +160,7 @@ impl<T: Terminal, I: NonTerminal> ProductionLHS<T, I> {
 
 #[test]
 fn test_get_all_context_instances() {
-    use crate::languages::strings::{nterminal_str, terminal_str, StringValue};
+    use crate::languages::strings::{nterminal_str, terminal_str};
 
     nterminal_str!(FOO, "foo");
     terminal_str!(BAR, "bar");
@@ -302,7 +302,7 @@ fn test_get_all_context_instances() {
     );
 }
 
-impl<T: Terminal, I: NonTerminal> Debug for ProductionLHS<T, I> {
+impl Debug for ProductionLHS {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // optionally write out prefix.
         if self.prefix.len() > 0 {
@@ -320,7 +320,7 @@ impl<T: Terminal, I: NonTerminal> Debug for ProductionLHS<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Hash for ProductionLHS<T, I> {
+impl Hash for ProductionLHS {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.prefix.hash(state);
         self.non_terminal.hash(state);
@@ -328,19 +328,19 @@ impl<T: Terminal, I: NonTerminal> Hash for ProductionLHS<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> From<I> for ProductionLHS<T, I> {
-    fn from(value: I) -> Self {
+impl From<NonTerminal> for ProductionLHS {
+    fn from(value: NonTerminal) -> Self {
         Self::new_context_free(value)
     }
 }
 
-impl<T: Terminal, I: NonTerminal> PartialOrd for ProductionLHS<T, I> {
+impl PartialOrd for ProductionLHS {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Ord for ProductionLHS<T, I> {
+impl Ord for ProductionLHS {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let mut hasher = DefaultHasher::new();
         self.hash(&mut hasher);

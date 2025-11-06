@@ -33,9 +33,9 @@ use crate::{
     errors::LangExplorerError,
     expanders::learned::LabelExtractionStrategy,
     experiments::generate::ProgramResult,
-    grammar::{BinarySerialize, GrammarElement, NonTerminal, Terminal},
+    grammar::{BinarySerialize, GrammarElement},
     languages::{
-        strings::{nterminal_str, terminal_str, StringValue},
+        strings::{nterminal_str, terminal_str},
         Feature,
     },
     tooling::similarity::{wl_test, VectorSimilarity},
@@ -49,11 +49,11 @@ pub type InstanceId = u64;
 /// So it serves as a wrapper around a general purpose graph. This type is recursively
 /// defined.
 #[derive(Clone)]
-pub struct ProgramInstance<T: Terminal, I: NonTerminal> {
+pub struct ProgramInstance {
     /// The current node in the tree.
-    node: GrammarElement<T, I>,
+    node: GrammarElement,
     /// The list of children nodes.
-    children: Vec<ProgramInstance<T, I>>,
+    children: Vec<ProgramInstance>,
     /// A unique identifier for this program instance.
     id: InstanceId,
     /// Optionally the ID of the parent for loopback.
@@ -70,10 +70,10 @@ pub enum WLKernelHashingOrder {
     TotalOrdered,
 }
 
-impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
+impl ProgramInstance {
     /// Create a new program instance. This can be a root of a program tree,
     /// or a subtree.
-    pub fn new(node: GrammarElement<T, I>, id: InstanceId) -> Self {
+    pub fn new(node: GrammarElement, id: InstanceId) -> Self {
         Self {
             node,
             children: vec![],
@@ -84,7 +84,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
     /// Create a new program instance, but with a parent ID instantiated.
     /// This can be a root of a program tree, or a subtree.
-    pub fn new_with_parent(node: GrammarElement<T, I>, id: InstanceId, parent: InstanceId) -> Self {
+    pub fn new_with_parent(node: GrammarElement, id: InstanceId, parent: InstanceId) -> Self {
         Self {
             node,
             children: vec![],
@@ -97,7 +97,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         self.id
     }
 
-    pub(super) fn get_node(&self) -> GrammarElement<T, I> {
+    pub(super) fn get_node(&self) -> GrammarElement {
         self.node.clone()
     }
 
@@ -106,14 +106,14 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     }
 
     /// Add a child node to this current program tree.
-    pub(super) fn set_children(&mut self, children: Vec<ProgramInstance<T, I>>) {
+    pub(super) fn set_children(&mut self, children: Vec<ProgramInstance>) {
         self.children = children;
     }
 
     /// Insert your children into the frontier with mutable references.
     pub(super) fn add_children_to_frontier<'a>(
         &'a mut self,
-        frontier: &mut Vec<&'a mut ProgramInstance<T, I>>,
+        frontier: &mut Vec<&'a mut ProgramInstance>,
         idx: usize,
     ) {
         for child in self.children.iter_mut().rev() {
@@ -133,10 +133,10 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         sort: bool,
     ) -> Vec<Feature> {
         let nodes = self.get_all_nodes();
-        let mut node_features_new: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
-        let mut node_features_old: HashMap<&ProgramInstance<T, I>, Feature> = HashMap::new();
+        let mut node_features_new: HashMap<&ProgramInstance, Feature> = HashMap::new();
+        let mut node_features_old: HashMap<&ProgramInstance, Feature> = HashMap::new();
 
-        let mut ids: HashMap<Feature, &ProgramInstance<T, I>> = HashMap::new();
+        let mut ids: HashMap<Feature, &ProgramInstance> = HashMap::new();
 
         nodes.iter().for_each(|node| {
             ids.insert(node.get_id(), node);
@@ -265,13 +265,13 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     }
 
     /// Essentially run BFS on the graph to get all nodes.
-    pub(crate) fn get_all_nodes(&self) -> Vec<&ProgramInstance<T, I>> {
+    pub(crate) fn get_all_nodes(&self) -> Vec<&ProgramInstance> {
         let mut nodes = vec![];
 
         // Since these will all be acyclic trees, we don't need to worry about
         // keeping a visited set. Haha I say that now.
-        // let mut visited: HashSet<&ProgramInstance<T, I>> = HashSet::new();
-        let mut queue: VecDeque<&ProgramInstance<T, I>> = VecDeque::new();
+        // let mut visited: HashSet<&ProgramInstance> = HashSet::new();
+        let mut queue: VecDeque<&ProgramInstance> = VecDeque::new();
         queue.push_back(self);
 
         while let Some(node) = queue.pop_front() {
@@ -287,7 +287,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
     /// Create a slightly perturbed program.
     #[allow(unused)]
-    pub(crate) fn perturb_program(&self, rng: &mut ChaCha8Rng) -> ProgramInstance<T, I> {
+    pub(crate) fn perturb_program(&self, rng: &mut ChaCha8Rng) -> ProgramInstance {
         let mut new = self.clone();
         let mut curr = &mut new;
         let mut all_t = false;
@@ -323,7 +323,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     }
 
     #[allow(unused)]
-    pub(crate) fn get_all_nodes_exclude_children(self) -> Vec<ProgramInstance<T, I>> {
+    pub(crate) fn get_all_nodes_exclude_children(self) -> Vec<ProgramInstance> {
         let mut programs = vec![self.clone()];
 
         for node in self.get_all_nodes() {
@@ -421,7 +421,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
     /// Used for graph2vec implementation, where we need all rooted subgraphs
     /// of degree d of a particular graph.
     #[deprecated()]
-    fn get_subgraph(&self, degree: u32) -> ProgramInstance<T, I> {
+    fn get_subgraph(&self, degree: u32) -> ProgramInstance {
         if degree == 0 {
             ProgramInstance::new(self.node.clone(), self.id)
         } else {
@@ -440,7 +440,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
     /// Returns all rooted subgraphs for the provided graph of degree d.
     #[deprecated()]
-    pub fn get_all_subgraphs(&self, degree: u32) -> Vec<ProgramInstance<T, I>> {
+    pub fn get_all_subgraphs(&self, degree: u32) -> Vec<ProgramInstance> {
         #[allow(deprecated)]
         let mut subgraphs = vec![self.get_subgraph(degree)];
         for child in self.children.iter() {
@@ -450,7 +450,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
         subgraphs
     }
 
-    pub fn simrank_similarity(&self, other: &ProgramInstance<T, I>, c: f64, depth: u32) -> f64 {
+    pub fn simrank_similarity(&self, other: &ProgramInstance, c: f64, depth: u32) -> f64 {
         if self.node == other.node && self.children.is_empty() && other.children.is_empty() {
             return 1.0;
         }
@@ -478,7 +478,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
     pub fn wl_test(
         &self,
-        other: &ProgramInstance<T, I>,
+        other: &ProgramInstance,
         ordering: WLKernelHashingOrder,
         similarity: VectorSimilarity,
         iterations: u32,
@@ -494,7 +494,7 @@ impl<T: Terminal, I: NonTerminal> ProgramInstance<T, I> {
 
 #[test]
 fn test_extract_words_wl_kernel() {
-    use crate::languages::strings::{nterminal_str, StringValue};
+    use crate::languages::strings::nterminal_str;
 
     nterminal_str!(FOO, "foo");
     nterminal_str!(BAR, "bar");
@@ -530,7 +530,7 @@ fn test_extract_words_wl_kernel() {
     println!("{:?}", wordsdedup);
 }
 
-impl<T: Terminal, I: NonTerminal> BinarySerialize for ProgramInstance<T, I> {
+impl BinarySerialize for ProgramInstance {
     fn serialize(&self) -> Vec<u8> {
         let mut vec: Vec<u8> = vec![];
 
@@ -562,15 +562,15 @@ impl<T: Terminal, I: NonTerminal> BinarySerialize for ProgramInstance<T, I> {
 /// the grammar elements within, don't worry about
 /// children for now. This will probably bite me later
 /// but lets just deal with it.
-impl<T: Terminal, I: NonTerminal> PartialEq for ProgramInstance<T, I> {
+impl PartialEq for ProgramInstance {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Eq for ProgramInstance<T, I> {}
+impl Eq for ProgramInstance {}
 
-impl<T: Terminal, I: NonTerminal> Hash for ProgramInstance<T, I> {
+impl Hash for ProgramInstance {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.node.hash(state);
         // This will probably also come back to bite me, will most
@@ -583,13 +583,13 @@ impl<T: Terminal, I: NonTerminal> Hash for ProgramInstance<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Debug for ProgramInstance<T, I> {
+impl Debug for ProgramInstance {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.node)
     }
 }
 
-impl<T: Terminal, I: NonTerminal> ToString for ProgramInstance<T, I> {
+impl ToString for ProgramInstance {
     fn to_string(&self) -> String {
         let mut res = format!("{:?}", self.node);
         for child in self.children.iter() {
@@ -600,8 +600,8 @@ impl<T: Terminal, I: NonTerminal> ToString for ProgramInstance<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> From<Arc<ProgramInstance<T, I>>> for ProgramInstance<T, I> {
-    fn from(value: Arc<ProgramInstance<T, I>>) -> Self {
+impl From<Arc<ProgramInstance>> for ProgramInstance {
+    fn from(value: Arc<ProgramInstance>) -> Self {
         Self {
             node: value.node.clone(),
             children: value.children.clone(),
@@ -611,7 +611,7 @@ impl<T: Terminal, I: NonTerminal> From<Arc<ProgramInstance<T, I>>> for ProgramIn
     }
 }
 
-impl Default for ProgramInstance<StringValue, StringValue> {
+impl Default for ProgramInstance {
     fn default() -> Self {
         nterminal_str!(START, "start");
         terminal_str!(EPSILON, "");

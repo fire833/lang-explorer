@@ -52,7 +52,6 @@ use crate::{
         nft_ruleset::{NFTRulesetLanguage, NFTRulesetParams},
         spice::{SpiceLanguage, SpiceLanguageParams},
         spiral::{SpiralLanguage, SpiralLanguageParams},
-        strings::StringValue,
         taco_expression::{TacoExpressionLanguage, TacoExpressionLanguageParams},
         taco_schedule::{TacoScheduleLanguage, TacoScheduleLanguageParams},
         Feature, GrammarBuilder, LanguageWrapper,
@@ -731,7 +730,7 @@ impl GenerateOutput {
     async fn create_embeddings<B: Backend>(
         &mut self,
         embedding: EmbeddingModel,
-        grammar: &Grammar<StringValue, StringValue>,
+        grammar: &Grammar,
         params: GeneralEmbeddingTrainingParams,
         models_dir: String,
         ollama_host: String,
@@ -773,13 +772,9 @@ impl GenerateOutput {
 
                 let start = SystemTime::now();
 
-                let model: Doc2VecEmbedderDBOWNS<StringValue, StringValue, Autodiff<B>> =
-                    Doc2VecEmbedderDBOWNS::<StringValue, StringValue, Autodiff<B>>::new(
-                        grammar,
-                        params,
-                        Default::default(),
-                    )
-                    .fit(&documents)?;
+                let model: Doc2VecEmbedderDBOWNS<Autodiff<B>> =
+                    Doc2VecEmbedderDBOWNS::<Autodiff<B>>::new(grammar, params, Default::default())
+                        .fit(&documents)?;
 
                 let end = start.elapsed().unwrap();
 
@@ -1131,7 +1126,7 @@ pub(crate) struct ProgramResult {
 
     /// Internal representation of the generated program.
     #[serde(skip_serializing, skip_deserializing)]
-    program_internal: Option<ProgramInstance<StringValue, StringValue>>,
+    program_internal: Option<ProgramInstance>,
 
     /// Optional graphviz representation for the generated program.
     #[serde(rename = "graphviz")]

@@ -33,17 +33,17 @@ use crate::{
         prod::Production,
         program::{InstanceId, ProgramInstance},
         rule::ProductionRule,
-        NonTerminal, Terminal,
+        NonTerminal,
     },
 };
 
 #[derive(Clone)]
-pub struct Grammar<T: Terminal, I: NonTerminal> {
+pub struct Grammar {
     /// The root symbol of this grammar definition.
-    pub(crate) root: I,
+    pub(crate) root: NonTerminal,
 
     /// The list of productions associated with this grammar.
-    pub(crate) productions: BTreeMap<ProductionLHS<T, I>, Production<T, I>>,
+    pub(crate) productions: BTreeMap<ProductionLHS, Production>,
 
     /// Whether or not the grammar is context sensitive. If false,
     /// it is assumed that the grammar is context-free.
@@ -54,9 +54,9 @@ pub struct Grammar<T: Terminal, I: NonTerminal> {
     pub(crate) canonical_name: String,
 }
 
-impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
-    pub fn new(root: I, mut productions: Vec<Production<T, I>>, name: String) -> Self {
-        let mut map: BTreeMap<ProductionLHS<T, I>, Production<T, I>> = BTreeMap::new();
+impl Grammar {
+    pub fn new(root: NonTerminal, mut productions: Vec<Production>, name: String) -> Self {
+        let mut map: BTreeMap<ProductionLHS, Production> = BTreeMap::new();
         let mut is_context_sensitive: bool = false;
 
         while let Some(p) = productions.pop() {
@@ -77,11 +77,11 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         format!("{}_{}", self.canonical_name, &self.generate_hash()[0..16])
     }
 
-    pub fn get_productions(&self) -> Vec<&Production<T, I>> {
+    pub fn get_productions(&self) -> Vec<&Production> {
         Vec::from_iter(self.productions.values())
     }
 
-    pub fn get_all_symbols(&self) -> HashSet<GrammarElement<T, I>> {
+    pub fn get_all_symbols(&self) -> HashSet<GrammarElement> {
         let mut set = HashSet::new();
 
         for prod in self.productions.iter() {
@@ -105,7 +105,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         set
     }
 
-    pub fn get_all_rules(&self) -> HashSet<ProductionRule<T, I>> {
+    pub fn get_all_rules(&self) -> HashSet<ProductionRule> {
         let mut set = HashSet::new();
 
         for prod in self.productions.iter() {
@@ -122,8 +122,8 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     /// the grammar is context-free or context-sensitive.
     pub fn generate_program_instance(
         &self,
-        expander: &mut Box<dyn GrammarExpander<T, I>>,
-    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        expander: &mut Box<dyn GrammarExpander>,
+    ) -> Result<ProgramInstance, LangExplorerError> {
         if !self.is_context_sensitive {
             self.generate_program_instance_ctx_free(expander)
         } else {
@@ -138,7 +138,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     /// Check if the frontier is able to be grown.
     /// This mutable reference of ProgramInstances is a bit of a hack to get
     /// this stuff working, sorry me and anyone else reading this in the future.
-    fn can_frontier_grow(frontier: &Vec<&mut ProgramInstance<T, I>>) -> bool {
+    fn can_frontier_grow(frontier: &Vec<&mut ProgramInstance>) -> bool {
         for item in frontier.iter() {
             if item.is_non_terminal() {
                 return true;
@@ -150,13 +150,13 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
     fn generate_program_instance_ctx_sensitive(
         &self,
-        expander: &mut Box<dyn GrammarExpander<T, I>>,
-    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        expander: &mut Box<dyn GrammarExpander>,
+    ) -> Result<ProgramInstance, LangExplorerError> {
         let mut counter: InstanceId = 1;
         let mut root = ProgramInstance::new(GrammarElement::NonTerminal(self.root.clone()), 1);
-        let mut frontier: Vec<&mut ProgramInstance<T, I>> = vec![&mut root];
+        let mut frontier: Vec<&mut ProgramInstance> = vec![&mut root];
 
-        let mut lhs_slots: Vec<(&ProductionLHS<T, I>, Vec<usize>)> = vec![];
+        let mut lhs_slots: Vec<(&ProductionLHS, Vec<usize>)> = vec![];
         while Grammar::can_frontier_grow(&frontier) {
             lhs_slots.clear();
 
@@ -187,7 +187,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
             // Get the element to be removed and replaced in the frontier.
             let ntp = frontier.remove(idx);
 
-            let children: Vec<ProgramInstance<T, I>> = rule
+            let children: Vec<ProgramInstance> = rule
                 .items
                 .iter()
                 .map(|g| {
@@ -205,8 +205,8 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
     fn generate_program_instance_ctx_free(
         &self,
-        expander: &mut Box<dyn GrammarExpander<T, I>>,
-    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+        expander: &mut Box<dyn GrammarExpander>,
+    ) -> Result<ProgramInstance, LangExplorerError> {
         let mut counter: InstanceId = 1;
 
         let prod = match self
@@ -231,11 +231,11 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
     fn generate_program_instance_ctx_free_recursive(
         grammar: &Self,
-        context: Option<&ProgramInstance<T, I>>,
-        production: &Production<T, I>,
-        expander: &mut Box<dyn GrammarExpander<T, I>>,
+        context: Option<&ProgramInstance>,
+        production: &Production,
+        expander: &mut Box<dyn GrammarExpander>,
         counter: &mut InstanceId,
-    ) -> Result<ProgramInstance<T, I>, LangExplorerError> {
+    ) -> Result<ProgramInstance, LangExplorerError> {
         let mut program = ProgramInstance::new(
             GrammarElement::NonTerminal(production.non_terminal.non_terminal.clone()),
             *counter,
@@ -248,7 +248,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
         };
 
         let rule = expander.expand_rule(grammar, ctx, production);
-        let mut children: Vec<ProgramInstance<T, I>> = vec![];
+        let mut children: Vec<ProgramInstance> = vec![];
         for item in rule.items.iter() {
             *counter += 1;
 
@@ -275,7 +275,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
 
     /// Retrieve all grammar elements found within this grammar as a set.
     /// Can be useful for creating a static labeling for each element.
-    pub fn get_all_nodes(&self) -> HashSet<&GrammarElement<T, I>> {
+    pub fn get_all_nodes(&self) -> HashSet<&GrammarElement> {
         let mut set = HashSet::new();
 
         for prod in self.productions.values() {
@@ -327,7 +327,7 @@ impl<T: Terminal, I: NonTerminal> Grammar<T, I> {
     }
 }
 
-impl<T: Terminal, I: NonTerminal> Debug for Grammar<T, I> {
+impl Debug for Grammar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Entry Symbol: {:?}", self.root)?;
 
@@ -340,7 +340,7 @@ impl<T: Terminal, I: NonTerminal> Debug for Grammar<T, I> {
 }
 
 /// Displays the grammar in BNF form for easier insertion into the appendices.
-impl<T: Terminal, I: NonTerminal> Display for Grammar<T, I> {
+impl Display for Grammar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Do this twice for ease, make sure we show the root symbol first
         for (nt, rules) in self.productions.iter() {
