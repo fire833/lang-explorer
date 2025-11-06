@@ -73,7 +73,7 @@ pub trait GrammarBuilder {
 
 /// A trait for objects that implement state management systems for
 /// context-sensitive grammars.
-pub trait GrammarState {
+pub trait GrammarState: Send {
     /// At any given expansion decision, we have the option to update the set
     /// of rules the expander can choose from based on the current production
     /// and the current state.
