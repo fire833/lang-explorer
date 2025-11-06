@@ -35,6 +35,7 @@ use crate::{
         rule::ProductionRule,
         NonTerminal,
     },
+    languages::GrammarState,
 };
 
 #[derive(Clone)]
@@ -123,11 +124,13 @@ impl Grammar {
     pub fn generate_program_instance(
         &self,
         expander: &mut Box<dyn GrammarExpander>,
+        state: Option<Box<dyn GrammarState>>,
     ) -> Result<ProgramInstance, LangExplorerError> {
-        if !self.is_context_sensitive {
-            self.generate_program_instance_ctx_free(expander)
-        } else {
-            self.generate_program_instance_ctx_sensitive(expander)
+        match (self.is_context_sensitive, state) {
+            (true, None) => self.generate_program_instance_ctx_sensitive(expander),
+            (true, Some(_)) => todo!(),
+            (false, None) => self.generate_program_instance_ctx_free(expander),
+            (false, Some(_)) => todo!(),
         }
     }
 

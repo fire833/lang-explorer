@@ -215,7 +215,7 @@ impl GenerateInput {
         let res_copy = self.clone();
         let exp_copy = self.clone();
 
-        let grammar = match language {
+        let grammar  = match language {
             LanguageWrapper::CSS => CSSLanguage::generate_grammar(self.css),
             LanguageWrapper::NFT => NFTRulesetLanguage::generate_grammar(self.nft),
             LanguageWrapper::Spiral => SpiralLanguage::generate_grammar(self.spiral),
@@ -271,7 +271,7 @@ impl GenerateInput {
                     let mut created_count = 0;
 
                     while created_count < count {
-                        match Grammar::generate_program_instance(&gc, &mut expander) {
+                        match Grammar::generate_program_instance(&gc, &mut expander, None) {
                             Ok(prog) => {
                                 let s = prog.to_string();
                                 if !all_programs.contains_key(&s) {
