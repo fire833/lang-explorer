@@ -29,6 +29,7 @@ use crate::{
         lhs::ProductionLHS,
         prod::{context_free_production, production_rule, Production},
         rule::ProductionRule,
+        NonTerminal,
     },
     languages::{
         strings::{nterminal_str, COMMA, EQUALS, FORWARDSLASH, LPAREN, MINUS, PLUS, RPAREN, STAR},
@@ -53,25 +54,25 @@ pub struct TacoExpressionState {
 
 impl GrammarState for TacoExpressionState {
     fn apply_context(&mut self, prod: &Production) -> Option<Production> {
-        if format!("{:?}", prod.non_terminal.non_terminal) == "symbol" {
+        const SYMB: NonTerminal = NonTerminal::ConstStr("symbol");
+        if prod.non_terminal.non_terminal == SYMB {
             let mut prod = prod.clone();
             // filter out production rules that are not in symbols
             prod.items
                 .retain(|rule| !self.symbols.contains(&rule.items[0]));
 
             self.in_tensor = true;
+            return Some(prod);
         }
-
-        self.in_tensor = false;
 
         None
     }
 
-    fn update(&mut self, _rule: &ProductionRule) {
-        self.in_tensor = false;
-        // self.symbols.insert(rule.items[0].clone());
-
-        todo!()
+    fn update(&mut self, rule: &ProductionRule) {
+        if self.in_tensor {
+            self.in_tensor = false;
+            self.symbols.insert(rule.items[0].clone());
+        }
     }
 }
 
