@@ -200,8 +200,16 @@ impl<B: AutodiffBackend> GrammarExpander for LearnedExpander<B> {
         &mut self,
         _grammar: &'a Grammar,
         _context: &'a ProgramInstance,
-        _lhs_location_matrix: &[(&'a ProductionLHS, Vec<usize>)],
+        lhs_location_matrix: &[(&'a ProductionLHS, Vec<usize>)],
     ) -> (&'a ProductionLHS, usize) {
+        let out = self.frontier_decision.forward(lhs_location_matrix);
+
+        let data = out
+            .to_data()
+            .convert::<f32>()
+            .to_vec::<f32>()
+            .expect("failed to convert tensor to vec");
+
         todo!()
     }
 

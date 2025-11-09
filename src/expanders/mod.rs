@@ -222,9 +222,19 @@ enum FrontierDecisionWrapper<B: Backend> {
 }
 
 impl<B: Backend> FrontierDecisionWrapper<B> {
-    fn forward(&self, frontier: Tensor<B, 2, Int>) -> Tensor<B, 2, Float> {
+    fn forward(&self, frontier: &[(&ProductionLHS, Vec<usize>)]) -> Tensor<B, 2, Float> {
+        let dev = Default::default(); // This will probably bite me and be wrong with multiple GPUs.
+        let num_rules = frontier.len();
+        let matrix = frontier
+            .iter()
+            .flat_map(|(_, row)| row.clone())
+            .collect::<Vec<usize>>();
+
+        let tensor =
+            Tensor::<B, 2, Int>::from_data(matrix.as_slice(), &dev).reshape([num_rules as i32, -1]);
+
         match self {
-            FrontierDecisionWrapper::FrontierDecisionV1(model) => model.forward(frontier),
+            FrontierDecisionWrapper::FrontierDecisionV1(model) => model.forward(tensor),
         }
     }
 }

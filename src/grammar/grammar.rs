@@ -55,6 +55,18 @@ pub struct Grammar {
     pub(crate) canonical_name: String,
 }
 
+/// When creating context matrices for context-sensitive LHS,
+/// this enum defines the format of the returned matrix.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextMatrixFormat {
+    /// Return a dense matrix of 0s and 1s.
+    Dense,
+    /// Return a sparse matrix in List of lists format.
+    /// I.e. each row has a vector for column indices
+    /// where there are non-zero entries.
+    ListOfLists,
+}
+
 impl Grammar {
     pub fn new(root: NonTerminal, mut productions: Vec<Production>, name: String) -> Self {
         let mut map: BTreeMap<ProductionLHS, Production> = BTreeMap::new();
@@ -163,8 +175,11 @@ impl Grammar {
         while Grammar::can_frontier_grow(&frontier) {
             lhs_slots.clear();
 
+            // For now, we only want dense.
+            const FORMAT: ContextMatrixFormat = ContextMatrixFormat::Dense;
+
             for lhs in self.productions.keys() {
-                let instances = lhs.get_all_context_instances(&frontier);
+                let instances = lhs.get_all_context_instances(&frontier, &FORMAT);
                 if instances.len() > 0 {
                     lhs_slots.push((lhs, instances));
                 }

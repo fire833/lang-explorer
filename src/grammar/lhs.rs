@@ -22,7 +22,9 @@ use std::{
     vec,
 };
 
-use crate::grammar::{elem::GrammarElement, program::ProgramInstance, NonTerminal};
+use crate::grammar::{
+    elem::GrammarElement, grammar::ContextMatrixFormat, program::ProgramInstance, NonTerminal,
+};
 
 /// A wrapper type for left-hand sides of grammars, which can include grammars that are
 /// context-sensitive. This type allows you to provide optional prefix and suffix
@@ -38,8 +40,8 @@ pub struct ProductionLHS {
     /// optional suffix context for the rule.
     pub suffix: Vec<GrammarElement>,
 
-    /// the entire token list for this LHS, compute it once
-    /// on init since this will have to be used quite often.
+    /// The entire token list for this LHS, compute it once
+    /// on init since this will have to be used quite often,
     /// and its cheaper than computing it on the fly.
     /// And make it optional as a cheap way of checking whether
     /// this LHS is context free. If empty, then this LHS can be
@@ -122,9 +124,16 @@ impl ProductionLHS {
     pub(super) fn get_all_context_instances(
         &self,
         frontier: &[&mut ProgramInstance],
+        format: &ContextMatrixFormat,
     ) -> Vec<usize> {
         let mut instances = vec![];
         let tokens = &self.full_token_list;
+
+        if *format == ContextMatrixFormat::Dense {
+            for _ in 0..self.prefix.len() {
+                instances.push(0);
+            }
+        }
 
         for idx in 0..frontier.len() - (tokens.len() - 1) {
             let mut found = true;
@@ -135,8 +144,25 @@ impl ProductionLHS {
                 }
             }
 
-            if found {
-                instances.push(idx + self.prefix.len());
+            match format {
+                ContextMatrixFormat::Dense => {
+                    if found {
+                        instances.push(1);
+                    } else {
+                        instances.push(0);
+                    }
+                }
+                ContextMatrixFormat::ListOfLists => {
+                    if found {
+                        instances.push(idx + self.prefix.len());
+                    }
+                }
+            }
+        }
+
+        if *format == ContextMatrixFormat::Dense {
+            for _ in 0..self.suffix.len() {
+                instances.push(0);
             }
         }
 
@@ -175,73 +201,84 @@ fn test_get_all_context_instances() {
     }
 
     let empty: Vec<usize> = vec![];
+    let sparse = ContextMatrixFormat::ListOfLists;
+    let dense = ContextMatrixFormat::Dense;
 
     assert_eq!(
         empty,
-        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(&vec![])
+        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(&vec![], &sparse)
     );
 
     assert_eq!(
         vec![0],
-        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(&vec![
-            pi!(FOO),
-            pi!(BAR),
-            pi!(BAZ)
-        ])
+        ProductionLHS::new_context_free_elem(FOO)
+            .get_all_context_instances(&vec![pi!(FOO), pi!(BAR), pi!(BAZ)], &sparse)
     );
 
     assert_eq!(
         vec![3],
-        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(&vec![
-            pi!(BAR),
-            pi!(BAR),
-            pi!(BAR3),
-            pi!(FOO),
-            pi!(BAZ),
-            pi!(BAZ),
-            pi!(BAZ),
-            pi!(BAZ),
-            pi!(BAR3)
-        ])
-    );
-
-    assert_eq!(
-        vec![3],
-        ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
-            .get_all_context_instances(&vec![pi!(FOO), pi!(BAR2), pi!(BAR3), pi!(FOO), pi!(BAZ)])
+        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(
+            &vec![
+                pi!(BAR),
+                pi!(BAR),
+                pi!(BAR3),
+                pi!(FOO),
+                pi!(BAZ),
+                pi!(BAZ),
+                pi!(BAZ),
+                pi!(BAZ),
+                pi!(BAR3)
+            ],
+            &sparse
+        )
     );
 
     assert_eq!(
         vec![3],
         ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
-            .get_all_context_instances(&vec![pi!(FOO), pi!(BAR2), pi!(BAR3), pi!(FOO)])
+            .get_all_context_instances(
+                &vec![pi!(FOO), pi!(BAR2), pi!(BAR3), pi!(FOO), pi!(BAZ)],
+                &sparse
+            )
+    );
+
+    assert_eq!(
+        vec![3],
+        ProductionLHS::new_with_prefix_list(vec![BAR2, BAR3], "foo".into())
+            .get_all_context_instances(&vec![pi!(FOO), pi!(BAR2), pi!(BAR3), pi!(FOO)], &sparse)
     );
 
     assert_eq!(
         vec![4],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR2, BAR3], "foo".into(), vec![BAR3, BAR2])
-            .get_all_context_instances(&vec![
-                pi!(BAR2),
-                pi!(BAR2),
-                pi!(BAR2),
-                pi!(BAR3),
-                pi!(FOO),
-                pi!(BAR3),
-                pi!(BAR2),
-                pi!(BAZ)
-            ])
+            .get_all_context_instances(
+                &vec![
+                    pi!(BAR2),
+                    pi!(BAR2),
+                    pi!(BAR2),
+                    pi!(BAR3),
+                    pi!(FOO),
+                    pi!(BAR3),
+                    pi!(BAR2),
+                    pi!(BAZ)
+                ],
+                &sparse
+            )
     );
 
     assert_eq!(
         vec![1],
         ProductionLHS::new_with_suffix_list(vec![BAR, BAR], "foo".into())
-            .get_all_context_instances(&vec![pi!(FOO), pi!(FOO), pi!(BAR), pi!(BAR), pi!(BAR)])
+            .get_all_context_instances(
+                &vec![pi!(FOO), pi!(FOO), pi!(BAR), pi!(BAR), pi!(BAR)],
+                &sparse
+            )
     );
 
     assert_eq!(
         vec![0],
         ProductionLHS::new_with_suffix_list(vec![BAR, BAR], "foo".into())
-            .get_all_context_instances(&vec![pi!(FOO), pi!(BAR), pi!(BAR)])
+            .get_all_context_instances(&vec![pi!(FOO), pi!(BAR), pi!(BAR)], &sparse)
     );
 
     assert_eq!(
@@ -251,15 +288,18 @@ fn test_get_all_context_instances() {
             "foo".into(),
             vec![BAZ, BAR, BAR]
         )
-        .get_all_context_instances(&vec![
-            pi!(BAR),
-            pi!(BAR),
-            pi!(BAZ),
-            pi!(FOO),
-            pi!(BAZ),
-            pi!(BAR),
-            pi!(BAR)
-        ])
+        .get_all_context_instances(
+            &vec![
+                pi!(BAR),
+                pi!(BAR),
+                pi!(BAZ),
+                pi!(FOO),
+                pi!(BAZ),
+                pi!(BAR),
+                pi!(BAR)
+            ],
+            &sparse
+        )
     );
 
     assert_eq!(
@@ -269,36 +309,74 @@ fn test_get_all_context_instances() {
             "foo".into(),
             vec![BAZ, BAR, BAR]
         )
-        .get_all_context_instances(&vec![
-            pi!(FOO),
-            pi!(BAR),
-            pi!(BAR),
-            pi!(BAZ),
-            pi!(FOO),
-            pi!(BAZ),
-            pi!(BAR),
-            pi!(BAR)
-        ])
+        .get_all_context_instances(
+            &vec![
+                pi!(FOO),
+                pi!(BAR),
+                pi!(BAR),
+                pi!(BAZ),
+                pi!(FOO),
+                pi!(BAZ),
+                pi!(BAR),
+                pi!(BAR)
+            ],
+            &sparse
+        )
     );
 
     assert_eq!(
         vec![2, 5],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAZ])
-            .get_all_context_instances(&vec![
-                pi!(BAR),
-                pi!(BAR),
-                pi!(FOO),
-                pi!(BAZ),
-                pi!(BAR),
-                pi!(FOO),
-                pi!(BAZ)
-            ])
+            .get_all_context_instances(
+                &vec![
+                    pi!(BAR),
+                    pi!(BAR),
+                    pi!(FOO),
+                    pi!(BAZ),
+                    pi!(BAR),
+                    pi!(FOO),
+                    pi!(BAZ)
+                ],
+                &sparse
+            )
     );
 
     assert_eq!(
         vec![1, 3],
         ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAR])
-            .get_all_context_instances(&vec![pi!(BAR), pi!(FOO), pi!(BAR), pi!(FOO), pi!(BAR)])
+            .get_all_context_instances(
+                &vec![pi!(BAR), pi!(FOO), pi!(BAR), pi!(FOO), pi!(BAR)],
+                &sparse
+            )
+    );
+
+    // Test the dense cases
+
+    assert_eq!(
+        vec![0, 0, 0, 1, 0, 0, 0, 0, 0],
+        ProductionLHS::new_context_free_elem(FOO).get_all_context_instances(
+            &vec![
+                pi!(BAR),
+                pi!(BAR),
+                pi!(BAR3),
+                pi!(FOO),
+                pi!(BAZ),
+                pi!(BAZ),
+                pi!(BAZ),
+                pi!(BAZ),
+                pi!(BAR3)
+            ],
+            &dense
+        )
+    );
+
+    assert_eq!(
+        vec![0, 1, 0, 1, 0],
+        ProductionLHS::new_with_prefix_and_suffix(vec![BAR], "foo".into(), vec![BAR])
+            .get_all_context_instances(
+                &vec![pi!(BAR), pi!(FOO), pi!(BAR), pi!(FOO), pi!(BAR)],
+                &dense
+            )
     );
 }
 
