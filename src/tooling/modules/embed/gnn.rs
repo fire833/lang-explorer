@@ -23,9 +23,12 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
-use crate::tooling::modules::embed::{
-    gat::{GraphAttentionNet, GraphAttentionNetConfig},
-    gcn::{GraphConvolutionNet, GraphConvolutionNetConfig},
+use crate::tooling::modules::{
+    embed::{
+        gat::{GraphAttentionNet, GraphAttentionNetConfig},
+        gcn::{GraphConvolutionNet, GraphConvolutionNetConfig},
+    },
+    expander::Activation,
 };
 
 #[derive(Debug, Config)]
@@ -50,8 +53,11 @@ pub enum GraphNeuralNet<B: Backend> {
 }
 
 impl<B: Backend> GraphNeuralNet<B> {
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
-        todo!()
+    pub fn forward(&self, node_features: Tensor<B, 3, Float>) -> Tensor<B, 3, Float> {
+        match self {
+            GraphNeuralNet::GCN(gcn) => gcn.forward(node_features),
+            GraphNeuralNet::GAT(gat) => gat.forward(node_features, Activation::LeakyReLU(20)),
+        }
     }
 }
 

@@ -41,7 +41,7 @@ pub struct GCNConv<B: Backend> {
 }
 
 impl<B: Backend> GCNConv<B> {
-    pub fn forward(&self) -> Tensor<B, 2, Float> {
+    pub fn forward(&self, node_features: Tensor<B, 3, Float>) -> Tensor<B, 3, Float> {
         todo!()
     }
 }

@@ -45,14 +45,14 @@ pub struct GraphAttentionNet<B: Backend> {
 impl<B: Backend> GraphAttentionNet<B> {
     pub fn forward(
         &self,
-        mut input: Tensor<B, 3, Float>,
+        mut node_features: Tensor<B, 3, Float>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
         for layer in self.layers.iter() {
-            input = layer.forward(input, activation.clone());
+            node_features = layer.forward(node_features, activation.clone());
         }
 
-        input
+        node_features
     }
 }
 
