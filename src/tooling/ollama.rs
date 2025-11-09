@@ -47,7 +47,23 @@ pub(crate) async fn get_embedding_ollama(
     Ok(res.embedding)
 }
 
-#[allow(unused)]
+pub(crate) fn get_embedding_ollama_sync(
+    client: &reqwest::blocking::Client,
+    host: &String,
+    prompt: &String,
+    model: EmbeddingModel,
+) -> Result<Vec<f32>, LangExplorerError> {
+    let res = client
+        .post(format!("{host}/api/embeddings"))
+        .body(format!(
+            "{{\"model\": \"{model}\", \"prompt\": \"{prompt}\"}}"
+        ))
+        .send()?
+        .json::<EmbeddingResult>()?;
+
+    Ok(res.embedding)
+}
+
 pub(crate) async fn get_embeddings_bulk_ollama(
     client: &Client,
     host: &String,

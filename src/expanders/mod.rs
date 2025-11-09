@@ -24,11 +24,15 @@ use burn::{
     tensor::{backend::AutodiffBackend, Float, Int, Tensor},
 };
 use clap::ValueEnum;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::{
-    embedding::{doc2vecdbowns::Doc2VecEmbedderDBOWNS, LanguageEmbedder},
+    embedding::{
+        doc2vecdbowns::Doc2VecEmbedderDBOWNS, graphmae::GraphMAEEmbedder, EmbeddingModel,
+        LanguageEmbedder,
+    },
     errors::LangExplorerError,
     expanders::{
         learned::{NormalizationStrategy, SamplingStrategy},
@@ -37,13 +41,16 @@ use crate::{
     },
     grammar::{
         grammar::Grammar, lhs::ProductionLHS, prod::Production, program::ProgramInstance,
-        rule::ProductionRule,
+        rule::ProductionRule, BinarySerialize,
     },
-    tooling::modules::expander::{
-        frontier_decision::FrontierDecisionAttention,
-        prod_decision_attn::ProductionDecisionAttention,
-        prod_decision_fixed::ProductionDecisionFixed,
-        prod_decision_var::ProductionDecisionVariable, Activation,
+    tooling::{
+        modules::expander::{
+            frontier_decision::FrontierDecisionAttention,
+            prod_decision_attn::ProductionDecisionAttention,
+            prod_decision_fixed::ProductionDecisionFixed,
+            prod_decision_var::ProductionDecisionVariable, Activation,
+        },
+        ollama,
     },
 };
 
@@ -153,12 +160,32 @@ impl Display for ExpanderWrapper {
 /// Another hack to allow us to use multiple embedders.
 enum EmbedderWrapper<B: AutodiffBackend> {
     Doc2Vec(Doc2VecEmbedderDBOWNS<B>),
+    GraphMAE(GraphMAEEmbedder<B>),
+    Ollama(EmbeddingModel),
 }
 
 impl<B: AutodiffBackend> EmbedderWrapper<B> {
     fn forward(&mut self, doc: ProgramInstance) -> Result<Tensor<B, 1, Float>, LangExplorerError> {
         match self {
-            EmbedderWrapper::Doc2Vec(d2ve) => d2ve.embed(doc),
+            Self::Doc2Vec(d2ve) => d2ve.embed(doc),
+            Self::GraphMAE(graphmae) => graphmae.embed(doc),
+            Self::Ollama(model) => {
+                let data = String::from_utf8(doc.serialize())?;
+                let client = Client::new();
+
+                let vec = ollama::get_embedding_ollama_sync(
+                    &client,
+                    // TODO: don't hardcode
+                    &"https://ollama.soonerhpclab.org".into(),
+                    &data,
+                    model.clone(),
+                )?;
+
+                let dev = Default::default();
+                let tensor = Tensor::<B, 1, Float>::from_data(vec.as_slice(), &dev);
+
+                Ok(tensor)
+            }
         }
     }
 }

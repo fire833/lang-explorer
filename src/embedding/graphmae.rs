@@ -16,19 +16,26 @@
 *	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-use burn::tensor::{backend::AutodiffBackend, Device, Tensor};
+use burn::{
+    prelude::Backend,
+    tensor::{backend::AutodiffBackend, Device, Tensor},
+};
 
 use crate::{
     embedding::LanguageEmbedder,
     errors::LangExplorerError,
     grammar::{grammar::Grammar, program::ProgramInstance},
+    tooling::modules::embed::gnn::GraphNeuralNet,
 };
 
-pub struct GraphMAEEmbedder {}
+pub struct GraphMAEEmbedder<B: Backend> {
+    encoder: GraphNeuralNet<B>,
+    decoder: GraphNeuralNet<B>,
+}
 
 pub struct GraphMAEEmbedderParams {}
 
-impl<B: AutodiffBackend> LanguageEmbedder<B> for GraphMAEEmbedder {
+impl<B: AutodiffBackend> LanguageEmbedder<B> for GraphMAEEmbedder<B> {
     type Document = ProgramInstance;
     type Params = GraphMAEEmbedderParams;
 
