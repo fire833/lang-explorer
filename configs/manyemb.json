@@ -2,7 +2,7 @@
   "return_features": true,
   "return_edge_lists": false,
   "return_embeddings": [
-    "docvecgensim"
+    "doc2vecgensim"
   ],
   "do_similarity_experiments": true,
   "return_tsne2d": false,

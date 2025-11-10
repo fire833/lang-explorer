@@ -2,7 +2,7 @@
   "return_features": true,
   "return_edge_lists": false,
   "return_embeddings": [
-    "docvecgensim",
+    "doc2vecgensim",
     "nomic-embed-text",
     "mxbai-embed-large",
     "snowflake-arctic-embed:137m"

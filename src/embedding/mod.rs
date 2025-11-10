@@ -246,7 +246,7 @@ pub(super) fn save_embeddings_as_csv<P: AsRef<Path>>(
 pub enum EmbeddingModel {
     #[serde(rename = "doc2vecdbow")]
     Doc2VecDBOW,
-    #[serde(rename = "docvecgensim")]
+    #[serde(rename = "doc2vecgensim")]
     Doc2VecGensim,
     #[serde(rename = "mxbai-embed-large")]
     MXBAILarge,
