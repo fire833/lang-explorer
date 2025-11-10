@@ -23,7 +23,7 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
-use crate::tooling::modules::embed::gcnconv::GCNConv;
+use crate::{grammar::program::ProgramInstance, tooling::modules::embed::gcnconv::GCNConv};
 
 #[derive(Debug, Config)]
 pub struct GraphConvolutionNetConfig {}
@@ -40,9 +40,13 @@ pub struct GraphConvolutionNet<B: Backend> {
 }
 
 impl<B: Backend> GraphConvolutionNet<B> {
-    pub fn forward(&self, mut node_features: Tensor<B, 3, Float>) -> Tensor<B, 3, Float> {
+    pub fn forward(
+        &self,
+        mut node_features: Tensor<B, 3, Float>,
+        programs: &Vec<&ProgramInstance>,
+    ) -> Tensor<B, 3, Float> {
         for layer in self.layers.iter() {
-            node_features = layer.forward(node_features);
+            node_features = layer.forward(node_features, programs);
         }
 
         node_features

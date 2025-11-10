@@ -24,6 +24,8 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
+use crate::grammar::program::ProgramInstance;
+
 #[derive(Debug, Config)]
 pub struct GCNConvConfig {}
 
@@ -41,7 +43,11 @@ pub struct GCNConv<B: Backend> {
 }
 
 impl<B: Backend> GCNConv<B> {
-    pub fn forward(&self, node_features: Tensor<B, 3, Float>) -> Tensor<B, 3, Float> {
+    pub fn forward(
+        &self,
+        node_features: Tensor<B, 3, Float>,
+        programs: &Vec<&ProgramInstance>,
+    ) -> Tensor<B, 3, Float> {
         todo!()
     }
 }

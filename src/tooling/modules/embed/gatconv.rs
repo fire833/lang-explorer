@@ -24,9 +24,12 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
-use crate::tooling::modules::{
-    expander::Activation,
-    general::{GeneralLinear, GeneralLinearConfig},
+use crate::{
+    grammar::program::ProgramInstance,
+    tooling::modules::{
+        expander::Activation,
+        general::{GeneralLinear, GeneralLinearConfig},
+    },
 };
 
 #[derive(Debug, Config)]
@@ -81,6 +84,7 @@ impl<B: Backend> GATConv<B> {
     pub fn forward(
         &self,
         node_features: Tensor<B, 3, Float>,
+        programs: &Vec<&ProgramInstance>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
         let transform = self.linear.forward(node_features, activation);

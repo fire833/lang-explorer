@@ -23,7 +23,10 @@ use burn::{
     tensor::{Float, Tensor},
 };
 
-use crate::tooling::modules::{embed::gatconv::GATConv, expander::Activation};
+use crate::{
+    grammar::program::ProgramInstance,
+    tooling::modules::{embed::gatconv::GATConv, expander::Activation},
+};
 
 #[derive(Debug, Config)]
 pub struct GraphAttentionNetConfig {
@@ -46,10 +49,11 @@ impl<B: Backend> GraphAttentionNet<B> {
     pub fn forward(
         &self,
         mut node_features: Tensor<B, 3, Float>,
+        programs: &Vec<&ProgramInstance>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
         for layer in self.layers.iter() {
-            node_features = layer.forward(node_features, activation.clone());
+            node_features = layer.forward(node_features, programs, activation.clone());
         }
 
         node_features
