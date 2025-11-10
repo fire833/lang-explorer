@@ -153,7 +153,7 @@ impl<B: AutodiffBackend> GrammarExpander for LearnedExpander<B> {
             label_extraction: LabelExtractionStrategy::WLKernel {
                 iterations: 5,
                 order: WLKernelHashingOrder::ParentSelfChildrenOrdered,
-                dedup: true,
+                dedup: false,
                 sort: false,
             },
             normalization: NormalizationStrategy::Softmax,
