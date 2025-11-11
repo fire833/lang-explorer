@@ -23,6 +23,10 @@ use std::{
     sync::Arc,
 };
 
+use burn::{
+    prelude::Backend,
+    tensor::{Int, Tensor},
+};
 use fasthash::{city, FastHasher};
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
@@ -364,6 +368,34 @@ impl ProgramInstance {
         s.push_str(" }");
 
         s
+    }
+
+    pub(crate) fn get_adjacency_matrix(&self) -> Vec<Vec<u8>> {
+        let mut nodes = self.get_all_nodes();
+        nodes.sort_by_key(|node| node.id);
+        let n = nodes.len();
+        let mut matrix = vec![vec![0_u8; n]; n];
+
+        for node in nodes.iter() {
+            let row = node.id as usize;
+            for child in node.children.iter() {
+                let col = child.id as usize;
+                matrix[row][col] = 1;
+            }
+        }
+
+        matrix
+    }
+
+    pub(crate) fn get_adjacency_matrix_tensor<B: Backend>(&self) -> Tensor<B, 2, Int> {
+        let matrix = self.get_adjacency_matrix();
+        let n = matrix.len();
+        let flat: Vec<u8> = matrix.into_iter().flatten().collect();
+
+        let dev = Default::default();
+
+        let tensor: Tensor<B, 1, Int> = Tensor::from_data(flat.as_slice(), &dev);
+        tensor.reshape([n as usize, n as usize])
     }
 
     pub(crate) fn to_result(

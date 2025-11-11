@@ -19,7 +19,7 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Dropout, DropoutConfig},
+    nn::{Dropout, DropoutConfig, LeakyRelu},
     prelude::Backend,
     tensor::{Float, Tensor},
 };
@@ -57,10 +57,10 @@ impl GATConvConfig {
             linear: GeneralLinearConfig::new(layers, no_activations)
                 .with_bias(false)
                 .init(device),
-            attn_l: GeneralLinearConfig::new(vec![self.d_in, 1], vec![false])
+            attn_l: GeneralLinearConfig::new(vec![self.d_in, 1], vec![true])
                 .with_bias(false)
                 .init(device),
-            attn_r: GeneralLinearConfig::new(vec![self.d_in, 1], vec![false])
+            attn_r: GeneralLinearConfig::new(vec![self.d_in, 1], vec![true])
                 .with_bias(false)
                 .init(device),
             feat_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
@@ -87,7 +87,9 @@ impl<B: Backend> GATConv<B> {
         programs: &Vec<&ProgramInstance>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
-        let transform = self.linear.forward(node_features, activation);
+        let w_xij = self.linear.forward(node_features, activation.clone());
+        let att_l = self.attn_l.forward(w_xij.clone(), activation.clone());
+        let att_r = self.attn_r.forward(w_xij.clone(), activation.clone());
 
         todo!()
     }
