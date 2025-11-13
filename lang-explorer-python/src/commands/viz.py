@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from sklearn.manifold import TSNE
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, manhattan_distances 
@@ -23,7 +24,8 @@ def data_viz(args):
 
 	embedding2 = TSNE(2).fit_transform(data.iloc[:,3:-1])
 	plt.title(f"t-SNE (2D) of {plain} dataset")
-	plt.scatter(embedding2[:,0], embedding2[:,1], c=data["plen"])
+	scatter = plt.scatter(embedding2[:,0], embedding2[:,1], c=data["plen"])
+	plt.colorbar(scatter, label='Program Length')
 	plt.tight_layout()
 	plt.savefig(f"{args.output}/tsne2d{plain}colors.png", dpi=300)
 	plt.close()
@@ -32,11 +34,13 @@ def data_viz(args):
 	color_map = {True: "green", False: "blue"}
 	label_map = {True: "Incomplete Program", False: "Complete Program"}
 	colors = [color_map[val] for val in data["is_partial"]]
-	# labels = [label_map[val] for val in data["is_partial"]]
-
+	handles = [
+    	mpatches.Patch(color="green", label="Incomplete Program"),
+    	mpatches.Patch(color="blue", label="Complete Program")
+	]
 	plt.scatter(embedding2[:,0], embedding2[:,1], c=colors)
 	plt.tight_layout()
-	plt.legend()
+	plt.legend(handles=handles)
 	plt.savefig(f"{args.output}/tsne2d{plain}ispartial.png", dpi=300)
 	plt.close()
 
