@@ -19,7 +19,7 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Dropout, DropoutConfig, LeakyRelu},
+    nn::{Dropout, DropoutConfig, LeakyRelu, LeakyReluConfig},
     prelude::Backend,
     tensor::{Float, Tensor},
 };
@@ -45,6 +45,9 @@ pub struct GATConvConfig {
     pub d_in: usize,
     /// Dimension of node output features (h').
     pub d_out: usize,
+
+    /// Slope of the leaky relu.
+    pub leaky_slope: f32,
 }
 
 impl GATConvConfig {
@@ -65,6 +68,9 @@ impl GATConvConfig {
                 .init(device),
             feat_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
             attn_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
+            leaky_relu: LeakyReluConfig::new()
+                .with_negative_slope(self.leaky_slope as f64)
+                .init(),
         }
     }
 }
@@ -75,6 +81,8 @@ pub struct GATConv<B: Backend> {
 
     attn_l: GeneralLinear<B>,
     attn_r: GeneralLinear<B>,
+
+    leaky_relu: LeakyRelu,
 
     feat_drop: Dropout,
     attn_drop: Dropout,
@@ -88,8 +96,12 @@ impl<B: Backend> GATConv<B> {
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
         let w_xij = self.linear.forward(node_features, activation.clone());
-        let att_l = self.attn_l.forward(w_xij.clone(), activation.clone());
-        let att_r = self.attn_r.forward(w_xij.clone(), activation.clone());
+        let att_l = self
+            .leaky_relu
+            .forward(self.attn_l.forward(w_xij.clone(), activation.clone()));
+        let att_r = self
+            .leaky_relu
+            .forward(self.attn_r.forward(w_xij.clone(), activation.clone()));
 
         todo!()
     }
