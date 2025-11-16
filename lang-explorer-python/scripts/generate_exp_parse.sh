@@ -13,19 +13,27 @@
 prefix="images/karel/"
 montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 2x4 -geometry 600x400+0+0 ${prefix}histograms_karel.jpeg
 
+montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 4x2 -geometry 600x400+0+0 ${prefix}histograms_karel_presentation.jpeg
+
 montage ${prefix}AST_histogram.png ${prefix}nopartials/AST_histogram.png -tile 2x1 -geometry 600x400+0+0 ${prefix}AST_histograms_karel.jpeg
 
 prefix="images/css/"
 montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 2x4 -geometry 600x400+0+0 ${prefix}histograms_css.jpeg
+
+montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 4x2 -geometry 600x400+0+0 ${prefix}histograms_css_presentation.jpeg
 
 montage ${prefix}AST_histogram.png ${prefix}nopartials/AST_histogram.png -tile 2x1 -geometry 600x400+0+0 ${prefix}AST_histograms_css.jpeg
 
 prefix="images/tacosched/"
 montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 2x4 -geometry 600x400+0+0 ${prefix}histograms_tacosched.jpeg
 
+montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 4x2 -geometry 600x400+0+0 ${prefix}histograms_tacosched_presentation.jpeg
+
 montage ${prefix}AST_histogram.png ${prefix}nopartials/AST_histogram.png -tile 2x1 -geometry 600x400+0+0 ${prefix}AST_histograms_tacosched.jpeg
 
 prefix="images/tacoexpr/"
 montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 2x4 -geometry 600x400+0+0 ${prefix}histograms_tacoexpr.jpeg
+
+montage ${prefix}doc2vecgensim_histogram.png ${prefix}nomic-embed-text_histogram.png ${prefix}mxbai-embed-large_histogram.png ${prefix}snowflake-arctic-embed_137m_histogram.png ${prefix}nopartials/doc2vecgensim_histogram.png ${prefix}nopartials/nomic-embed-text_histogram.png ${prefix}nopartials/mxbai-embed-large_histogram.png ${prefix}nopartials/snowflake-arctic-embed_137m_histogram.png -tile 4x2 -geometry 600x400+0+0 ${prefix}histograms_tacoexpr_presentation.jpeg
 
 montage ${prefix}AST_histogram.png ${prefix}nopartials/AST_histogram.png -tile 2x1 -geometry 600x400+0+0 ${prefix}AST_histograms_tacoexpr.jpeg
