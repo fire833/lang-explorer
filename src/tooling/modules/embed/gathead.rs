@@ -86,13 +86,16 @@ impl<B: Backend> GATHead<B> {
         programs: &Vec<&ProgramInstance>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
-        let w_xij = self.linear.forward(node_features, activation.clone());
+        let n_dropout = self.feat_drop.forward(node_features);
+        let w_xij = self.linear.forward(n_dropout, activation.clone());
         let att_l = self
             .leaky_relu
             .forward(self.attn_l.forward(w_xij.clone(), activation.clone()));
         let att_r = self
             .leaky_relu
             .forward(self.attn_r.forward(w_xij.clone(), activation.clone()));
+        let att_l = self.attn_drop.forward(att_l);
+        let att_r = self.attn_drop.forward(att_r);
 
         todo!()
     }
