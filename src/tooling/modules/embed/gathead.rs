@@ -19,21 +19,12 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Dropout, DropoutConfig, LeakyRelu, LeakyReluConfig},
     prelude::Backend,
     tensor::{Float, Tensor},
 };
 
-use crate::{
-    grammar::program::ProgramInstance,
-    tooling::modules::{
-        expander::Activation,
-        general::{GeneralLinear, GeneralLinearConfig},
-    },
-};
-
 #[derive(Debug, Config)]
-pub struct GATConvConfig {
+pub struct GATHeadConfig {
     /// Configuration for the fully connected layer.
     /// An additional layer will be added to the front of size d_in.
     pub fc_layers: Vec<usize>,
@@ -47,16 +38,16 @@ pub struct GATConvConfig {
     pub d_out: usize,
 
     /// Slope of the leaky relu.
-    pub leaky_slope: f32,
+    pub leaky_relu_slope: f32,
 }
 
-impl GATConvConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> GATConv<B> {
+impl GATHeadConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GATHead<B> {
         let mut layers = self.fc_layers.clone();
         layers.insert(0, self.d_in);
         let no_activations = vec![false; layers.len() - 1];
 
-        GATConv {
+        GATHead {
             linear: GeneralLinearConfig::new(layers, no_activations)
                 .with_bias(false)
                 .init(device),
@@ -69,14 +60,14 @@ impl GATConvConfig {
             feat_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
             attn_drop: DropoutConfig::new(self.dropout_rate as f64).init(),
             leaky_relu: LeakyReluConfig::new()
-                .with_negative_slope(self.leaky_slope as f64)
+                .with_negative_slope(self.leaky_relu_slope as f64)
                 .init(),
         }
     }
 }
 
 #[derive(Debug, Module)]
-pub struct GATConv<B: Backend> {
+pub struct GATHead<B: Backend> {
     linear: GeneralLinear<B>,
 
     attn_l: GeneralLinear<B>,
@@ -88,7 +79,7 @@ pub struct GATConv<B: Backend> {
     attn_drop: Dropout,
 }
 
-impl<B: Backend> GATConv<B> {
+impl<B: Backend> GATHead<B> {
     pub fn forward(
         &self,
         node_features: Tensor<B, 3, Float>,

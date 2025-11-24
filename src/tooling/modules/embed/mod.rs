@@ -21,7 +21,8 @@ use utoipa::ToSchema;
 
 pub mod code2vec;
 pub mod gat;
-mod gatconv;
+mod gathead;
+mod gatlayer;
 pub mod gcn;
 mod gcnconv;
 pub mod gnn;

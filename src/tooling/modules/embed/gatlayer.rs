@@ -19,44 +19,37 @@
 use burn::{
     config::Config,
     module::Module,
+    nn::{Dropout, DropoutConfig, LeakyRelu, LeakyReluConfig},
     prelude::Backend,
     tensor::{Float, Tensor},
 };
 
 use crate::{
     grammar::program::ProgramInstance,
-    tooling::modules::{embed::gatlayer::GATLayer, expander::Activation},
+    tooling::modules::{
+        expander::Activation,
+        general::{GeneralLinear, GeneralLinearConfig},
+    },
 };
 
 #[derive(Debug, Config)]
-pub struct GraphAttentionNetConfig {
-    /// Number of graph attention layers.
-    pub n_layers: usize,
-}
+pub struct GATLayerConfig {}
 
-impl GraphAttentionNetConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> GraphAttentionNet<B> {
-        GraphAttentionNet { layers: vec![] }
-    }
+impl GATLayerConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GATLayer<B> {}
 }
 
 #[derive(Debug, Module)]
-pub struct GraphAttentionNet<B: Backend> {
-    layers: Vec<GATLayer<B>>,
-}
+pub struct GATLayer<B: Backend> {}
 
-impl<B: Backend> GraphAttentionNet<B> {
+impl<B: Backend> GATLayer<B> {
     pub fn forward(
         &self,
-        mut node_features: Tensor<B, 3, Float>,
+        node_features: Tensor<B, 3, Float>,
         programs: &Vec<&ProgramInstance>,
         activation: Activation,
     ) -> Tensor<B, 3, Float> {
-        for layer in self.layers.iter() {
-            node_features = layer.forward(node_features, programs, activation.clone());
-        }
-
-        node_features
+        todo!()
     }
 }
 
