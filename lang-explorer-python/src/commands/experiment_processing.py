@@ -41,7 +41,7 @@ def plot_histogram(lang, name, directory, histogram_data, title_prefix=""):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
-    filename = f"{directory}/{name.replace(":", "_").replace(" ", "_")}_histogram.png"
+    filename = f"{directory}/{name.replace(":", "_").replace(" ", "_")}_histogram.svg"
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     plt.close()
 

@@ -47,11 +47,11 @@ def nearest_neighbors3(args):
 			y = 1
 			title = "3rd NN"
 
-		img = Source(neigh).render(f"/tmp/{x}_{y}", format="png", cleanup=True)
+		img = Source(neigh).render(f"/tmp/{x}_{y}", format="svg", cleanup=True)
 		axes[x, y].imshow(mpimg.imread(img))
 		axes[x, y].axis('off')
 		axes[x, y].set_title(title)
 		# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
 
-	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
-	subprocess.run(["mogrify", "-trim", f"images/{args.output}.jpeg"])
+	plt.savefig(f"images/{args.output}.svg", dpi=1500)
+	subprocess.run(["mogrify", "-trim", f"images/{args.output}.svg"])
