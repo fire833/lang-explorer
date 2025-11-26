@@ -27,7 +27,7 @@ def data_viz(args):
 	scatter = plt.scatter(embedding2[:,0], embedding2[:,1], c=data["plen"])
 	plt.colorbar(scatter, label='Program Length')
 	plt.tight_layout()
-	plt.savefig(f"{args.output}/tsne2d{plain}colors.png", dpi=300)
+	plt.savefig(f"{args.output}/tsne2d{plain}colors.svg", dpi=300)
 	plt.close()
 
 	plt.title(f"t-SNE (2D) of {plain} dataset")
@@ -41,7 +41,7 @@ def data_viz(args):
 	plt.scatter(embedding2[:,0], embedding2[:,1], c=colors)
 	plt.tight_layout()
 	plt.legend(handles=handles)
-	plt.savefig(f"{args.output}/tsne2d{plain}ispartial.png", dpi=300)
+	plt.savefig(f"{args.output}/tsne2d{plain}ispartial.svg", dpi=300)
 	plt.close()
 
 	# embedding3 = TSNE(3).fit_transform(data.iloc[:,2:-1])
