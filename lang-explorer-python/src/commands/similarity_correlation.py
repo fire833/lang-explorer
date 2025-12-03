@@ -16,20 +16,23 @@ def similarity_correlation(args):
 	num_embeddings = data.shape[1] - 2
 
 	# Need to create plots where X axis corresponds to values in column 2, 3, 4, ... and Y axis corresponds to column 1
-	ast_scores = data.iloc[20000:21000, 1]
+	ast_scores = data.iloc[0:2500, 1]
 
 	for i in range(2, num_embeddings + 2):
-		embedding_scores = data.iloc[20000:21000, i]
+		embedding_scores = data.iloc[0:2500, i]
 		embedding_system = data.columns[i]
 
-		analysis = correlation_analysis(embedding_scores, ast_scores)
+		analysis = correlation_analysis(data.iloc[:, i], data.iloc[:, 1])
+
+		print(f"Correlation results for {embedding_system}:")
+		print(analysis)
 
 		plt.figure()
 		plt.scatter(embedding_scores, ast_scores)
 		plt.xlabel(f"Pairwise similarity scores - {embedding_system}")
 		plt.ylabel("AST similarity scores")
 		plt.title(f"Similarity Correlation for {args.lang} - {embedding_system}")
-		plt.savefig(f"images/{args.lang}/similarity_correlation_{embedding_system}.jpeg")
+		plt.savefig(f"images/{args.lang}/similarity_correlation_{embedding_system}.jpeg", dpi=500)
 		plt.close()
 
 def correlation_analysis(x, y):
