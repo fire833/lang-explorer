@@ -172,7 +172,7 @@ fn default_keepalive() -> u32 {
 }
 
 fn default_count() -> u64 {
-    1
+    100
 }
 
 fn default_return_partials() -> bool {

@@ -2,6 +2,7 @@
   "return_features": false,
   "return_edge_lists": false,
   "return_embeddings": [],
+  "similarity_scores_max_count": 100000,
   "do_similarity_experiments": false,
   "return_tsne2d": false,
   "return_tsne3d": false,
@@ -125,9 +126,11 @@
       "p"
     ],
     "split_factor_variables": [
-      "q",
-      "r",
-      "s"
+      "2",
+      "4",
+      "8",
+      "16",
+      "32"
     ],
     "divide_factor_variables": [
       "t",

@@ -8,6 +8,7 @@
     "snowflake-arctic-embed:137m"
   ],
   "do_similarity_experiments": true,
+  "similarity_scores_max_count": 100000,
   "return_tsne2d": false,
   "return_tsne3d": false,
   "return_grammar": true,
