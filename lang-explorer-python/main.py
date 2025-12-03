@@ -13,6 +13,7 @@ from src.commands.tsne_animation import animate
 from src.commands.nearest2 import nearest_neighbors2
 from src.commands.nearest3 import nearest_neighbors3
 from src.commands.experiment_processing import process_experiment
+from src.commands.similarity_correlation import similarity_correlation
 import matplotlib
 
 # %matplotlib qt
@@ -84,6 +85,12 @@ def main():
 	anim.add_argument("--input", default="results/temporal/vectors_*.csv", help="Specify the embeddings to use for visualization.")
 	anim.add_argument("--output", default="images/tsneanim.mp4", help="Images path.")
 	anim.set_defaults(func=animate)
+
+	similarity = sub.add_parser("similarity_correlation", help="Run similarity correlation analysis.")
+	similarity.add_argument("--lang", type=str, default="tacosched", help="Specify the language of the experiment.")
+	similarity.add_argument("--experiment-number", type=int, default=1, help="Specify the experiment number.")
+	similarity.add_argument("--output", type=str, default="images/", help="Images path.")
+	similarity.set_defaults(func=similarity_correlation)
 
 	process = sub.add_parser("expparse", help="Process Generate experiment results.")
 	process.add_argument("--input", type=str, help="Specify the input results to process.")
