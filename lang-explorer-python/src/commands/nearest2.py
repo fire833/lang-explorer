@@ -42,11 +42,11 @@ def nearest_neighbors2(args):
 	fig.tight_layout(pad=0.05)
 	fig.subplots_adjust(top=0.99, bottom=0.01, left=0.01, right=0.99, hspace=0.001, wspace=0.001)
 
-	path = Source(graphs[indices[0]]).render(f"/tmp/root", format="png", cleanup=True)
+	path = Source(graphs[indices[0]]).render(f"images/{args.output}-0-0", format="svg", cleanup=True)
 
-	axes[0, 0].imshow(mpimg.imread(path))
-	axes[0, 0].axis('off')
-	axes[0, 0].set_title(f"Original Program")
+	# axes[0, 0].imshow(mpimg.imread(path))
+	# axes[0, 0].axis('off')
+	# axes[0, 0].set_title(f"Original Program")
 
 	# axes[i, 0].text(0.5, 0.001, prog, fontsize=1)
 	print(f"Graph program: {programs}")
@@ -73,11 +73,11 @@ def nearest_neighbors2(args):
 
 		neighprogram = data.iloc[neighind[0, j], 0]
 		neighbor = data.iloc[neighind[0, j], 1]
-		img = Source(neighbor).render(f"/tmp/{x}_{y}", format="png", cleanup=True)
-		axes[x, y].imshow(mpimg.imread(img))
-		axes[x, y].axis('off')
-		axes[x, y].set_title(f"{j}{suffix} NN")
+		img = Source(neighbor).render(f"images/{args.output}-{x}-{y}", format="svg", cleanup=True)
+		# axes[x, y].imshow(mpimg.imread(img))
+		# axes[x, y].axis('off')
+		# axes[x, y].set_title(f"{j}{suffix} NN")
 		# axes[i, j].text(0.5, 0.001, neighprogram, fontsize=1)
 
-	plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
-	subprocess.run(["mogrify", "-trim", f"images/{args.output}.jpeg"])
+	# plt.savefig(f"images/{args.output}.jpeg", dpi=1500)
+	# subprocess.run(["mogrify", "-trim", f"images/{args.output}.jpeg"])
