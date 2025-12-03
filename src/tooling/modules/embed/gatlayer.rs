@@ -19,28 +19,28 @@
 use burn::{
     config::Config,
     module::Module,
-    nn::{Dropout, DropoutConfig, LeakyRelu, LeakyReluConfig},
     prelude::Backend,
     tensor::{Float, Tensor},
 };
 
 use crate::{
     grammar::program::ProgramInstance,
-    tooling::modules::{
-        expander::Activation,
-        general::{GeneralLinear, GeneralLinearConfig},
-    },
+    tooling::modules::{embed::gathead::GATHead, expander::Activation},
 };
 
 #[derive(Debug, Config)]
 pub struct GATLayerConfig {}
 
 impl GATLayerConfig {
-    pub fn init<B: Backend>(&self, device: &B::Device) -> GATLayer<B> {}
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GATLayer<B> {
+        GATLayer { heads: vec![] }
+    }
 }
 
 #[derive(Debug, Module)]
-pub struct GATLayer<B: Backend> {}
+pub struct GATLayer<B: Backend> {
+    heads: Vec<GATHead<B>>,
+}
 
 impl<B: Backend> GATLayer<B> {
     pub fn forward(

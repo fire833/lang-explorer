@@ -19,8 +19,17 @@
 use burn::{
     config::Config,
     module::Module,
+    nn::{Dropout, DropoutConfig, LeakyRelu, LeakyReluConfig},
     prelude::Backend,
     tensor::{Float, Tensor},
+};
+
+use crate::{
+    grammar::program::ProgramInstance,
+    tooling::modules::{
+        expander::Activation,
+        general::{GeneralLinear, GeneralLinearConfig},
+    },
 };
 
 #[derive(Debug, Config)]
