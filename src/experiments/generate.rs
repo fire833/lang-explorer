@@ -28,6 +28,7 @@ use std::{
 use bhtsne::tSNE;
 use burn::{backend::Autodiff, data::dataset::Dataset, optim::AdamWConfig, prelude::Backend};
 use dashmap::DashMap;
+use rand::Rng;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use reqwest::ClientBuilder;
 use serde::{Deserialize, Serialize};
@@ -80,6 +81,10 @@ pub struct GenerateInput {
     /// Toggle which embeddings to return for each instance.
     #[serde(rename = "return_embeddings", default)]
     return_embeddings: Vec<EmbeddingModel>,
+
+    /// Optionally specify a cap for the number of similarity scores to write to disk.
+    #[serde(rename = "similarity_scores_max_count", default)]
+    similarity_scores_max_count: Option<usize>,
 
     //// Toggle whether or not to run similarity experiments.
     #[serde(rename = "do_similarity_experiments", default)]
@@ -180,6 +185,7 @@ impl Default for GenerateInput {
             return_features: false,
             return_edge_lists: false,
             return_embeddings: vec![],
+            similarity_scores_max_count: Some(100000),
             do_experiments: false,
             return_tsne2d: false,
             return_tsne3d: false,
@@ -890,6 +896,7 @@ impl GenerateOutput {
             self.programs.len(),
             self.language
         );
+
         for (idx, prog) in self.programs.iter().enumerate() {
             program_writer.serialize(ProgramRecord::new(
                 idx,
@@ -923,6 +930,64 @@ impl GenerateOutput {
 
         program_writer.flush()?;
         ast_nn_writer.flush()?;
+
+        if let Some(exp) = &self.similarity_experiments {
+            let indices = match self.options.similarity_scores_max_count {
+                Some(max) => {
+                    let mut index_set = HashSet::new();
+
+                    let len = exp.normalized_ast_similarity_scores.len();
+
+                    while index_set.len() < max {
+                        let idx = (rand::rng().random::<u64>() as usize) % len;
+                        index_set.insert(idx);
+                    }
+
+                    index_set.into_iter().collect::<Vec<usize>>().into_iter()
+                },
+                None => (0..exp.normalized_ast_similarity_scores.len()).collect::<Vec<usize>>().into_iter(),
+            };
+
+            let mut normalized_similarity_scores_writer = csv::Writer::from_path(format!(
+                "{path}/{}/{exp_id}/normalized_ast_similarity_scores.csv",
+                self.language
+            ))?;
+    
+            println!("writing normalized_ast_similarity_scores to {path}/{}/{exp_id}/normalized_ast_similarity_scores.csv", self.language);
+            
+            let embedding_models = self.options.return_embeddings.clone();
+
+            for idx in indices
+            {
+                if idx == 0 {
+                    let mut vec = vec!["idx".to_string(), "ast".to_string()];
+
+                    for model in embedding_models.iter() {
+                        vec.push(model.to_string());
+                    }
+
+                    normalized_similarity_scores_writer.write_record(vec)?;
+                }
+
+                let ast_score = exp.normalized_ast_similarity_scores[idx];
+
+                let mut record = vec![idx.to_string(), ast_score.to_string()];
+
+                for (model_idx, _) in embedding_models.iter().enumerate() {
+                    let emb_score = exp.normalized_similarity_scores[model_idx][idx];
+                    record.push(emb_score.to_string());
+                }
+
+                normalized_similarity_scores_writer.write_record(record)?;
+            
+                if idx % 1000 == 0 {
+                    normalized_similarity_scores_writer.flush()?;
+                }
+            }
+
+            normalized_similarity_scores_writer.flush()?;
+        }
+
 
         // Need to clone to avoid immutable and mutable borrow downstream.
         for embed_model in self.options.return_embeddings.clone().iter() {
