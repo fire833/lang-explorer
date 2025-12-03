@@ -957,9 +957,9 @@ impl GenerateOutput {
             
             let embedding_models = self.options.return_embeddings.clone();
 
-            for idx in indices
+            for (r, idx) in indices.enumerate()
             {
-                if idx == 0 {
+                if r == 0 {
                     let mut vec = vec!["idx".to_string(), "ast".to_string()];
 
                     for model in embedding_models.iter() {

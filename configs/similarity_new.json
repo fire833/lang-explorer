@@ -1,0 +1,175 @@
+{
+  "return_features": true,
+  "return_edge_lists": false,
+  "return_embeddings": [
+    "doc2vecgensim",
+    "nomic-embed-text",
+    "mxbai-embed-large",
+    "snowflake-arctic-embed:137m"
+  ],
+  "do_similarity_experiments": true,
+  "similarity_scores_max_count": 100000,
+  "return_tsne2d": false,
+  "return_tsne3d": false,
+  "return_grammar": false,
+  "return_graphviz": false,
+  "return_partial_graphs": false,
+  "css": {
+    "version": "exhaustivev1",
+    "colors": [
+      "#842d5b",
+      "#20b01c",
+      "#7d1dc1",
+      "#42a1dc",
+      "#da8454",
+      "#8ec5d2",
+      "#a69657",
+      "#a69657",
+      "#664ba3",
+      "#3b6a42",
+      "rgb(39, 37, 193)",
+      "rgb(37, 138, 166)",
+      "rgb(84, 183, 126)",
+      "rgb(104, 36, 170)",
+      "rgb(207, 106, 144)",
+      "rgb(203, 135, 198)",
+      "rgb(231, 100, 187)",
+      "rgb(143, 143, 143)",
+      "rgb(68, 68, 68)",
+      "rgb(160, 160, 160)",
+      "rgb(141, 141, 141)",
+      "rgb(95, 95, 95)"
+    ],
+    "classes": [
+      "buttons",
+      "footers"
+    ],
+    "ids": [
+      "content",
+      "header",
+      "btn"
+    ]
+  },
+  "nft": {},
+  "spice": {},
+  "spiral": {},
+  "taco_expression": {
+    "version": "contextfreev1",
+    "symbols": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z"
+    ],
+    "indices": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+      "m",
+      "n",
+      "o",
+      "p",
+      "q",
+      "r",
+      "s",
+      "t",
+      "u",
+      "v",
+      "w",
+      "x",
+      "y",
+      "z"
+    ]
+  },
+  "taco_schedule": {
+    "version": "contextfreev1",
+    "index_variables": [
+      "i",
+      "j",
+      "k",
+      "x",
+      "y"
+    ],
+    "workspace_index_variables": [
+      "l",
+      "m",
+      "n"
+    ],
+    "fused_index_variables": [
+      "o",
+      "p"
+    ],
+    "split_factor_variables": [
+      "q",
+      "r",
+      "s"
+    ],
+    "divide_factor_variables": [
+      "t",
+      "u"
+    ],
+    "unroll_factor_variables": [
+      "v",
+      "w",
+      "z"
+    ]
+  },
+  "karel": {},
+  "count": 5000,
+  "ollama_concurrent_requests": 30,
+  "label_extraction": {
+    "WLKernel": {
+      "iterations": 5,
+      "order": "parent_self_children",
+      "dedup": false,
+      "sort": false
+    }
+  },
+  "gen_params": {
+    "batch_size": 128,
+    "n_epochs": 10,
+    "learning_rate": 0.001,
+    "learning_rate_drop": 0.75,
+    "min_learning_rate": 1e-6,
+    "seed": 10,
+    "display_frequency": 100,
+    "create_new_model": false,
+    "save_model": true
+  },
+  "d_model": 128,
+  "window_left": 5,
+  "window_right": 5,
+  "num_neg_samples": 5,
+  "agg": "Average"
+}
