@@ -522,10 +522,10 @@ impl GenerateOutput {
 
         let normalized_ast_scores = ast_distribution.minmax_scale(ast_similarity_scores.clone());
 
-        let mut emb_c = vec![];
-        let mut emb_n = vec![];
-        let mut emb_d = vec![];
-        let mut emb_nn = vec![];
+        let mut embeddings_similarity_scores = vec![];
+        let mut embeddings_normalized_similarity_scores = vec![];
+        let mut embeddings_distributions = vec![];
+        let mut embeddings_nearest_neighbors = vec![];
 
         // Now, go through all embeddings and compute the similarity matrix, among other things.
         for emb in input.return_embeddings.iter() {
@@ -561,15 +561,15 @@ impl GenerateOutput {
                 prog.set_embedding_nn(emb.to_string(), nn.pop_front().unwrap());
             }
 
-            emb_d.push(emb_dist);
-            emb_c.push(emb_similarity_scores);
-            emb_n.push(normalized_emb_scores);
-            emb_nn.push(nn);
+            embeddings_distributions.push(emb_dist);
+            embeddings_similarity_scores.push(emb_similarity_scores);
+            embeddings_normalized_similarity_scores.push(normalized_emb_scores);
+            embeddings_nearest_neighbors.push(nn);
         }
 
         let similarity_results = self.compute_similarity_results(
-            &emb_c,
-            &emb_n,
+            &embeddings_similarity_scores,
+            &embeddings_normalized_similarity_scores,
             &ast_similarity_scores,
             &normalized_ast_scores,
             3,
@@ -577,9 +577,11 @@ impl GenerateOutput {
         );
 
         self.similarity_experiments = Some(ExperimentResult {
+            normalized_ast_similarity_scores: normalized_ast_scores,
             ast_distribution,
-            embedding_distributions: emb_d,
+            embedding_distributions: embeddings_distributions,
             similarity_results,
+            normalized_similarity_scores: embeddings_normalized_similarity_scores,
         });
 
         Ok(())
@@ -718,10 +720,15 @@ impl GraphvizRecord {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 struct ExperimentResult {
+    #[serde(skip_serializing)]
+    normalized_ast_similarity_scores: Vec<f32>,
     /// Distribution for AST similarities.
     ast_distribution: Distribution,
     /// Distributions for embedding similarities.
     embedding_distributions: Vec<Distribution>,
+    /// All similarity scores for each.
+    #[serde(skip_serializing)]
+    normalized_similarity_scores: Vec<Vec<f32>>,
     /// Average, weighted, and chi-square similarity results, normalized average, normalized chi square.
     similarity_results: Vec<(f64, f64, f64, f64, f64)>,
 }
