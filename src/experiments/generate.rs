@@ -933,6 +933,9 @@ impl GenerateOutput {
 
         if let Some(exp) = &self.similarity_experiments {
             let indices = match self.options.similarity_scores_max_count {
+                Some(max) if max >= exp.normalized_ast_similarity_scores.len() => {
+                    (0..exp.normalized_ast_similarity_scores.len()).collect::<Vec<usize>>().into_iter()
+                },
                 Some(max) => {
                     let mut index_set = HashSet::new();
 
