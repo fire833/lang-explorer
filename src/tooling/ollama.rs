@@ -73,7 +73,7 @@ pub(crate) async fn get_embeddings_bulk_ollama(
 ) -> Result<Vec<Vec<f32>>, LangExplorerError> {
     let prompts = futures::stream::iter(prompts.iter());
     let res = prompts
-        .map(async |prompt| make_request(client, host, &model, prompt).await)
+        .map(async |prompt| make_request(client, host, &model, prompt, 5).await)
         .buffer_unordered(num_parallel_requests);
 
     let res = res.collect().await;
@@ -86,6 +86,7 @@ async fn make_request(
     host: &String,
     model: &EmbeddingModel,
     prompt: &String,
+    mut retries: u8,
 ) -> Vec<f32> {
     let p = String::from(" ");
     let mut final_prompt = prompt;
@@ -94,26 +95,43 @@ async fn make_request(
         final_prompt = &p;
     }
 
-    let res = client
-        .post(format!("{host}/api/embeddings"))
-        .json(&serde_json::json!({
-            "model": model.to_string(),
-            "prompt": final_prompt,
-        }))
-        .send()
-        .await
-        .expect("couldn't make request");
+    while retries > 0 {
+        let res = match client
+            .post(format!("{host}/api/embeddings"))
+            .json(&serde_json::json!({
+                "model": model.to_string(),
+                "prompt": final_prompt,
+            }))
+            .send()
+            .await
+        {
+            Ok(res) => res,
+            Err(e) => {
+                println!("request error: {}", e);
+                retries -= 1;
+                continue;
+            }
+        };
 
-    if res.status() != StatusCode::OK {
-        let status = res.status();
-        let data = res.text().await.unwrap();
-        panic!("invalid reply: {status} {data}");
+        if res.status() != StatusCode::OK {
+            let status = res.status();
+            let data = res.text().await.unwrap();
+            println!("request returned {status}: {data}");
+            retries -= 1;
+            continue;
+        }
+
+        let emb = match res.json::<EmbeddingResult>().await {
+            Ok(emb) => emb,
+            Err(e) => {
+                println!("deserialization error: {}", e);
+                retries -= 1;
+                continue;
+            }
+        };
+
+        return emb.embedding;
     }
 
-    let emb = res
-        .json::<EmbeddingResult>()
-        .await
-        .expect("couldn't deserialize response");
-
-    emb.embedding
+    panic!("exceeded maximum retries");
 }
