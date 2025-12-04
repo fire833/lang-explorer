@@ -31,7 +31,7 @@ def similarity_correlation(args):
 		plt.scatter(embedding_scores, ast_scores)
 		plt.xlabel(f"Pairwise similarity scores - {embedding_system}")
 		plt.ylabel("AST similarity scores")
-		plt.title(f"Similarity Correlation for {args.lang} - {embedding_system}")
+		plt.title(f"Similarity Correlation for {args.lang} - {embedding_system}\n $p_{{pearson}}$ = {analysis["pearson_p"]:.5f}, $r_{{pearson}} = {analysis["pearson_r"]:.5f}$")
 		plt.savefig(f"images/{args.lang}/similarity_correlation_{embedding_system}_{args.experiment_number}.jpeg", dpi=500)
 		plt.close()
 
