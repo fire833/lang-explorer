@@ -7,8 +7,8 @@
     "mxbai-embed-large",
     "snowflake-arctic-embed:137m"
   ],
-  "do_similarity_experiments": true,
   "similarity_scores_max_count": 250000,
+  "do_similarity_experiments": true,
   "return_tsne2d": false,
   "return_tsne3d": false,
   "return_grammar": false,
@@ -148,6 +148,7 @@
   "karel": {},
   "count": 500,
   "ollama_concurrent_requests": 30,
+  "ollama_tcp_keepalive": 3600,
   "label_extraction": {
     "WLKernel": {
       "iterations": 5,

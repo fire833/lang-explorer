@@ -32,7 +32,7 @@ def similarity_correlation(args):
 		plt.xlabel(f"Pairwise similarity scores - {embedding_system}")
 		plt.ylabel("AST similarity scores")
 		plt.title(f"Similarity Correlation for {args.lang} - {embedding_system}")
-		plt.savefig(f"images/{args.lang}/similarity_correlation_{embedding_system}.jpeg", dpi=500)
+		plt.savefig(f"images/{args.lang}/similarity_correlation_{embedding_system}_{args.experiment_number}.jpeg", dpi=500)
 		plt.close()
 
 def correlation_analysis(x, y):
