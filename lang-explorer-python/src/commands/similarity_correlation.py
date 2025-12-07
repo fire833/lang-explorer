@@ -28,8 +28,8 @@ def similarity_correlation(args):
 		print(analysis)
 
 		pval = f"{analysis["pearson_p"]:.5f}"
-		if analysis["pearson_p"] < 0.00001:
-			pval = "< 0.00001"
+		if analysis["pearson_p"] < 0.000009:
+			pval = "< 0.00000"
 
 		plt.figure()
 		plt.scatter(embedding_scores, ast_scores)
