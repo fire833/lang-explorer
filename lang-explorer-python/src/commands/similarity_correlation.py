@@ -27,11 +27,15 @@ def similarity_correlation(args):
 		print(f"Correlation results for {embedding_system}:")
 		print(analysis)
 
+		pval = f"{analysis["pearson_p"]:.5f}"
+		if analysis["pearson_p"] < 0.00001:
+			pval = "< 0.00001"
+
 		plt.figure()
 		plt.scatter(embedding_scores, ast_scores)
 		plt.xlabel(f"Pairwise similarity scores - {embedding_system}")
 		plt.ylabel("AST similarity scores")
-		plt.title(f"Similarity Correlation for {args.lang} - {embedding_system}\n $p_{{pearson}}$ = {analysis["pearson_p"]:.5f}, $r_{{pearson}} = {analysis["pearson_r"]:.5f}$")
+		plt.title(f"Similarity Correlation for {args.lang} - {embedding_system}\n $p_{{pearson}}$ = {pval}, $r_{{pearson}} = {analysis["pearson_r"]:.5f}$")
 		plt.savefig(f"images/{args.lang}/similarity_correlation_{embedding_system}_{args.experiment_number}.jpeg", dpi=500)
 		plt.close()
 
