@@ -20,6 +20,8 @@ use async_trait::async_trait;
 
 mod compilers;
 
+pub mod karel;
+
 use crate::errors::LangExplorerError;
 
 /// A metric is intended to be usually a real-valued number (or maybe
@@ -30,7 +32,7 @@ use crate::errors::LangExplorerError;
 /// loss to compute a gradient for the parameters of the model that
 /// the underlying expander uses, and doing gradient descent to optimize
 /// the weights.
-pub trait Metric: Sized + Eq + PartialEq + PartialOrd {}
+pub trait Metric: Sized + PartialEq + PartialOrd {}
 
 /// Evaluator is a trait that takes in some program, in the
 /// form of a vector of bytes, and returns some kind of metric
