@@ -48,9 +48,9 @@ nterminal_str!(NT_PARALLELIZE_RACES, "parallelize_races");
 nterminal_str!(NT_INDEX_VARIABLE, "idx_var");
 nterminal_str!(NT_WORKSPACE_INDEX_VARIABLE, "workspace_idx_var");
 nterminal_str!(NT_FUSED_INDEX_VARIABLE, "fused_idx_var");
-nterminal_str!(NT_UNROLL_FACTOR, "unroll_factor");
-nterminal_str!(NT_DIVIDE_FACTOR, "divide_factor");
-nterminal_str!(NT_SPLIT_FACTOR, "split_factor");
+nterminal_str!(NT_UNROLL_FACTOR, "unroll_fact");
+nterminal_str!(NT_DIVIDE_FACTOR, "divide_fact");
+nterminal_str!(NT_SPLIT_FACTOR, "split_fact");
 
 // Terminals for this grammar.
 terminal_str!(POS_OP, "pos");

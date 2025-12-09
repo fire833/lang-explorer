@@ -42,7 +42,7 @@ nterminal_str!(NT_EXPR, "expr");
 nterminal_str!(NT_ELEMENT, "elem");
 nterminal_str!(TENSOR, "symbol");
 nterminal_str!(NT_INDEX, "nt_index");
-nterminal_str!(INDEX, "index");
+nterminal_str!(INDEX, "idx");
 
 pub struct TacoExpressionLanguage;
 

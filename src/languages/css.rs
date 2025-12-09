@@ -47,7 +47,7 @@ nterminal_str!(NT_SELECTOR, "selector");
 nterminal_str!(NT_PROPERTIES, "properties");
 nterminal_str!(NT_PROPERTY, "property");
 nterminal_str!(NT_BASE_HTML_ELEMENT, "base_html_elem");
-nterminal_str!(NT_HTML_ELEMENT, "html_element");
+nterminal_str!(NT_HTML_ELEMENT, "html_elem");
 nterminal_str!(NT_MULTI_CSHE, "comma_sep_html_elems");
 nterminal_str!(NT_MULTI_SSHE, "space_sep_html_elems");
 nterminal_str!(NT_PSEUDO_ELEMENTS, "pseudo_elem");

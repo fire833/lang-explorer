@@ -23,7 +23,7 @@ pub mod prod;
 pub mod program;
 pub mod rule;
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::grammar::elem::GrammarElement;
 
@@ -38,7 +38,7 @@ pub trait BinarySerialize {
 }
 
 /// Wrapper for all terminal elements.
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub enum Terminal {
     String(String),
     ConstStr(&'static str),
@@ -50,6 +50,16 @@ impl Display for Terminal {
         match self {
             Self::String(s) => write!(f, "\"{s}\""),
             Self::ConstStr(s) => write!(f, "\"{s}\""),
+            Self::Byte(b) => write!(f, "{b:#04x}"),
+        }
+    }
+}
+
+impl Debug for Terminal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::String(s) => write!(f, "{s}"),
+            Self::ConstStr(s) => write!(f, "{s}"),
             Self::Byte(b) => write!(f, "{b:#04x}"),
         }
     }
@@ -94,12 +104,20 @@ impl BinarySerialize for Terminal {
 }
 
 /// Wrapper for all non-terminal elements.
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub enum NonTerminal {
     ConstStr(&'static str),
 }
 
 impl Display for NonTerminal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ConstStr(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+impl Debug for NonTerminal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ConstStr(s) => write!(f, "{s}"),
