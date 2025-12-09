@@ -42,12 +42,12 @@ use super::{
 nterminal_str!(NT_ENTRYPOINT, "entrypoint");
 nterminal_str!(NT_EXPANSION, "expansion");
 nterminal_str!(NT_RULE, "rule");
-nterminal_str!(NT_ASSEMBLE_STRATEGY, "assemble_strategy");
+nterminal_str!(NT_ASSEMBLE_STRATEGY, "assemble_strat");
 nterminal_str!(NT_PARALLELIZE_HW, "parallelize_hw");
 nterminal_str!(NT_PARALLELIZE_RACES, "parallelize_races");
-nterminal_str!(NT_INDEX_VARIABLE, "index_variable");
-nterminal_str!(NT_WORKSPACE_INDEX_VARIABLE, "workspace_index_variable");
-nterminal_str!(NT_FUSED_INDEX_VARIABLE, "fused_index_variable");
+nterminal_str!(NT_INDEX_VARIABLE, "idx_var");
+nterminal_str!(NT_WORKSPACE_INDEX_VARIABLE, "workspace_idx_var");
+nterminal_str!(NT_FUSED_INDEX_VARIABLE, "fused_idx_var");
 nterminal_str!(NT_UNROLL_FACTOR, "unroll_factor");
 nterminal_str!(NT_DIVIDE_FACTOR, "divide_factor");
 nterminal_str!(NT_SPLIT_FACTOR, "split_factor");

@@ -38,8 +38,8 @@ use crate::{
 };
 
 nterminal_str!(NT_ENTRY, "entrypoint");
-nterminal_str!(NT_EXPR, "expression");
-nterminal_str!(NT_ELEMENT, "element");
+nterminal_str!(NT_EXPR, "expr");
+nterminal_str!(NT_ELEMENT, "elem");
 nterminal_str!(TENSOR, "symbol");
 nterminal_str!(NT_INDEX, "nt_index");
 nterminal_str!(INDEX, "index");
