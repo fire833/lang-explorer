@@ -54,7 +54,7 @@ pub struct KarelLanguageEvaluator {
     flags: HashSet<(u32, u32)>,
     agent_direction: Direction,
     agent_position: (u32, u32),
-    flag_count: u8,
+    flag_count: u32,
 }
 
 enum Direction {
