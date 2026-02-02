@@ -19,6 +19,7 @@
 use std::collections::HashSet;
 
 use async_trait::async_trait;
+use warp::filters::sse::keep_alive;
 
 use crate::{errors::LangExplorerError, evaluators::Evaluator};
 
@@ -35,9 +36,9 @@ pub(crate) enum KarelInstruction {
     TurnRight,
     PickMarker,
     PutMarker,
-    If(KarelCondition),
-    IfElse(KarelCondition),
-    While(KarelCondition),
+    If(KarelCondition, Vec<KarelInstruction>),
+    IfElse(KarelCondition, Vec<KarelInstruction>, Vec<KarelInstruction>),
+    While(KarelCondition, Vec<KarelInstruction>),
 }
 
 pub(crate) enum KarelCondition {
@@ -56,6 +57,12 @@ pub struct KarelLanguageEvaluator {
     flag_count: u8,
 }
 
+enum Direction {
+    Front,
+    Left,
+    Right,
+}
+
 impl KarelLanguageEvaluator {
     pub fn new() -> Self {
         Self {
@@ -66,7 +73,57 @@ impl KarelLanguageEvaluator {
         }
     }
 
-    pub fn execute(&mut self, program: Vec<KarelInstruction>) {
+    fn check_condition(&self, condition: &KarelCondition) -> bool {
+        match condition {
+            KarelCondition::FrontIsClear => match self.agent_direction {
+                Direction::Up => !self
+                    .flags
+                    .contains(&(self.agent_position.0, self.agent_position.1 + 1)),
+                Direction::Down => !self
+                    .flags
+                    .contains(&(self.agent_position.0, self.agent_position.1 - 1)),
+                Direction::Left => !self
+                    .flags
+                    .contains(&(self.agent_position.0 - 1, self.agent_position.1)),
+                Direction::Right => !self
+                    .flags
+                    .contains(&(self.agent_position.0 + 1, self.agent_position.1)),
+            },
+            KarelCondition::LeftIsClear => match self.agent_direction {
+                Direction::Up => !self
+                    .flags
+                    .contains(&(self.agent_position.0 - 1, self.agent_position.1)),
+                Direction::Down => !self
+                    .flags
+                    .contains(&(self.agent_position.0 + 1, self.agent_position.1)),
+                Direction::Left => !self
+                    .flags
+                    .contains(&(self.agent_position.0, self.agent_position.1 - 1)),
+                Direction::Right => !self
+                    .flags
+                    .contains(&(self.agent_position.0, self.agent_position.1 + 1)),
+            },
+            KarelCondition::RightIsClear => match self.agent_direction {
+                Direction::Up => !self
+                    .flags
+                    .contains(&(self.agent_position.0 + 1, self.agent_position.1)),
+                Direction::Down => !self
+                    .flags
+                    .contains(&(self.agent_position.0 - 1, self.agent_position.1)),
+                Direction::Left => !self
+                    .flags
+                    .contains(&(self.agent_position.0, self.agent_position.1 - 1)),
+                Direction::Right => !self
+                    .flags
+                    .contains(&(self.agent_position.0, self.agent_position.1 + 1)),
+            },
+            KarelCondition::MarkersPresent => self.flags.contains(&self.agent_position),
+            KarelCondition::NoMarkersPresent => !self.flags.contains(&self.agent_position),
+            KarelCondition::Not(karel_condition) => !self.check_condition(karel_condition),
+        }
+    }
+
+    pub fn execute(&mut self, program: &Vec<KarelInstruction>) {
         for instr in program.iter() {
             match instr {
                 KarelInstruction::Move => match self.agent_direction {
@@ -123,9 +180,27 @@ impl KarelLanguageEvaluator {
                         self.flag_count -= 1;
                     }
                 }
-                KarelInstruction::If(karel_condition) => todo!(),
-                KarelInstruction::IfElse(karel_condition) => todo!(),
-                KarelInstruction::While(karel_condition) => todo!(),
+                KarelInstruction::If(karel_condition, karel_instructions) => {
+                    if self.check_condition(karel_condition) {
+                        self.execute(karel_instructions);
+                    }
+                }
+                KarelInstruction::IfElse(
+                    karel_condition,
+                    karel_instructions_if,
+                    karel_instructions_else,
+                ) => {
+                    if self.check_condition(karel_condition) {
+                        self.execute(karel_instructions_if);
+                    } else {
+                        self.execute(karel_instructions_else);
+                    }
+                }
+                KarelInstruction::While(karel_condition, karel_instructions) => {
+                    while self.check_condition(karel_condition) {
+                        self.execute(karel_instructions);
+                    }
+                }
             }
         }
     }
