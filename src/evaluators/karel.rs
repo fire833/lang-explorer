@@ -19,7 +19,6 @@
 use std::collections::HashSet;
 
 use async_trait::async_trait;
-use warp::filters::sse::keep_alive;
 
 use crate::{errors::LangExplorerError, evaluators::Evaluator};
 
@@ -55,12 +54,6 @@ pub struct KarelLanguageEvaluator {
     agent_direction: Direction,
     agent_position: (u32, u32),
     flag_count: u32,
-}
-
-enum Direction {
-    Front,
-    Left,
-    Right,
 }
 
 impl KarelLanguageEvaluator {
