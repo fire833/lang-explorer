@@ -2,7 +2,7 @@
 import ray
 import os
 
-# Wrapper function to apply to ray in a dynamic way. 
+# Wrapper function to apply to ray in a dynamic way.
 # Will be useful when swapping over to schooner.
 def init_ray():
 	addr = os.getenv("RAY_URL")

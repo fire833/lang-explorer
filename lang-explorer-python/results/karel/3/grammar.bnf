@@ -7,4 +7,3 @@
 <cond> ::= 'frontIsClear()' | 'leftIsClear()' | 'rightIsClear()' | 'markersPresent()' | 'noMarkersPresent()' | 'not' ' ' <cond>
 
 <stmt> ::= 'while' '(' <cond> ')' ':' ' ' <stmt> | 'repeat' '(' <count> ')' ':' ' ' <stmt> | <action> | <stmt> ';' <stmt> | 'if' '(' <cond> ')' ':' ' ' <stmt> | 'ifelse' '(' <cond> ')' ':' ' ' <stmt> 'else' ':' ' ' <stmt>
-

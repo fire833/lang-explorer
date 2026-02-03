@@ -32,11 +32,11 @@ class Doc2VecConfig:
 def train_doc2vec(documents: Dict[str, List], config: Doc2VecConfig) -> Dict[str, List[float]]:
     """
     Train a Doc2Vec model and return embeddings for all documents.
-    
+
     Args:
         documents: Dictionary mapping document IDs to lists of words
         config: Doc2VecConfig object with model parameters
-        
+
     Returns:
         Dictionary mapping document IDs to their embedding vectors
     """
@@ -45,7 +45,7 @@ def train_doc2vec(documents: Dict[str, List], config: Doc2VecConfig) -> Dict[str
         TaggedDocument(words=words, tags=[doc_id])
         for doc_id, words in documents.items()
     ]
-    
+
     # Initialize and train model
     model = Doc2Vec(
 		tagged_docs,
@@ -60,12 +60,12 @@ def train_doc2vec(documents: Dict[str, List], config: Doc2VecConfig) -> Dict[str
         negative=config.negative,
         hs=0,
     )
-    
+
     # Extract embeddings
     embeddings = {}
     for doc_id in documents.keys():
         embeddings[doc_id] = model.dv[doc_id].tolist()
-    
+
     return embeddings
 
 
@@ -78,7 +78,7 @@ def health_check():
 def embed_documents():
     """
     Train Doc2Vec model and return document embeddings.
-    
+
     Expected JSON payload:
     {
         "documents": {
@@ -93,7 +93,7 @@ def embed_documents():
             ...
         }
     }
-    
+
     Returns:
     {
         "embeddings": {
@@ -105,33 +105,33 @@ def embed_documents():
     """
     try:
         data = request.get_json()
-        
+
         if not data or "documents" not in data:
             return jsonify({"error": "Missing documents field in request"}), 400
-        
+
         documents = data["documents"]
-        
+
         if not isinstance(documents, dict):
             return jsonify({"error": "documents must be a dictionary"}), 400
-        
+
         if not documents:
             return jsonify({"error": "No documents provided"}), 400
-        
+
         # Validate document format
         for doc_id, words in documents.items():
             if not isinstance(words, list):
                 return jsonify({"error": f"Document {doc_id} must have a list of words"}), 400
             if not all(isinstance(w, str) for w in words):
                 return jsonify({"error": f"Document {doc_id} contains non-string words"}), 400
-        
+
         # Get config or use defaults
         config = Doc2VecConfig(**data.get("config", {}))
-        
+
         # Train model and get embeddings
         embeddings = train_doc2vec(documents, config)
-        
+
         return jsonify({"embeddings": embeddings}), 200
-        
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

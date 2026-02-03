@@ -9,4 +9,3 @@
 <nt_index> ::= <nt_index> ',' <nt_index> | <index>
 
 <element> ::=  <symbol> '(' <nt_index> ')'
-

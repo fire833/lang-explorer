@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from src.utils.client import GenerateParams, GenerateResults, CSSLanguageParameters, TacoScheduleParameters, TacoExpressionParameters
-from argparse import ArgumentParser	
+from argparse import ArgumentParser
 import sys
 from src.commands.viz import data_viz
 from src.commands.viz2 import data_viz2

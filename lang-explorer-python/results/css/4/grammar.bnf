@@ -53,4 +53,3 @@
 <border_type> ::= 'none' | 'hidden' | 'dotted' | 'dashed' | 'solid' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset' | 'initial' | 'inherit'
 
 <id> ::= 'content' | 'header' | 'btn'
-

@@ -955,9 +955,9 @@ impl GenerateOutput {
                 "{path}/{}/{exp_id}/normalized_ast_similarity_scores.csv",
                 self.language
             ))?;
-    
+
             println!("writing normalized_ast_similarity_scores to {path}/{}/{exp_id}/normalized_ast_similarity_scores.csv", self.language);
-            
+
             let embedding_models = self.options.return_embeddings.clone();
 
             for (r, idx) in indices.enumerate()
@@ -982,7 +982,7 @@ impl GenerateOutput {
                 }
 
                 normalized_similarity_scores_writer.write_record(record)?;
-            
+
                 if idx % 1000 == 0 {
                     normalized_similarity_scores_writer.flush()?;
                 }
@@ -996,7 +996,7 @@ impl GenerateOutput {
         for embed_model in self.options.return_embeddings.clone().iter() {
             println!(
                 "writing embeddings for model {embed_model} to {path}/{}/{exp_id}/embeddings_{embed_model}.csv",
-                self.language, 
+                self.language,
             );
             let mut embed_writer = csv::Writer::from_path(format!(
                 "{path}/{}/{exp_id}/embeddings_{embed_model}.csv",

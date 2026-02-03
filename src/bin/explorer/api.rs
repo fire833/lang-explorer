@@ -105,7 +105,7 @@ pub(super) async fn start_server<B: Backend>(
 }
 
 #[utoipa::path(
-    get, path = "/v2/generate/{language}/{expander}", 
+    get, path = "/v2/generate/{language}/{expander}",
     request_body = GenerateInput,
     responses(
         (status = 200, description = "Successfully generated code.", body = GenerateOutput),

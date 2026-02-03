@@ -23,7 +23,7 @@ class CubeDataset(Dataset):
 
 	def __len__(self):
 		return self.data.__len__()
-	
+
 	def __getitem__(self, idx: int):
 		return self.data[idx]
 
@@ -48,7 +48,7 @@ class XORLearner(LightningModule):
 
 	def forward(self, x):
 		return self.model.forward(x)
-	
+
 	def configure_optimizers(self):
 		return Adam(self.parameters(), lr=0.01)
 

@@ -17,9 +17,9 @@ def animate(args):
         data = pd.read_csv(f)  # rows = samples, cols = features (+ maybe label)
 
         tsne = TSNE(n_components=2, init="random", learning_rate="auto", random_state=42)
-        embedding = tsne.fit_transform(data.values) 
+        embedding = tsne.fit_transform(data.values)
         if i == 0:
-    	    init = embedding    
+    	    init = embedding
         snapshots.append(embedding)
 
     fig, ax = plt.subplots(figsize=(6, 6))

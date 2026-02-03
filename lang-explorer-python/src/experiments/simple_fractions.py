@@ -13,8 +13,8 @@ import math
 @ray.remote
 def pi4_sample(sample_count):
     """
-	pi4_sample runs sample_count experiments, and returns the 
-    fraction of time it was inside the circle. 
+	pi4_sample runs sample_count experiments, and returns the
+    fraction of time it was inside the circle.
     """
     in_count = 0
     for i in range(sample_count):
@@ -28,14 +28,14 @@ def main():
 	ray.init(f"ray://client.ray.soonerhpclab.org:10001")
 
 	SAMPLE_COUNT = 1000 * 10000
-	# start = time.time() 
+	# start = time.time()
 	# future = pi4_sample.remote(sample_count = SAMPLE_COUNT)
 	# pi4 = ray.get(future)
 	# end = time.time()
 	# dur = end - start
 	# print(f"Running {SAMPLE_COUNT} tests took {dur} seconds")
 
-	FULL_SAMPLE_COUNT = 100 * 1000 * 1000 * 1000 # 100 billion samples! 
+	FULL_SAMPLE_COUNT = 100 * 1000 * 1000 * 1000 # 100 billion samples!
 	BATCHES = int(FULL_SAMPLE_COUNT / SAMPLE_COUNT)
 	print(f'Doing {BATCHES} batches')
 	results = []

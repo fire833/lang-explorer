@@ -30,7 +30,7 @@ def main():
 	for i in range(8):
 		for j in range(8):
 			new[i, j] = find_kron_val(2, i, j, kron)
-	
+
 	print(kron)
 	print()
 	print(canonical)
@@ -41,6 +41,6 @@ def main():
 	# 	for j in range(8):
 	# 		if new[i, j] != canonical[i, j]:
 	# 			print(f"error! {i} {j} {new[i, j]} {canonical[i, j]}")
-	
+
 if __name__ == "__main__":
 	main()

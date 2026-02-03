@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.manifold import TSNE
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
-from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, manhattan_distances 
+from sklearn.metrics.pairwise import cosine_distances, euclidean_distances, manhattan_distances
 import os
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram

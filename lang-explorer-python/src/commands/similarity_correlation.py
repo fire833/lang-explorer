@@ -42,7 +42,7 @@ def similarity_correlation(args):
 def correlation_analysis(x, y):
 	# Pearson correlation
 	pearson_r, pearson_p = pearsonr(x, y, alternative="greater")
-    
+
 	# Spearman correlation
 	spearman_r, spearman_p = spearmanr(x, y, alternative="greater")
 
@@ -60,7 +60,5 @@ def correlation_analysis(x, y):
 		"regression_p": regression_p,
 		"regression_rsq": rsq,
     }
-    
+
 	return results
-
-
